@@ -1,0 +1,288 @@
+import type { Category, MenuItem, Order, User } from '@/types';
+import { Query } from 'appwrite';
+import { account, appwriteConfig, databases } from './appwrite';
+
+// ===================== AUTH =====================
+
+/**
+ * Sign in with email and password (Admin only)
+ */
+export const signIn = async (email: string, password: string) => {
+  try {
+    // Delete any existing session first to avoid "session already active" error
+    try {
+      await account.deleteSession('current');
+      console.log('Deleted existing session');
+    } catch (e) {
+      // Ignore if no session exists
+      console.log('No existing session to delete');
+    }
+    
+    const session = await account.createEmailPasswordSession(email, password);
+    
+    // Get user data and check if admin
+    const user = await getCurrentUser();
+    
+    if (!user || user.role !== 'admin') {
+      await signOut();
+      throw new Error('Access denied. Admin privileges required.');
+    }
+    
+    return session;
+  } catch (error: any) {
+    throw new Error(error.message || 'Login failed');
+  }
+};
+
+/**
+ * Sign out
+ */
+export const signOut = async () => {
+  try {
+    await account.deleteSession('current');
+  } catch (error: any) {
+    throw new Error(error.message || 'Logout failed');
+  }
+};
+
+/**
+ * Get current user
+ */
+export const getCurrentUser = async (): Promise<User | null> => {
+  try {
+    const currentAccount = await account.get();
+    
+    if (!currentAccount) return null;
+    
+    const userDocuments = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      appwriteConfig.userCollectionId,
+      [Query.equal('accountId', currentAccount.$id)]
+    );
+    
+    if (userDocuments.documents.length === 0) return null;
+    
+    return userDocuments.documents[0] as User;
+  } catch (error) {
+    console.error('Get current user error:', error);
+    return null;
+  }
+};
+
+// ===================== USERS =====================
+
+/**
+ * Get all users
+ */
+export const getAllUsers = async (limit: number = 100): Promise<User[]> => {
+  try {
+    const response = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      appwriteConfig.userCollectionId,
+      [Query.orderDesc('$createdAt'), Query.limit(limit)]
+    );
+    
+    return response.documents as User[];
+  } catch (error: any) {
+    throw new Error(error.message || 'Failed to fetch users');
+  }
+};
+
+/**
+ * Update user role
+ */
+export const updateUserRole = async (userId: string, role: string): Promise<User> => {
+  try {
+    const updatedUser = await databases.updateDocument(
+      appwriteConfig.databaseId,
+      appwriteConfig.userCollectionId,
+      userId,
+      { role, updatedAt: new Date().toISOString() }
+    );
+    
+    return updatedUser as User;
+  } catch (error: any) {
+    throw new Error(error.message || 'Failed to update user role');
+  }
+};
+
+// ===================== ORDERS =====================
+
+/**
+ * Get all orders
+ */
+export const getAllOrders = async (limit: number = 200): Promise<Order[]> => {
+  try {
+    const response = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      appwriteConfig.ordersCollectionId,
+      [Query.orderDesc('$createdAt'), Query.limit(limit)]
+    );
+    
+    return response.documents as Order[];
+  } catch (error: any) {
+    throw new Error(error.message || 'Failed to fetch orders');
+  }
+};
+
+/**
+ * Update order status
+ */
+export const updateOrderStatus = async (orderId: string, status: string): Promise<Order> => {
+  try {
+    const updatedOrder = await databases.updateDocument(
+      appwriteConfig.databaseId,
+      appwriteConfig.ordersCollectionId,
+      orderId,
+      { status, updatedAt: new Date().toISOString() }
+    );
+    
+    return updatedOrder as Order;
+  } catch (error: any) {
+    throw new Error(error.message || 'Failed to update order status');
+  }
+};
+
+/**
+ * Get order by ID
+ */
+export const getOrderById = async (orderId: string): Promise<Order> => {
+  try {
+    const order = await databases.getDocument(
+      appwriteConfig.databaseId,
+      appwriteConfig.ordersCollectionId,
+      orderId
+    );
+    
+    return order as Order;
+  } catch (error: any) {
+    throw new Error(error.message || 'Failed to fetch order');
+  }
+};
+
+// ===================== MENU =====================
+
+/**
+ * Get all menu items
+ */
+export const getAllMenuItems = async (limit: number = 100): Promise<MenuItem[]> => {
+  try {
+    const response = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      appwriteConfig.menuCollectionId,
+      [Query.limit(limit)]
+    );
+    
+    return response.documents as MenuItem[];
+  } catch (error: any) {
+    throw new Error(error.message || 'Failed to fetch menu items');
+  }
+};
+
+/**
+ * Create menu item
+ */
+export const createMenuItem = async (data: Partial<MenuItem>): Promise<MenuItem> => {
+  try {
+    const newItem = await databases.createDocument(
+      appwriteConfig.databaseId,
+      appwriteConfig.menuCollectionId,
+      'unique()',
+      {
+        ...data,
+        createdAt: new Date().toISOString(),
+      }
+    );
+    
+    return newItem as MenuItem;
+  } catch (error: any) {
+    throw new Error(error.message || 'Failed to create menu item');
+  }
+};
+
+/**
+ * Update menu item
+ */
+export const updateMenuItem = async (menuId: string, data: Partial<MenuItem>): Promise<MenuItem> => {
+  try {
+    const updatedItem = await databases.updateDocument(
+      appwriteConfig.databaseId,
+      appwriteConfig.menuCollectionId,
+      menuId,
+      {
+        ...data,
+        updatedAt: new Date().toISOString(),
+      }
+    );
+    
+    return updatedItem as MenuItem;
+  } catch (error: any) {
+    throw new Error(error.message || 'Failed to update menu item');
+  }
+};
+
+/**
+ * Delete menu item
+ */
+export const deleteMenuItem = async (menuId: string): Promise<void> => {
+  try {
+    await databases.deleteDocument(
+      appwriteConfig.databaseId,
+      appwriteConfig.menuCollectionId,
+      menuId
+    );
+  } catch (error: any) {
+    throw new Error(error.message || 'Failed to delete menu item');
+  }
+};
+
+// ===================== CATEGORIES =====================
+
+/**
+ * Get all categories
+ */
+export const getAllCategories = async (): Promise<Category[]> => {
+  try {
+    const response = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      appwriteConfig.categoriesCollectionId,
+      [Query.limit(100)]
+    );
+    
+    return response.documents as Category[];
+  } catch (error: any) {
+    throw new Error(error.message || 'Failed to fetch categories');
+  }
+};
+
+// ===================== STATS =====================
+
+/**
+ * Get dashboard statistics
+ */
+export const getDashboardStats = async () => {
+  try {
+    const [orders, users, products] = await Promise.all([
+      getAllOrders(),
+      getAllUsers(),
+      getAllMenuItems(),
+    ]);
+    
+    const totalRevenue = orders.reduce((sum, order) => sum + (order.total || 0), 0);
+    const pendingOrders = orders.filter(o => o.status === 'pending').length;
+    const completedOrders = orders.filter(o => o.status === 'completed').length;
+    const cancelledOrders = orders.filter(o => o.status === 'cancelled').length;
+    
+    return {
+      totalOrders: orders.length,
+      totalRevenue,
+      totalCustomers: users.filter(u => u.role !== 'admin').length,
+      totalProducts: products.length,
+      pendingOrders,
+      completedOrders,
+      cancelledOrders,
+    };
+  } catch (error: any) {
+    throw new Error(error.message || 'Failed to fetch dashboard stats');
+  }
+};
