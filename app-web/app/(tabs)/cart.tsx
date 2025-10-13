@@ -94,7 +94,7 @@ const Cart = () => {
                 deliveryAddressLabel: 'Custom',
                 phone: deliveryInfo.phone,
                 notes: deliveryInfo.notes,
-                recipientName: deliveryInfo.name,
+                recipientName: deliveryInfo.name, // Commented out - add this attribute to Appwrite orders collection if needed
             });
 
             // Close modal
@@ -114,11 +114,42 @@ const Cart = () => {
             );
         } catch (error) {
             console.error('Order error:', error);
-            Alert.alert(
-                'Order Failed',
-                'Failed to place order. Please make sure you have added the orders permissions in Appwrite Console.',
-                [{ text: 'OK' }]
-            );
+            
+            // Extract error message
+            let errorMessage = 'Failed to place order. Please try again.';
+            
+            if (error instanceof Error) {
+                errorMessage = error.message;
+            } else if (typeof error === 'string') {
+                errorMessage = error;
+            }
+            
+            // Check for specific error types
+            if (errorMessage.includes('permission') || errorMessage.includes('Unauthorized')) {
+                Alert.alert(
+                    'Permission Error ⚠️',
+                    'Unable to create order due to permission issues.\n\n' +
+                    '📝 To fix this:\n' +
+                    '1. Open Appwrite Console\n' +
+                    '2. Go to Database → orders collection\n' +
+                    '3. Settings → Permissions\n' +
+                    '4. Add "Any" role with Create permission\n\n' +
+                    'Contact admin if you need help.',
+                    [{ text: 'OK' }]
+                );
+            } else if (errorMessage.includes('Network') || errorMessage.includes('fetch')) {
+                Alert.alert(
+                    'Network Error 📡',
+                    'Unable to connect to server. Please check your internet connection and try again.',
+                    [{ text: 'OK' }]
+                );
+            } else {
+                Alert.alert(
+                    'Order Failed ❌',
+                    `Failed to place order.\n\nError: ${errorMessage}\n\nPlease try again or contact support.`,
+                    [{ text: 'OK' }]
+                );
+            }
         } finally {
             setIsOrdering(false);
         }

@@ -8,6 +8,7 @@ import envelope from "@/assets/icons/envelope.png";
 import home from "@/assets/icons/home.png";
 import location from "@/assets/icons/location.png";
 import logout from "@/assets/icons/logout.png";
+import menu from "@/assets/icons/menu.png";
 import minus from "@/assets/icons/minus.png";
 import pencil from "@/assets/icons/pencil.png";
 import person from "@/assets/icons/person.png";
@@ -193,6 +194,7 @@ export const icons = {
     home,
     location,
     logout,
+    menu,
     minus,
     pencil,
     person,
