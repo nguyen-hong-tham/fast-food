@@ -131,8 +131,24 @@ const Cart = () => {
                 renderItem={({ item }) => <CartItem item={item} />}
                 keyExtractor={(item) => item.id}
                 contentContainerClassName="pb-28 px-5 pt-5"
-                ListHeaderComponent={() => <CustomHeader title="Your Cart" />}
-                ListEmptyComponent={() => <Text>Cart Empty</Text>}
+                ListHeaderComponent={() => (
+                    <CustomHeader 
+                        title="Your Cart" 
+                        showBackButton={false} 
+                        showSearchButton={false}
+                        centered={true}
+                    />
+                )}
+                ListEmptyComponent={() => (
+                    <View className="items-center justify-center py-20">
+                        <Text className="text-lg font-semibold text-gray-400 mb-2">
+                            Cart Empty
+                        </Text>
+                        <Text className="text-sm text-gray-300">
+                            Add some delicious items to get started!
+                        </Text>
+                    </View>
+                )}
                 ListFooterComponent={() => totalItems > 0 && (
                     <View className="gap-5">
                         <View className="mt-6 border border-gray-200 p-5 rounded-2xl">

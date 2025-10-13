@@ -85,10 +85,15 @@ const Profile = () => {
                 contentContainerStyle={{ paddingBottom: 100 }}
             >
                 <View className="px-5 pt-5">
-                    <CustomHeader title="Profile" />
+                    <CustomHeader 
+                        title="Profile" 
+                        showBackButton={false} 
+                        showSearchButton={false}
+                        centered={true}
+                    />
 
                     {/* Avatar Section */}
-                    <View className="items-center mt-8 mb-10">
+                    <View className="items-center mt-10 mb-8">
                         <View className="profile-avatar">
                             <Image
                                 source={
@@ -113,6 +118,14 @@ const Profile = () => {
                                 />
                             </TouchableOpacity>
                         </View>
+                        
+                        {/* User Name - Centered below avatar */}
+                        <Text className="text-xl font-bold text-dark-100 mt-4">
+                            {user.name}
+                        </Text>
+                        <Text className="text-sm text-gray-400 mt-1">
+                            {user.email}
+                        </Text>
                     </View>
 
                     {/* Profile Information */}
