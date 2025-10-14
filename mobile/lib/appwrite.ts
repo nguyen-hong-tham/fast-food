@@ -32,23 +32,79 @@ export const storage = new Storage(client);
 const avatars = new Avatars(client);
 
 export const createUser = async ({ email, password, name }: CreateUserParams) => {
+    let newAccount: any = null;
+    
     try {
-        const newAccount = await account.create(ID.unique(), email, password, name)
-        if(!newAccount) throw Error;
+        console.log('🔵 [STEP 1/3] Creating account in Auth for:', email);
+        
+        // Bước 1: Tạo account trong Auth
+        newAccount = await account.create(ID.unique(), email, password, name);
+        if (!newAccount) throw new Error('Failed to create account');
+        
+        console.log('✅ [STEP 1/3] Account created successfully. ID:', newAccount.$id);
 
-        // Đăng nhập sau khi tạo tài khoản thành công
-        await signIn({ email, password });
+        // Bước 2: Tạo avatar URL
+        const avatarUrl = avatars.getInitials(name);
+        console.log('🔵 [STEP 2/3] Creating user document in database...');
 
-        const avatarUrl = avatars.getInitialsURL(name);
-
-        return await databases.createDocument(
+        // Bước 3: Tạo document trong user collection
+        // Note: Only include attributes that exist in Appwrite user collection
+        const userDoc = await databases.createDocument(
             appwriteConfig.databaseId,
             appwriteConfig.userCollectionId,
             ID.unique(),
-            { email, name, accountId: newAccount.$id, avatar: avatarUrl }
+            { 
+                email, 
+                name, 
+                accountId: newAccount.$id, 
+                avatar: avatarUrl,
+                role: 'customer'
+                // phone and address removed - not in Appwrite schema
+                // Add them in Appwrite Console if needed: Database → user → Attributes
+            }
         );
-    } catch (e) {
-        throw new Error(e as string);
+        
+        console.log('✅ [STEP 2/3] User document created successfully. Doc ID:', userDoc.$id);
+        console.log('🔵 [STEP 3/3] Logging in user...');
+
+        // Bước 4: Login sau khi tất cả thành công
+        await signIn({ email, password });
+        
+        console.log('✅ [STEP 3/3] User logged in successfully');
+        console.log('🎉 Registration completed successfully for:', email);
+
+        return userDoc;
+        
+    } catch (e: any) {
+        console.error('❌ Error in createUser:', e);
+        
+        // Provide better error message
+        let errorMessage = '';
+        
+        if (e.message?.includes('permission') || e.message?.includes('Unauthorized')) {
+            errorMessage = '⚠️ Permission Error: Unable to save user to database.\n\n' +
+                '📝 Admin needs to:\n' +
+                '1. Open Appwrite Console\n' +
+                '2. Go to Database → user collection\n' +
+                '3. Settings → Permissions\n' +
+                '4. Add "Any" role with Create permission\n\n' +
+                '💡 Your account was created but not fully registered.';
+        } else if (e.message?.includes('already exists') || e.message?.includes('duplicate')) {
+            errorMessage = '📧 This email is already registered.\n\nPlease try logging in instead.';
+        } else if (e.message?.includes('network') || e.message?.includes('fetch')) {
+            errorMessage = '📡 Network error. Please check your internet connection and try again.';
+        } else {
+            errorMessage = `❌ Registration failed: ${e.message || 'Unknown error'}`;
+        }
+        
+        // Log warning if account was created but document wasn't
+        if (newAccount) {
+            console.warn('⚠️ IMPORTANT: Account created in Auth but user document creation failed');
+            console.warn('⚠️ Account ID:', newAccount.$id);
+            console.warn('⚠️ Manual cleanup may be required');
+        }
+        
+        throw new Error(errorMessage);
     }
 }
 

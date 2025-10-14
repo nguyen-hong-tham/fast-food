@@ -14,19 +14,30 @@ const SignUp = () => {
     const submit = async () => {
         const { name, email, password } = form;
 
-        if(!name || !email || !password) return Alert.alert('Error', 'Please enter valid email address & password.');
+        if(!name || !email || !password) return Alert.alert('Error', 'Please fill in all fields.');
 
         setIsSubmitting(true)
 
         try {
+            console.log('🚀 Starting user registration...');
+            
             await createUser({ email,  password,  name });
+            
+            console.log('🎉 Registration successful! Fetching user data...');
             
             // Cập nhật lại auth state sau khi tạo tài khoản thành công
             await fetchAuthenticatedUser();
 
-            router.replace('/');
+            // Show success message
+            Alert.alert(
+                '🎉 Welcome!', 
+                `Registration successful! Welcome to FoodFast, ${name}!`,
+                [{ text: 'Get Started', onPress: () => router.replace('/') }]
+            );
+            
         } catch(error: any) {
-            Alert.alert('Error', error.message);
+            console.error('❌ Registration failed:', error.message);
+            Alert.alert('Registration Failed', error.message);
         } finally {
             setIsSubmitting(false);
         }

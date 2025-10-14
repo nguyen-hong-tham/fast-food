@@ -15,20 +15,27 @@ const SignIn = () => {
     const submit = async () => {
         const { email, password } = form;
 
-        if(!email || !password) return Alert.alert('Error', 'Please enter valid email address & password.');
+        if(!email || !password) return Alert.alert('Error', 'Please fill in all fields.');
 
         setIsSubmitting(true)
 
         try {
+            console.log('🚀 Starting user login...');
+            
             await signIn({ email, password });
+            
+            console.log('🎉 Login successful! Fetching user data...');
             
             // Cập nhật lại auth state sau khi đăng nhập thành công
             await fetchAuthenticatedUser();
 
+            // Navigate back to home
             router.replace('/');
+            
         } catch(error: any) {
-            Alert.alert('Error', error.message);
-            Sentry.captureEvent(error);
+            console.error('❌ Login failed:', error.message);
+            Alert.alert('Login Failed', error.message || 'Invalid email or password. Please try again.');
+            Sentry.captureException(error);
         } finally {
             setIsSubmitting(false);
         }
