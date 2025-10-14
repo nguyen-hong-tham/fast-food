@@ -1,12 +1,11 @@
 import {View, Text, KeyboardAvoidingView, Platform, ScrollView, Dimensions, ImageBackground, Image} from 'react-native'
-import {Redirect, Slot} from "expo-router";
+import {Slot} from "expo-router";
 import {images} from "@/constants";
-import useAuthStore from "@/store/auth.store";
 
 export default function AuthLayout() {
-    const { isAuthenticated } = useAuthStore();
-
-    if(isAuthenticated) return <Redirect href="/" />
+    // ✅ Allow unauthenticated users to access auth screens
+    // ❌ Removed: Auto-redirect to home when authenticated
+    // Users can now browse the app without logging in
 
     return (
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>

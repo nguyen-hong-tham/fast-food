@@ -21,7 +21,7 @@ Sentry.init({
 });
 
 function RootInner() {
-  const { isLoading, fetchAuthenticatedUser } = useAuthStore();
+  const { isLoading } = useAuthStore();
 
   const [fontsLoaded, error] = useFonts({
     'QuickSand-Bold': require('../assets/fonts/Quicksand-Bold.ttf'),
@@ -36,9 +36,12 @@ function RootInner() {
     if (fontsLoaded) SplashScreen.hideAsync();
   }, [fontsLoaded, error]);
 
-  useEffect(() => {
-    fetchAuthenticatedUser();
-  }, []);
+  // ✅ Removed auto-fetch of auth user on app start
+  // User can browse app without logging in
+  // Auth will be fetched only when:
+  // 1. User logs in (sign-in.tsx)
+  // 2. User signs up (sign-up.tsx)
+  // 3. User tries to place order (cart.tsx)
 
   if (!fontsLoaded || isLoading) return null;
 
