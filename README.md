@@ -720,19 +720,16 @@ Chúng tôi hoan nghênh mọi đóng góp! Để đóng góp:
 
 **Nhóm Phát Triển - Đại học Sài Gòn (SGU)**
 
-- **Phát Lê** - [@phatle224](https://github.com/phatle224)
+- **Lê Hồng Phát** - [@phatle224](https://github.com/phatle224)
+- **Nguyễn Hồng Thắm** - [@nguyen-hong-tham](https://github.com/nguyen-hong-tham)
+
 
 **Môn học**: Công Nghệ Phần Mềm  
-**Giảng viên hướng dẫn**: [Tên Giảng Viên]  
-**Học kỳ**: [Học kỳ/Năm học]
+**Giảng viên hướng dẫn**: [TS.Nguyễn Quốc Huy]  
+**Học kỳ**: [Học kỳ 1/Năm học 2025-2026]
 
 ---
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
 
 ## 🙏 Acknowledgments
 
@@ -747,7 +744,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Liên Hệ & Hỗ Trợ
 
-- **Email**: [your-email@example.com]
+- **Email**: [hongphatle224@gmail.com]
 - **GitHub Issues**: [https://github.com/phatle224/sgu_cnpm_foodfast/issues](https://github.com/phatle224/sgu_cnpm_foodfast/issues)
 - **Documentation**: [Wiki](https://github.com/phatle224/sgu_cnpm_foodfast/wiki)
 
@@ -775,17 +772,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [ ] Payment integration (VNPay, MoMo)
 - [ ] Real-time order tracking
 - [ ] Push notifications
-- [ ] Loyalty points system
-- [ ] Multi-language support
-- [ ] Dark mode
-- [ ] Advanced analytics
-
-### Phase 3 (Future)
-- [ ] Delivery driver app
-- [ ] Live chat support
-- [ ] Social media integration
-- [ ] Advanced recommendation system
-- [ ] Progressive Web App (PWA)
+- [ ] Drone delivery 
+- [ ] Chat box AI
 
 ---
 
