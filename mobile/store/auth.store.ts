@@ -18,7 +18,7 @@ type AuthState = {
 const useAuthStore = create<AuthState>((set) => ({
     isAuthenticated: false,
     user: null,
-    isLoading: true,
+    isLoading: false, // ✅ Changed from true to false - Allow app to render without authentication
 
     setIsAuthenticated: (value) => set({ isAuthenticated: value }),
     setUser: (user) => set({ user }),
