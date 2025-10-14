@@ -1,8 +1,0 @@
-{
-  "servers": {
-    "Sentry": {
-      "url": "https://mcp.sentry.dev/mcp/sgu-university-tq/jsm-reactnative-food-ordering",
-      "type": "http"
-    }
-  }
-}
