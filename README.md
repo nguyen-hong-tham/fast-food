@@ -471,10 +471,6 @@ npm run preview
 
 <div align="center">
 
-**⭐ Nếu bạn thấy project này hữu ích, hãy cho chúng tôi một star! ⭐**
-
-Made with ❤️ by SGU Students
-
 [⬆ Back to top](#-sgu-fastfood-deli---food-ordering-system)
 
 </div>
