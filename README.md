@@ -18,7 +18,6 @@
 - [Cấu Trúc Dự Án](#-cấu-trúc-dự-án)
 - [Cài Đặt](#-cài-đặt)
 - [Chạy Ứng Dụng](#-chạy-ứng-dụng)
-- [Screenshots](#-screenshots)
 - [Tác Giả](#-tác-giả)
 
 
@@ -410,37 +409,8 @@ npm run build
 npm run preview
 ```
 
----
-
-## 📸 Screenshots
-
-### 📱 Mobile App
-
-| Sign In | Sign Up | Home | Menu Detail |
-|---------|---------|------|-------------|
-| ![Sign In](./docs/screenshots/signin.png) | ![Sign Up](./docs/screenshots/signup.png) | ![Home](./docs/screenshots/home.png) | ![Detail](./docs/screenshots/detail.png) |
-
-| Cart | Checkout | Orders | Profile |
-|------|----------|--------|---------|
-| ![Cart](./docs/screenshots/cart.png) | ![Checkout](./docs/screenshots/checkout.png) | ![Orders](./docs/screenshots/orders.png) | ![Profile](./docs/screenshots/profile.png) |
-
-### 💻 Admin Web
-
-| Dashboard | Orders | Products | Customers |
-|-----------|--------|----------|-----------|
-| ![Dashboard](./docs/screenshots/admin-dashboard.png) | ![Orders](./docs/screenshots/admin-orders.png) | ![Products](./docs/screenshots/admin-products.png) | ![Customers](./docs/screenshots/admin-customers.png) |
-
----
-
-
-
-
-
----
 
 ## 👥 Tác Giả
-
-**Nhóm Phát Triển - Đại học Sài Gòn (SGU)**
 
 - **Lê Hồng Phát** - [@phatle224](https://github.com/phatle224)
 - **Nguyễn Hồng Thắm** - [@nguyen-hong-tham](https://github.com/nguyen-hong-tham)
