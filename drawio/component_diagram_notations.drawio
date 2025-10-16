@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2025-10-14T00:00:00.000Z" agent="ChatGPT" version="22.1.16" type="device">
+  <!--
+    This Draw.io file illustrates basic UML component‑diagram notations based on the
+    provided study material.  The diagram contains examples of blackbox and whitebox
+    components, required/provided interfaces, dependency relationships, ports and
+    subsystems.  Each shape uses simple styles so the file remains easy to read
+    when imported into draw.io.  Feel free to rearrange or extend the components
+    further to suit your own system design.
+  -->
+  <diagram name="Component Diagram Notations" id="component-notations">
+    <mxGraphModel dx="1080" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="800" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Title -->
+        <mxCell id="title" value="Component Diagram Notations" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=20;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="300" y="20" width="600" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- Blackbox Component -->
+        <mxCell id="blackbox" value="&lt;&lt;component&gt;&gt;&lt;br&gt;&lt;b&gt;Blackbox Component&lt;/b&gt;&lt;br&gt;&lt;i&gt;No internal details shown&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#64B5F6;fontSize=12;align=center;verticalAlign=middle" vertex="1" parent="1">
+          <mxGeometry x="50" y="80" width="300" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Whitebox Component -->
+        <mxCell id="whitebox" value="&lt;&lt;component&gt;&gt;&lt;br&gt;&lt;b&gt;Whitebox Component&lt;/b&gt;&lt;br&gt;&lt;i&gt;Internal structure visible&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#81C784;fontSize=12;align=center;verticalAlign=middle" vertex="1" parent="1">
+          <mxGeometry x="400" y="80" width="300" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Interface Example -->
+        <mxCell id="compA" value="&lt;&lt;component&gt;&gt;&lt;br&gt;Component A" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#FFB74D;fontSize=12;align=center;verticalAlign=middle" vertex="1" parent="1">
+          <mxGeometry x="50" y="200" width="250" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="compB" value="&lt;&lt;component&gt;&gt;&lt;br&gt;Component B" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#FFB74D;fontSize=12;align=center;verticalAlign=middle" vertex="1" parent="1">
+          <mxGeometry x="450" y="200" width="250" height="80" as="geometry" />
+        </mxCell>
+        <!-- Required Interface (circle) attached to Component A -->
+        <mxCell id="reqInterface" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;strokeColor=#000000;fillColor=#FFFFFF" vertex="1" parent="1">
+          <mxGeometry x="290" y="225" width="20" height="20" as="geometry" />
+        </mxCell>
+        <!-- Provided Interface (circle) attached to Component B -->
+        <mxCell id="provInterface" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;strokeColor=#000000;fillColor=#FFFFFF" vertex="1" parent="1">
+          <mxGeometry x="430" y="225" width="20" height="20" as="geometry" />
+        </mxCell>
+        <!-- Interface connection edge -->
+        <mxCell id="interfaceEdge" style="endArrow=open;html=1;strokeWidth=2;strokeColor=#000000" edge="1" parent="1" source="reqInterface" target="provInterface">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <!-- Annotation for interface -->
+        <mxCell id="interfaceNote" value="Required/Provided Interface" style="text;html=1;strokeColor=none;fillColor=none;fontSize=10;align=center" vertex="1" parent="1">
+          <mxGeometry x="280" y="250" width="200" height="20" as="geometry" />
+        </mxCell>
+
+        <!-- Dependency Example -->
+        <mxCell id="compC" value="&lt;&lt;component&gt;&gt;&lt;br&gt;Component C" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#BA68C8;fontSize=12;align=center;verticalAlign=middle" vertex="1" parent="1">
+          <mxGeometry x="50" y="320" width="250" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="compD" value="&lt;&lt;component&gt;&gt;&lt;br&gt;Component D" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#BA68C8;fontSize=12;align=center;verticalAlign=middle" vertex="1" parent="1">
+          <mxGeometry x="450" y="320" width="250" height="80" as="geometry" />
+        </mxCell>
+        <!-- Dependency edge (dashed) -->
+        <mxCell id="dependencyEdge" style="endArrow=open;dashed=1;dashPattern=5 5;strokeWidth=1.5;strokeColor=#000000" edge="1" parent="1" source="compC" target="compD">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <!-- Annotation for dependency -->
+        <mxCell id="dependencyNote" value="Dependency" style="text;html=1;strokeColor=none;fillColor=none;fontSize=10;align=center" vertex="1" parent="1">
+          <mxGeometry x="280" y="360" width="200" height="20" as="geometry" />
+        </mxCell>
+
+        <!-- Port Example -->
+        <mxCell id="compE" value="&lt;&lt;component&gt;&gt;&lt;br&gt;Component E" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFEBEE;strokeColor=#EF9A9A;fontSize=12;align=center;verticalAlign=middle" vertex="1" parent="1">
+          <mxGeometry x="50" y="440" width="250" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="compF" value="&lt;&lt;component&gt;&gt;&lt;br&gt;Component F" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFEBEE;strokeColor=#EF9A9A;fontSize=12;align=center;verticalAlign=middle" vertex="1" parent="1">
+          <mxGeometry x="450" y="440" width="250" height="80" as="geometry" />
+        </mxCell>
+        <!-- Port square on the right edge of Component E -->
+        <mxCell id="portSquare" value="" style="shape=rect;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000" vertex="1" parent="1">
+          <mxGeometry x="290" y="465" width="20" height="20" as="geometry" />
+        </mxCell>
+        <!-- Edge connecting port to Component F -->
+        <mxCell id="portEdge" style="endArrow=block;html=1;strokeWidth=2;strokeColor=#000000" edge="1" parent="1" source="portSquare" target="compF">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <!-- Annotation for port -->
+        <mxCell id="portNote" value="Port" style="text;html=1;strokeColor=none;fillColor=none;fontSize=10;align=center" vertex="1" parent="1">
+          <mxGeometry x="280" y="490" width="200" height="20" as="geometry" />
+        </mxCell>
+
+        <!-- Subsystem Example -->
+        <mxCell id="subsystem" value="&lt;&lt;subsystem&gt;&gt;&lt;br&gt;Subsystem Example" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E0F7FA;strokeColor=#4DD0E1;fontSize=12;align=left;verticalAlign=top;spacingLeft=10;spacingTop=20" vertex="1" parent="1">
+          <mxGeometry x="50" y="570" width="650" height="180" as="geometry" />
+        </mxCell>
+        <!-- Components inside subsystem -->
+        <mxCell id="subComp1" value="&lt;&lt;component&gt;&gt;&lt;br&gt;Component G" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#4DD0E1;fontSize=10;align=center;verticalAlign=middle" vertex="1" parent="subsystem">
+          <mxGeometry x="20" y="40" width="170" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="subComp2" value="&lt;&lt;component&gt;&gt;&lt;br&gt;Component H" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#4DD0E1;fontSize=10;align=center;verticalAlign=middle" vertex="1" parent="subsystem">
+          <mxGeometry x="240" y="40" width="170" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="subComp3" value="&lt;&lt;component&gt;&gt;&lt;br&gt;Component I" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#4DD0E1;fontSize=10;align=center;verticalAlign=middle" vertex="1" parent="subsystem">
+          <mxGeometry x="460" y="40" width="170" height="60" as="geometry" />
+        </mxCell>
+        <!-- Internal dependencies inside subsystem -->
+        <mxCell id="subEdge1" style="endArrow=open;dashed=1;dashPattern=4 4;strokeWidth=1;strokeColor=#00796B" edge="1" parent="subsystem" source="subComp1" target="subComp2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="subEdge2" style="endArrow=open;dashed=1;dashPattern=4 4;strokeWidth=1;strokeColor=#00796B" edge="1" parent="subsystem" source="subComp2" target="subComp3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <!-- Annotation for subsystem -->
+        <mxCell id="subsystemNote" value="Subsystem showing internal component interactions" style="text;html=1;strokeColor=none;fillColor=none;fontSize=10;align=left" vertex="1" parent="1">
+          <mxGeometry x="720" y="620" width="350" height="60" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

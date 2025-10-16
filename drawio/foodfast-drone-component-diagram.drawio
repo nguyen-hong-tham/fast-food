@@ -1,0 +1,241 @@
+<mxfile host="app.diagrams.net" modified="2025-01-15T00:00:00.000Z" agent="draw.io" version="22.1.16" etag="component-diagram-v2" type="device">
+  <diagram name="Component Diagram - FoodFast Drone Delivery" id="component-diagram">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- Title -->
+        <mxCell id="title" value="Component Diagram - FoodFast Drone Delivery App" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=22;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="600" y="20" width="600" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- Customer Mobile App Container -->
+        <mxCell id="customer-app" value="&lt;b&gt;📱 Customer Mobile App&lt;/b&gt;&lt;br&gt;(React Native + Expo)" style="swimlane;whiteSpace=wrap;html=1;fillColor=#4A90E2;strokeColor=#2E5C8A;fontColor=#ffffff;fontSize=14;startSize=50;" vertex="1" parent="1">
+          <mxGeometry x="80" y="150" width="380" height="600" as="geometry" />
+        </mxCell>
+        
+        <!-- Home Module -->
+        <mxCell id="home-module" value="🏠 Home Module&lt;br&gt;- MenuList&lt;br&gt;- CategoryFilter&lt;br&gt;- SearchBar" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2E5C8A;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="customer-app">
+          <mxGeometry x="20" y="60" width="340" height="70" as="geometry" />
+        </mxCell>
+        
+        <!-- Cart Module -->
+        <mxCell id="cart-module" value="🛒 Cart Module&lt;br&gt;- CartItems&lt;br&gt;- OrderSummary&lt;br&gt;- CheckoutButton" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2E5C8A;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="customer-app">
+          <mxGeometry x="20" y="140" width="340" height="70" as="geometry" />
+        </mxCell>
+        
+        <!-- Drone Tracking Module NEW -->
+        <mxCell id="drone-tracking" value="🚁 Drone Tracking Module (NEW)&lt;br&gt;- DroneMap&lt;br&gt;- LocationMarkers&lt;br&gt;- FlightPath&lt;br&gt;- CountdownTimer&lt;br&gt;- ProgressBar&lt;br&gt;- StatusIndicator&lt;br&gt;- RealtimeSubscription" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#C8E6C9;strokeColor=#2E5C8A;fontSize=11;align=left;spacingLeft=10;fontStyle=1" vertex="1" parent="customer-app">
+          <mxGeometry x="20" y="220" width="340" height="110" as="geometry" />
+        </mxCell>
+        
+        <!-- Delivery Confirmation NEW -->
+        <mxCell id="delivery-confirm" value="✅ Delivery Confirmation (NEW)&lt;br&gt;- QRScanner&lt;br&gt;- PINInput&lt;br&gt;- GPSVerification&lt;br&gt;- PhotoCapture&lt;br&gt;- RatingSystem" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#C8E6C9;strokeColor=#2E5C8A;fontSize=11;align=left;spacingLeft=10;fontStyle=1" vertex="1" parent="customer-app">
+          <mxGeometry x="20" y="340" width="340" height="90" as="geometry" />
+        </mxCell>
+        
+        <!-- Profile Module -->
+        <mxCell id="profile-module" value="👤 Profile Module&lt;br&gt;- UserInfo&lt;br&gt;- OrderHistory&lt;br&gt;- DroneDeliveryHistory (NEW)&lt;br&gt;- Settings" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2E5C8A;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="customer-app">
+          <mxGeometry x="20" y="440" width="340" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- Auth Module -->
+        <mxCell id="auth-module" value="🔐 Auth Module&lt;br&gt;- Login&lt;br&gt;- Register&lt;br&gt;- ForgotPassword" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2E5C8A;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="customer-app">
+          <mxGeometry x="20" y="530" width="340" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Store Admin Dashboard Container -->
+        <mxCell id="store-dashboard" value="&lt;b&gt;🏪 Store Admin Dashboard&lt;/b&gt;&lt;br&gt;(React + Vite)" style="swimlane;whiteSpace=wrap;html=1;fillColor=#F5A623;strokeColor=#D68910;fontColor=#ffffff;fontSize=14;startSize=50;" vertex="1" parent="1">
+          <mxGeometry x="1140" y="150" width="380" height="600" as="geometry" />
+        </mxCell>
+        
+        <!-- Order Management -->
+        <mxCell id="order-mgmt" value="📦 Order Management&lt;br&gt;- OrderList&lt;br&gt;- OrderDetail&lt;br&gt;- StatusUpdate&lt;br&gt;- DroneAssignment (NEW)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#D68910;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="store-dashboard">
+          <mxGeometry x="20" y="60" width="340" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- Drone Fleet Management NEW -->
+        <mxCell id="fleet-mgmt" value="🚁 Drone Fleet Management (NEW)&lt;br&gt;- DroneList&lt;br&gt;- DroneStatus&lt;br&gt;- FleetOverview&lt;br&gt;- BatteryMonitor&lt;br&gt;- MaintenanceScheduler&lt;br&gt;- ManualAssignment" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#C8E6C9;strokeColor=#D68910;fontSize=11;align=left;spacingLeft=10;fontStyle=1" vertex="1" parent="store-dashboard">
+          <mxGeometry x="20" y="150" width="340" height="100" as="geometry" />
+        </mxCell>
+        
+        <!-- Real-time Monitoring NEW -->
+        <mxCell id="monitoring" value="🗺️ Real-time Monitoring (NEW)&lt;br&gt;- LiveMap&lt;br&gt;- ActiveDeliveries&lt;br&gt;- DroneTracker&lt;br&gt;- AlertSystem" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#C8E6C9;strokeColor=#D68910;fontSize=11;align=left;spacingLeft=10;fontStyle=1" vertex="1" parent="store-dashboard">
+          <mxGeometry x="20" y="260" width="340" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- Analytics NEW -->
+        <mxCell id="analytics" value="📊 Analytics &amp; Reports (NEW)&lt;br&gt;- DeliveryMetrics&lt;br&gt;- DronePerformance&lt;br&gt;- CustomerSatisfaction&lt;br&gt;- FleetUtilization" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#C8E6C9;strokeColor=#D68910;fontSize=11;align=left;spacingLeft=10;fontStyle=1" vertex="1" parent="store-dashboard">
+          <mxGeometry x="20" y="350" width="340" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- Menu Management -->
+        <mxCell id="menu-mgmt" value="🍔 Menu Management&lt;br&gt;- MenuItems&lt;br&gt;- Categories&lt;br&gt;- Customizations" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#D68910;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="store-dashboard">
+          <mxGeometry x="20" y="440" width="340" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- Appwrite Backend Container -->
+        <mxCell id="appwrite-backend" value="&lt;b&gt;☁️ Appwrite Backend&lt;/b&gt;&lt;br&gt;(Cloud BaaS)" style="swimlane;whiteSpace=wrap;html=1;fillColor=#9013FE;strokeColor=#6610B8;fontColor=#ffffff;fontSize=14;startSize=50;" vertex="1" parent="1">
+          <mxGeometry x="520" y="250" width="560" height="650" as="geometry" />
+        </mxCell>
+        
+        <!-- Authentication Service -->
+        <mxCell id="auth-service" value="🔐 Authentication Service&lt;br&gt;- User Auth&lt;br&gt;- Session Management&lt;br&gt;- OAuth Integration" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6610B8;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="appwrite-backend">
+          <mxGeometry x="20" y="60" width="250" height="70" as="geometry" />
+        </mxCell>
+        
+        <!-- Database Service -->
+        <mxCell id="db-service" value="🗄️ Database Service&lt;br&gt;&lt;br&gt;Collections:&lt;br&gt;├─ users&lt;br&gt;├─ orders&lt;br&gt;├─ menu&lt;br&gt;├─ categories&lt;br&gt;├─ drones (NEW)&lt;br&gt;├─ drone_trips (NEW)&lt;br&gt;├─ delivery_confirmations (NEW)&lt;br&gt;├─ drone_maintenance (NEW)&lt;br&gt;├─ drone_battery_logs (NEW)&lt;br&gt;└─ delivery_history (NEW)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6610B8;fontSize=10;align=left;spacingLeft=10;" vertex="1" parent="appwrite-backend">
+          <mxGeometry x="20" y="140" width="250" height="210" as="geometry" />
+        </mxCell>
+        
+        <!-- Realtime Service -->
+        <mxCell id="realtime-service" value="📡 Realtime Service&lt;br&gt;- WebSocket Connections&lt;br&gt;- Live Drone Location Updates&lt;br&gt;- Status Change Broadcasts&lt;br&gt;- Order Status Notifications" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6610B8;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="appwrite-backend">
+          <mxGeometry x="290" y="60" width="250" height="90" as="geometry" />
+        </mxCell>
+        
+        <!-- Cloud Functions NEW -->
+        <mxCell id="functions-service" value="⚡ Cloud Functions (NEW)&lt;br&gt;- assignDroneToOrder()&lt;br&gt;- startDroneFlight()&lt;br&gt;- updateDroneLocation()&lt;br&gt;- simulateFlightPath()&lt;br&gt;- validateDeliveryConfirmation()&lt;br&gt;- handleDroneError()&lt;br&gt;- calculateFleetMetrics()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#C8E6C9;strokeColor=#6610B8;fontSize=10;align=left;spacingLeft=10;fontStyle=1" vertex="1" parent="appwrite-backend">
+          <mxGeometry x="290" y="160" width="250" height="120" as="geometry" />
+        </mxCell>
+        
+        <!-- Storage Service -->
+        <mxCell id="storage-service" value="📦 Storage Service&lt;br&gt;- Delivery Photos&lt;br&gt;- QR Codes&lt;br&gt;- User Avatars&lt;br&gt;- Menu Images" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6610B8;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="appwrite-backend">
+          <mxGeometry x="20" y="360" width="250" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- Messaging Service -->
+        <mxCell id="messaging-service" value="📧 Messaging Service&lt;br&gt;- Push Notifications&lt;br&gt;- Email Notifications&lt;br&gt;- SMS Alerts" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6610B8;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="appwrite-backend">
+          <mxGeometry x="290" y="290" width="250" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- Drone Simulation Engine Container -->
+        <mxCell id="drone-simulator" value="&lt;b&gt;🤖 Drone Simulation Engine&lt;/b&gt;&lt;br&gt;(Background Service)" style="swimlane;whiteSpace=wrap;html=1;fillColor=#7ED321;strokeColor=#5B9E18;fontColor=#ffffff;fontSize=14;startSize=50;" vertex="1" parent="1">
+          <mxGeometry x="600" y="950" width="400" height="360" as="geometry" />
+        </mxCell>
+        
+        <!-- Flight Simulator -->
+        <mxCell id="flight-sim" value="✈️ Flight Simulator&lt;br&gt;- PathCalculator&lt;br&gt;- LocationInterpolator&lt;br&gt;- SpeedController&lt;br&gt;- AltitudeSimulator" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#5B9E18;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="drone-simulator">
+          <mxGeometry x="20" y="60" width="170" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- Timer Controller -->
+        <mxCell id="timer-controller" value="⏱️ Timer Controller&lt;br&gt;- CountdownTimer (60s)&lt;br&gt;- MilestoneNotifier&lt;br&gt;- ProgressCalculator" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#5B9E18;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="drone-simulator">
+          <mxGeometry x="210" y="60" width="170" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- Battery Simulator -->
+        <mxCell id="battery-sim" value="🔋 Battery Simulator&lt;br&gt;- BatteryDrain&lt;br&gt;- ChargingSimulator&lt;br&gt;- LowBatteryDetector" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#5B9E18;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="drone-simulator">
+          <mxGeometry x="20" y="150" width="170" height="70" as="geometry" />
+        </mxCell>
+        
+        <!-- Error Simulator -->
+        <mxCell id="error-sim" value="⚠️ Error Simulator&lt;br&gt;- ConnectionLoss&lt;br&gt;- WeatherConditions&lt;br&gt;- ObstacleDetection&lt;br&gt;- EmergencyProtocol" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#5B9E18;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="drone-simulator">
+          <mxGeometry x="210" y="150" width="170" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- Logger -->
+        <mxCell id="logger" value="📝 Logger&lt;br&gt;- FlightPathRecorder&lt;br&gt;- EventLogger&lt;br&gt;- PerformanceTracker" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#5B9E18;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="drone-simulator">
+          <mxGeometry x="20" y="230" width="360" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- External Services Container -->
+        <mxCell id="external-services" value="&lt;b&gt;🌐 External Services&lt;/b&gt;" style="swimlane;whiteSpace=wrap;html=1;fillColor=#9B9B9B;strokeColor=#666666;fontColor=#ffffff;fontSize=14;startSize=40;dashed=1;dashPattern=8 8;" vertex="1" parent="1">
+          <mxGeometry x="120" y="820" width="400" height="390" as="geometry" />
+        </mxCell>
+        
+        <!-- Google Maps -->
+        <mxCell id="google-maps" value="🗺️ Google Maps API&lt;br&gt;- Map Display&lt;br&gt;- Geocoding&lt;br&gt;- Distance Calculation&lt;br&gt;- Route Planning" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="external-services">
+          <mxGeometry x="20" y="50" width="170" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- Payment Gateway -->
+        <mxCell id="payment" value="💳 Payment Gateway&lt;br&gt;- Stripe / PayPal&lt;br&gt;- Transaction Processing&lt;br&gt;- Refund Handling" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="external-services">
+          <mxGeometry x="210" y="50" width="170" height="70" as="geometry" />
+        </mxCell>
+        
+        <!-- Email Service -->
+        <mxCell id="email-service" value="📨 Email Service (SendGrid)&lt;br&gt;- Order Confirmations&lt;br&gt;- Delivery Notifications&lt;br&gt;- Receipt Emails" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="external-services">
+          <mxGeometry x="20" y="140" width="170" height="70" as="geometry" />
+        </mxCell>
+        
+        <!-- Push Notification -->
+        <mxCell id="push-notif" value="📱 Push Notification (Firebase)&lt;br&gt;- Real-time Alerts&lt;br&gt;- Delivery Updates&lt;br&gt;- Promotional Messages" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="external-services">
+          <mxGeometry x="210" y="130" width="170" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- Connections -->
+        
+        <!-- Customer App to Appwrite REST -->
+        <mxCell id="conn1" value="REST API" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#4A90E2;fontSize=11;" edge="1" parent="1" source="customer-app" target="appwrite-backend">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- Customer App to Appwrite WebSocket -->
+        <mxCell id="conn2" value="WebSocket" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#4A90E2;dashed=1;dashPattern=8 8;fontSize=11;" edge="1" parent="1" source="customer-app" target="realtime-service">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="460" y="350" as="sourcePoint" />
+            <mxPoint x="520" y="315" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Store Dashboard to Appwrite REST -->
+        <mxCell id="conn3" value="REST API" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#F5A623;fontSize=11;" edge="1" parent="1" source="store-dashboard" target="appwrite-backend">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- Store Dashboard to Appwrite WebSocket -->
+        <mxCell id="conn4" value="WebSocket" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#F5A623;dashed=1;dashPattern=8 8;fontSize=11;" edge="1" parent="1" source="store-dashboard" target="realtime-service">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1140" y="350" as="sourcePoint" />
+            <mxPoint x="1080" y="315" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Appwrite to Drone Simulator -->
+        <mxCell id="conn5" value="Trigger Events" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#9013FE;fontSize=11;" edge="1" parent="1" source="functions-service" target="drone-simulator">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="800" y="900" as="sourcePoint" />
+            <mxPoint x="800" y="950" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Drone Simulator to Appwrite -->
+        <mxCell id="conn6" value="Update Status" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#7ED321;fontSize=11;" edge="1" parent="1" source="drone-simulator" target="db-service">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="700" y="950" as="sourcePoint" />
+            <mxPoint x="640" y="900" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Customer App to External Services -->
+        <mxCell id="conn7" value="API Calls" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#4A90E2;fontSize=11;" edge="1" parent="1" source="customer-app" target="external-services">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="260" y="750" as="sourcePoint" />
+            <mxPoint x="260" y="820" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Appwrite to External Services -->
+        <mxCell id="conn8" value="API Calls" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#9013FE;fontSize=11;" edge="1" parent="1" source="messaging-service" target="external-services">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="520" y="700" as="sourcePoint" />
+            <mxPoint x="400" y="820" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Legend -->
+        <mxCell id="legend" value="&lt;b&gt;Legend&lt;/b&gt;&lt;br&gt;━━━━► REST API Call&lt;br&gt;⇢⇢⇢⇢► WebSocket / Realtime&lt;br&gt;- - -► Async / Event-driven&lt;br&gt;◄───► Bidirectional" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF9E6;strokeColor=#D6B656;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="1140" y="820" width="380" height="100" as="geometry" />
+        </mxCell>
+        
+        <!-- Note -->
+        <mxCell id="note" value="&lt;b&gt;Note:&lt;/b&gt; Components marked with (NEW) are part of the Drone Delivery feature.&lt;br&gt;Green background indicates new functionality added for drone simulation." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#4CAF50;fontSize=10;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="1140" y="940" width="380" height="60" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

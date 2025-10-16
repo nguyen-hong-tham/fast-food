@@ -1,0 +1,308 @@
+<mxfile host="app.diagrams.net" modified="2025-01-15T00:00:00.000Z" agent="draw.io" version="22.1.16" etag="deployment-diagram" type="device">
+  <diagram name="Deployment Diagram - Drone Delivery" id="deployment-diagram">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1400" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- Title -->
+        <mxCell id="title" value="FoodFast - Drone Delivery System&#xa;Deployment Diagram&#xa;&#xa;Environment: Production | Region: Asia Southeast (Singapore)&#xa;Date: 2025-01-15 | Version: 1.0" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=18;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="500" y="20" width="600" height="110" as="geometry" />
+        </mxCell>
+
+        <!-- CLIENT TIER ZONE -->
+        <mxCell id="client-zone" value="CLIENT TIER" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1976D2;fontSize=16;fontStyle=1;align=left;verticalAlign=top;spacingTop=10;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="80" y="180" width="1440" height="240" as="geometry" />
+        </mxCell>
+
+        <!-- Mobile Device -->
+        <mxCell id="mobile-device" value="" style="verticalLabelPosition=bottom;verticalAlign=top;html=1;shape=mxgraph.basic.rect;fillColor2=none;strokeWidth=2;size=20;indent=5;fillColor=#4A90E2;strokeColor=#2E5C8A;" vertex="1" parent="1">
+          <mxGeometry x="200" y="240" width="280" height="160" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="mobile-label" value="&lt;b&gt;📱 iOS/Android Device&lt;/b&gt;&lt;br&gt;(Customer's Phone)" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=13;fontStyle=1;fontColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="210" y="250" width="260" height="30" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="expo-app" value="&lt;b&gt;Expo Go / Standalone App&lt;/b&gt;&lt;br&gt;React Native 0.81.4&lt;br&gt;&lt;br&gt;Environment:&lt;br&gt;- iOS 13+ / Android 8+&lt;br&gt;- GPS enabled&lt;br&gt;- Camera access&lt;br&gt;&lt;br&gt;Artifacts:&lt;br&gt;FoodFastCustomer.apk (Android)&lt;br&gt;FoodFastCustomer.ipa (iOS)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2E5C8A;fontSize=10;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="220" y="290" width="240" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Desktop/Laptop -->
+        <mxCell id="desktop-device" value="" style="verticalLabelPosition=bottom;verticalAlign=top;html=1;shape=mxgraph.basic.rect;fillColor2=none;strokeWidth=2;size=20;indent=5;fillColor=#F5A623;strokeColor=#D68910;" vertex="1" parent="1">
+          <mxGeometry x="600" y="240" width="280" height="160" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="desktop-label" value="&lt;b&gt;💻 Desktop/Laptop&lt;/b&gt;&lt;br&gt;(Store Manager's Device)" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=13;fontStyle=1;fontColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="610" y="250" width="260" height="30" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="web-browser" value="&lt;b&gt;Web Browser&lt;/b&gt;&lt;br&gt;Chrome 120+ / Firefox 120+&lt;br&gt;&lt;br&gt;Environment:&lt;br&gt;- Windows 10+ / macOS 12+&lt;br&gt;- 1920x1080 display&lt;br&gt;&lt;br&gt;Running:&lt;br&gt;- React 18.3 SPA&lt;br&gt;- Vite (dev) / Static files (prod)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#D68910;fontSize=10;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="620" y="290" width="240" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- CDN Node -->
+        <mxCell id="cdn-node" value="" style="ellipse;shape=cloud;whiteSpace=wrap;html=1;fillColor=#B0BEC5;strokeColor=#607D8B;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="230" width="200" height="120" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="cdn-label" value="&lt;b&gt;🌍 CDN&lt;/b&gt;&lt;br&gt;(Cloudflare)&lt;br&gt;&lt;br&gt;Cached Content:&lt;br&gt;- React bundle.js&lt;br&gt;- CSS, Images&lt;br&gt;- QR codes" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1070" y="250" width="140" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- CLOUD PLATFORM ZONE -->
+        <mxCell id="cloud-zone" value="CLOUD PLATFORM (Appwrite Backend)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E8EAF6;strokeColor=#5E35B1;fontSize=16;fontStyle=1;align=left;verticalAlign=top;spacingTop=10;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="80" y="480" width="1440" height="430" as="geometry" />
+        </mxCell>
+
+        <!-- Load Balancer -->
+        <mxCell id="load-balancer" value="⚖️ Load Balancer&lt;br&gt;HTTPS/WSS&lt;br&gt;TLS 1.2+" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#9013FE;strokeColor=#6610B8;fontSize=12;fontStyle=1;fontColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="700" y="520" width="200" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Appwrite Services Row 1 -->
+        <mxCell id="auth-server" value="&lt;b&gt;🔐 Auth Server&lt;/b&gt;&lt;br&gt;&lt;br&gt;- JWT tokens&lt;br&gt;- Sessions&lt;br&gt;- OAuth" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6610B8;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="140" y="630" width="180" height="100" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="db-server" value="&lt;b&gt;🗄️ Database Server&lt;/b&gt;&lt;br&gt;(MariaDB)&lt;br&gt;&lt;br&gt;Database ID:&lt;br&gt;68da5e73002cb68e70af&lt;br&gt;&lt;br&gt;Collections: 10&lt;br&gt;(6 new for drones)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6610B8;fontSize=10;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="350" y="630" width="180" height="100" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="realtime-server" value="&lt;b&gt;📡 Realtime Server&lt;/b&gt;&lt;br&gt;(WebSocket)&lt;br&gt;&lt;br&gt;- Socket.io based&lt;br&gt;- Pub/Sub&lt;br&gt;- Auto-reconnect" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6610B8;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="560" y="630" width="180" height="100" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="storage-server" value="&lt;b&gt;📦 Storage Server&lt;/b&gt;&lt;br&gt;(S3-compatible)&lt;br&gt;&lt;br&gt;- Delivery photos&lt;br&gt;- QR codes&lt;br&gt;- Avatars&lt;br&gt;- Menu images" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6610B8;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="770" y="630" width="180" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Appwrite Services Row 2 -->
+        <mxCell id="functions-runtime" value="&lt;b&gt;⚡ Functions Runtime&lt;/b&gt;&lt;br&gt;(Node.js 18+)&lt;br&gt;&lt;br&gt;Serverless execution&lt;br&gt;Event-driven triggers&lt;br&gt;&lt;br&gt;Functions: 8&lt;br&gt;(7 new for drones)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#C8E6C9;strokeColor=#6610B8;fontSize=10;align=left;spacingLeft=10;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="980" y="630" width="180" height="100" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="messaging-server" value="&lt;b&gt;📧 Messaging&lt;/b&gt;&lt;br&gt;&lt;br&gt;- Push notifications&lt;br&gt;- Email&lt;br&gt;- SMS alerts" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6610B8;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="1190" y="630" width="180" height="100" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="monitoring" value="&lt;b&gt;📊 Monitoring &amp; Logs&lt;/b&gt;&lt;br&gt;&lt;br&gt;- Application logs&lt;br&gt;- Error tracking&lt;br&gt;- Performance metrics" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6610B8;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="140" y="760" width="180" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- PRIVATE NETWORK ZONE -->
+        <mxCell id="private-zone" value="PRIVATE NETWORK (Background Services)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#388E3C;fontSize=16;fontStyle=1;align=left;verticalAlign=top;spacingTop=10;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="350" y="760" width="830" height="150" as="geometry" />
+        </mxCell>
+
+        <!-- Drone Simulation Worker -->
+        <mxCell id="drone-worker" value="&lt;b&gt;🤖 Drone Simulation Worker&lt;/b&gt;&lt;br&gt;(Serverless Functions)&lt;br&gt;&lt;br&gt;Runtime: Node.js 18+ | Memory: 512MB&lt;br&gt;Timeout: 300s&lt;br&gt;&lt;br&gt;Job Loop (every 1s):&lt;br&gt;- Calculate location&lt;br&gt;- Update database&lt;br&gt;- Broadcast to realtime&lt;br&gt;&lt;br&gt;Error handling: Retry 3x with backoff" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#7ED321;strokeColor=#5B9E18;fontSize=10;align=left;spacingLeft=10;fontColor=#ffffff;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="520" y="780" width="480" height="120" as="geometry" />
+        </mxCell>
+
+        <!-- EXTERNAL SERVICES ZONE -->
+        <mxCell id="external-zone" value="EXTERNAL SERVICES (3rd Party APIs)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FAFAFA;strokeColor=#616161;fontSize=16;fontStyle=1;align=left;verticalAlign=top;spacingTop=10;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="80" y="960" width="1440" height="180" as="geometry" />
+        </mxCell>
+
+        <!-- External APIs -->
+        <mxCell id="google-maps" value="&lt;b&gt;🗺️ Google Maps&lt;/b&gt;&lt;br&gt;&lt;br&gt;- Maps JS API&lt;br&gt;- Geocoding&lt;br&gt;- Distance Matrix" style="shape=hexagon;perimeter=hexagonPerimeter2;whiteSpace=wrap;html=1;fixedSize=1;fillColor=#ffffff;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="180" y="1010" width="200" height="110" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="stripe" value="&lt;b&gt;💳 Stripe&lt;/b&gt;&lt;br&gt;&lt;br&gt;- Payment processing&lt;br&gt;- Transactions&lt;br&gt;- Refunds" style="shape=hexagon;perimeter=hexagonPerimeter2;whiteSpace=wrap;html=1;fixedSize=1;fillColor=#ffffff;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="440" y="1010" width="200" height="110" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="sendgrid" value="&lt;b&gt;📨 SendGrid&lt;/b&gt;&lt;br&gt;&lt;br&gt;- Order emails&lt;br&gt;- Delivery alerts&lt;br&gt;- Receipts" style="shape=hexagon;perimeter=hexagonPerimeter2;whiteSpace=wrap;html=1;fixedSize=1;fillColor=#ffffff;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="700" y="1010" width="200" height="110" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="firebase" value="&lt;b&gt;📱 Firebase FCM&lt;/b&gt;&lt;br&gt;&lt;br&gt;- Push notifications&lt;br&gt;- iOS (APNs)&lt;br&gt;- Android (FCM)" style="shape=hexagon;perimeter=hexagonPerimeter2;whiteSpace=wrap;html=1;fixedSize=1;fillColor=#ffffff;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="960" y="1010" width="200" height="110" as="geometry" />
+        </mxCell>
+
+        <!-- CONNECTIONS -->
+        
+        <!-- Mobile to Load Balancer -->
+        <mxCell id="conn-mobile-lb" value="HTTPS (443)&lt;br&gt;REST API" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#4A90E2;fontSize=10;fontStyle=1" edge="1" parent="1" source="mobile-device" target="load-balancer">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="480" y="450" as="sourcePoint" />
+            <mxPoint x="650" y="520" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="340" y="450" />
+              <mxPoint x="650" y="450" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Mobile to Load Balancer WebSocket -->
+        <mxCell id="conn-mobile-ws" value="WSS (443)&lt;br&gt;WebSocket" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#4A90E2;dashed=1;dashPattern=8 8;fontSize=10;fontStyle=1" edge="1" parent="1" source="mobile-device" target="load-balancer">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="490" y="400" as="sourcePoint" />
+            <mxPoint x="750" y="520" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="380" y="450" />
+              <mxPoint x="750" y="450" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Desktop to CDN -->
+        <mxCell id="conn-desktop-cdn" value="HTTPS (443)&lt;br&gt;Static Assets" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#F5A623;fontSize=10;fontStyle=1" edge="1" parent="1" source="desktop-device" target="cdn-node">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="880" y="290" as="sourcePoint" />
+            <mxPoint x="1040" y="290" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Desktop to Load Balancer -->
+        <mxCell id="conn-desktop-lb" value="HTTPS (443)&lt;br&gt;REST API" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#F5A623;fontSize=10;fontStyle=1" edge="1" parent="1" source="desktop-device" target="load-balancer">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="740" y="400" as="sourcePoint" />
+            <mxPoint x="800" y="520" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- CDN to Storage (cache miss) -->
+        <mxCell id="conn-cdn-storage" value="Cache Miss" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#B0BEC5;dashed=1;dashPattern=4 4;fontSize=10;" edge="1" parent="1" source="cdn-node" target="storage-server">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1100" y="350" as="sourcePoint" />
+            <mxPoint x="900" y="630" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="1140" y="420" />
+              <mxPoint x="860" y="420" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Load Balancer to Auth Server -->
+        <mxCell id="conn-lb-auth" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#9013FE;" edge="1" parent="1" source="load-balancer" target="auth-server">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="650" y="600" />
+              <mxPoint x="230" y="600" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Load Balancer to Database -->
+        <mxCell id="conn-lb-db" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#9013FE;" edge="1" parent="1" source="load-balancer" target="db-server">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="700" y="600" />
+              <mxPoint x="440" y="600" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Load Balancer to Realtime -->
+        <mxCell id="conn-lb-realtime" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#9013FE;" edge="1" parent="1" source="load-balancer" target="realtime-server">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="750" y="600" />
+              <mxPoint x="650" y="600" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Load Balancer to Storage -->
+        <mxCell id="conn-lb-storage" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#9013FE;" edge="1" parent="1" source="load-balancer" target="storage-server">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- Functions to Database -->
+        <mxCell id="conn-fn-db" value="Internal Call" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#7ED321;dashed=1;dashPattern=4 4;fontSize=10;" edge="1" parent="1" source="functions-runtime" target="db-server">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1070" y="750" />
+              <mxPoint x="440" y="750" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Functions to Drone Worker -->
+        <mxCell id="conn-fn-worker" value="Trigger" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#9013FE;fontSize=10;fontStyle=1" edge="1" parent="1" source="functions-runtime" target="drone-worker">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1070" y="760" />
+              <mxPoint x="1070" y="840" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Drone Worker to Database -->
+        <mxCell id="conn-worker-db" value="Update (1s)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#7ED321;fontSize=10;fontStyle=1" edge="1" parent="1" source="drone-worker" target="db-server">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="520" y="840" as="sourcePoint" />
+            <mxPoint x="440" y="730" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="440" y="840" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Drone Worker to Realtime -->
+        <mxCell id="conn-worker-realtime" value="Broadcast" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#7ED321;fontSize=10;fontStyle=1" edge="1" parent="1" source="drone-worker" target="realtime-server">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="600" y="840" as="sourcePoint" />
+            <mxPoint x="650" y="730" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="650" y="840" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Messaging to External Services -->
+        <mxCell id="conn-msg-external" value="HTTPS&lt;br&gt;API Calls" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#9013FE;fontSize=10;" edge="1" parent="1" source="messaging-server" target="external-zone">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1280" y="730" as="sourcePoint" />
+            <mxPoint x="1000" y="960" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="1280" y="900" />
+              <mxPoint x="1000" y="900" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Mobile to Google Maps -->
+        <mxCell id="conn-mobile-maps" value="API" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#4A90E2;fontSize=10;" edge="1" parent="1" source="mobile-device" target="google-maps">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="200" y="500" as="sourcePoint" />
+            <mxPoint x="200" y="1010" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="200" y="900" />
+              <mxPoint x="280" y="900" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Security Notes -->
+        <mxCell id="security-note" value="&lt;b&gt;🔒 Security&lt;/b&gt;&lt;br&gt;- TLS/SSL on all public connections&lt;br&gt;- JWT token authentication&lt;br&gt;- API key validation&lt;br&gt;- CORS policy enabled&lt;br&gt;- Rate limiting: 1000 req/min&lt;br&gt;- Firewall: Allow HTTPS/WSS only" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#E65100;fontSize=10;align=left;spacingLeft=10;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="1240" y="1000" width="260" height="120" as="geometry" />
+        </mxCell>
+
+        <!-- Legend -->
+        <mxCell id="legend" value="&lt;b&gt;Legend&lt;/b&gt;&lt;br&gt;━━━━► HTTPS/REST API&lt;br&gt;⇢⇢⇢⇢► WebSocket (WSS)&lt;br&gt;·····► Internal call&lt;br&gt;&lt;br&gt;[📱] Device node&lt;br&gt;[☁️] Cloud service&lt;br&gt;[⬡] External API" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF9E6;strokeColor=#D6B656;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="80" y="1180" width="260" height="150" as="geometry" />
+        </mxCell>
+        
+        <!-- Deployment Info -->
+        <mxCell id="deploy-info" value="&lt;b&gt;📦 Deployment Artifacts&lt;/b&gt;&lt;br&gt;&lt;br&gt;Mobile:&lt;br&gt;- FoodFastCustomer.apk (25MB)&lt;br&gt;- FoodFastCustomer.ipa (30MB)&lt;br&gt;&lt;br&gt;Web:&lt;br&gt;- bundle.js (2MB gzipped)&lt;br&gt;- styles.css (100KB gzipped)&lt;br&gt;&lt;br&gt;Functions:&lt;br&gt;- drone-simulator.js (compiled)&lt;br&gt;- node_modules (dependencies)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#4CAF50;fontSize=10;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="380" y="1180" width="260" height="150" as="geometry" />
+        </mxCell>
+        
+        <!-- Performance Info -->
+        <mxCell id="perf-info" value="&lt;b&gt;⚡ Performance Specs&lt;/b&gt;&lt;br&gt;&lt;br&gt;Appwrite Cloud:&lt;br&gt;- Auto-scaling: Yes&lt;br&gt;- Backup: Daily&lt;br&gt;- Uptime SLA: 99.9%&lt;br&gt;&lt;br&gt;Database:&lt;br&gt;- Storage: SSD&lt;br&gt;- Replication: Multi-AZ&lt;br&gt;&lt;br&gt;Functions:&lt;br&gt;- Cold start: &lt;1s&lt;br&gt;- Concurrent: 100" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1976D2;fontSize=10;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="680" y="1180" width="260" height="150" as="geometry" />
+        </mxCell>
+        
+        <!-- Future Expansion -->
+        <mxCell id="future" value="&lt;b&gt;🌍 Future Multi-Region&lt;/b&gt;&lt;br&gt;&lt;br&gt;Expansion plan:&lt;br&gt;- Asia: Singapore (primary)&lt;br&gt;- NA: US East (secondary)&lt;br&gt;- EU: Frankfurt (secondary)&lt;br&gt;&lt;br&gt;Features:&lt;br&gt;- Geo-routing&lt;br&gt;- DB replication&lt;br&gt;- Edge functions&lt;br&gt;- CDN multi-region" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#7B1FA2;fontSize=10;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="980" y="1180" width="240" height="150" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
