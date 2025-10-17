@@ -12,6 +12,10 @@ export interface MenuItem extends Models.Document {
   protein: number;
   rating: number;
   type: string;
+  // New fields for Phase 0
+  restaurantId?: string;
+  isAvailable?: boolean;
+  stock?: number;
 }
 
 // ===================== CATEGORY =====================
@@ -21,9 +25,34 @@ export interface Category extends Models.Document {
   description: string;
 }
 
+// ===================== RESTAURANT =====================
+
+export interface Restaurant extends Models.Document {
+  ownerId: string;
+  name: string;
+  description?: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  phone: string;
+  email: string;
+  logo?: string;
+  coverImage?: string;
+  operatingHours?: Record<string, { open: string; close: string }>;
+  cuisine?: string;
+  status: 'pending' | 'active' | 'inactive' | 'suspended';
+  rating: number;
+  totalOrders: number;
+  totalRevenue: number;
+  businessLicense?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 // ===================== USER =====================
 
-export type UserRole = 'customer' | 'admin' | 'staff';
+export type UserRole = 'customer' | 'admin' | 'restaurant' | 'staff';
 
 export interface User extends Models.Document {
   accountId: string;
@@ -33,7 +62,7 @@ export interface User extends Models.Document {
   phone?: string;
   address_home?: string;
   address_home_label?: string;
-  role?: UserRole; // NEW: For admin access control
+  role?: UserRole;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -80,6 +109,7 @@ export interface OrderItem {
 
 export interface Order extends Models.Document {
   userId: string;
+  restaurantId?: string; // NEW: Phase 0
   items: OrderItem[];
   total: number;
   status:
@@ -89,6 +119,9 @@ export interface Order extends Models.Document {
     | "delivering"
     | "completed"
     | "cancelled";
+  paymentStatus?: 'pending' | 'paid' | 'failed' | 'refunded'; // NEW: Phase 0
+  paymentMethod?: 'cod' | 'vnpay'; // NEW: Phase 0
+  droneId?: string; // NEW: Phase 0
   deliveryAddress: string;
   deliveryAddressLabel?: string;
   phone: string;
@@ -96,6 +129,146 @@ export interface Order extends Models.Document {
   createdAt: string;
   updatedAt?: string;
   estimatedDelivery?: string;
+}
+
+// ===================== ORDER ITEMS =====================
+
+export interface OrderItemDocument extends Models.Document {
+  orderId: string;
+  menuItemId: string;
+  name: string;
+  price: number;
+  quantity: number;
+  customizations?: Record<string, any>;
+  subtotal: number;
+}
+
+// ===================== PAYMENT =====================
+
+export interface Payment extends Models.Document {
+  orderId: string;
+  userId: string;
+  provider: 'cod' | 'vnpay';
+  amount: number;
+  status: 'pending' | 'completed' | 'failed' | 'refunded';
+  transactionId?: string;
+  transactionRef?: string;
+  refundAmount?: number;
+  refundReason?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+// ===================== REVIEW =====================
+
+export interface Review extends Models.Document {
+  userId: string;
+  restaurantId: string;
+  orderId: string;
+  overallRating: number; // 1-5
+  foodQuality?: number; // 1-5
+  deliverySpeed?: number; // 1-5
+  service?: number; // 1-5
+  comment?: string;
+  images?: string[];
+  isVisible: boolean;
+  restaurantResponse?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+// ===================== NOTIFICATION =====================
+
+export interface Notification extends Models.Document {
+  userId: string;
+  type: 'order_update' | 'promotion' | 'system' | 'review_request';
+  title: string;
+  body: string;
+  data?: Record<string, any>;
+  status: 'sent' | 'read' | 'failed';
+  channel: 'push' | 'email' | 'in_app';
+  sentAt: string;
+  readAt?: string;
+}
+
+// ===================== DRONE =====================
+
+export interface Drone extends Models.Document {
+  code: string; // Unique identifier
+  name: string;
+  model: string;
+  status: 'idle' | 'delivering' | 'maintenance' | 'charging' | 'offline';
+  batteryLevel: number; // 0-100
+  currentLat?: number;
+  currentLng?: number;
+  maxPayload: number; // kg
+  maxRange: number; // km
+  assignedOrderId?: string;
+  lastMaintenanceAt?: string;
+  totalFlights: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+// ===================== DRONE EVENT =====================
+
+export interface DroneEvent extends Models.Document {
+  droneId: string;
+  orderId?: string;
+  eventType: 'takeoff' | 'landing' | 'position_update' | 'battery_low' | 'error' | 'maintenance';
+  latitude?: number;
+  longitude?: number;
+  altitude?: number;
+  speed?: number;
+  batteryLevel?: number;
+  message?: string;
+  timestamp: string;
+}
+
+// ===================== PROMOTION =====================
+
+export interface Promotion extends Models.Document {
+  code: string; // Promo code
+  title: string;
+  description?: string;
+  type: 'percentage' | 'fixed';
+  discountValue: number;
+  minOrderValue?: number;
+  maxDiscountAmount?: number;
+  maxUsage: number;
+  currentUsage: number;
+  startDate: string;
+  endDate: string;
+  applicableRestaurants?: string[]; // Restaurant IDs or empty for all
+  isActive: boolean;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+// ===================== USER VOUCHER =====================
+
+export interface UserVoucher extends Models.Document {
+  userId: string;
+  promotionId: string;
+  status: 'available' | 'used' | 'expired';
+  usedAt?: string;
+  orderId?: string;
+  createdAt: string;
+}
+
+// ===================== AUDIT LOG =====================
+
+export interface AuditLog extends Models.Document {
+  actorId: string; // User ID who performed action
+  action: string; // e.g., 'approve_restaurant', 'update_order_status'
+  entity: string; // e.g., 'restaurant', 'order', 'user'
+  entityId: string;
+  before?: Record<string, any>;
+  after?: Record<string, any>;
+  ipAddress?: string;
+  userAgent?: string;
+  timestamp: string;
 }
 
 // ===================== UI COMPONENT PROPS =====================

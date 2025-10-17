@@ -1,12 +1,34 @@
-# 🍔 SGU Fastfood Deli - Food Ordering System
+# 🍔 FoodFast - Drone Delivery Food Ordering Platform
 
-> Hệ thống đặt đồ ăn nhanh trực tuyến được xây dựng bằng React Native (Mobile App) và React Web (Admin Dashboard) với Appwrite Backend.
+> Nền tảng giao đồ ăn thông minh với drone delivery, kết nối khách hàng, nhà hàng và hệ thống vận hành trung tâm.
 
-[![React Native](https://img.shields.io/badge/React%20Native-0.81.4-blue.svg)](https://reactnative.dev/)
-[![Expo](https://img.shields.io/badge/Expo-~54.0-000020.svg)](https://expo.dev/)
-[![React](https://img.shields.io/badge/React-18.3-61DAFB.svg)](https://reactjs.org/)
+[![React Native](https://img.shields.io/badge/React%20Native-Expo%2054-blue.svg)](https://reactnative.dev/)
+[![Next.js](https://img.shields.io/badge/Next.js-14-black.svg)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6.svg)](https://www.typescriptlang.org/)
 [![Appwrite](https://img.shields.io/badge/Appwrite-Backend-F02E65.svg)](https://appwrite.io/)
+[![Progress](https://img.shields.io/badge/Progress-0%2F40%20issues-red.svg)](./docs/PROJECT_TRACKER.md)
+
+---
+
+## 🚀 Quick Start
+
+**🆕 Developer mới?** → **[Đọc Documentation Hub](./docs/README.md)** (5 phút)
+
+**⚡ Bắt đầu ngay**:
+```bash
+# 1. Setup Database (Tuần 1 - CRITICAL)
+Read: docs/database/APPWRITE_SETUP_GUIDE.md
+Create: 16 Appwrite collections
+
+# 2. Pick an issue (Tuần 2+)
+Read: docs/GITHUB_ISSUES.md
+Choose: Issue #1, #7, #15, or #23
+
+# 3. Start coding
+git checkout -b feature/[issue-number]-description
+```
+
+**📊 Track Progress**: [PROJECT_TRACKER.md](./docs/PROJECT_TRACKER.md)
 
 ---
 
@@ -14,114 +36,260 @@
 
 - [Giới Thiệu](#-giới-thiệu)
 - [Tính Năng](#-tính-năng)
-- [Công Nghệ](#-công-nghệ-sử-dụng)
+- [Tech Stack](#-tech-stack)
 - [Cấu Trúc Dự Án](#-cấu-trúc-dự-án)
+- [Development Roadmap](#-development-roadmap)
 - [Cài Đặt](#-cài-đặt)
-- [Chạy Ứng Dụng](#-chạy-ứng-dụng)
-- [Tác Giả](#-tác-giả)
-
+- [Documentation](#-documentation)
+- [Contributing](#-contributing)
+- [Team](#-team)
 
 ---
 
 ## 🎯 Giới Thiệu
 
-**SGU Fastfood Deli** là một hệ thống đặt đồ ăn nhanh hoàn chỉnh, bao gồm:
+**FoodFast** là nền tảng giao đồ ăn đa bên (multi-sided platform) với công nghệ drone delivery:
 
-- 📱 **Mobile App** (iOS/Android) - Dành cho khách hàng đặt món
-- 💻 **Admin Web Dashboard** - Quản lý đơn hàng, sản phẩm, khách hàng
-- 🔧 **Appwrite Backend** - Backend as a Service (BaaS) với Authentication, Database, Storage
+- 📱 **Customer Mobile App** - Browse restaurants, Order food, Track drone real-time
+- 🏪 **Restaurant Portal** - Menu management, Order processing, Analytics
+- 🎛️ **Admin Dashboard** - Restaurant approval, Drone fleet management, System analytics
+- � **Drone Delivery System** - 60-second simulation, Real-time tracking, Telemetry
 
-Dự án được phát triển cho môn **Công Nghệ Phần Mềm** tại **Đại học Sài Gòn (SGU)**.
+**Mục tiêu**: Xây dựng hệ sinh thái giao đồ ăn hoàn chỉnh với trải nghiệm tốt nhất cho 3 bên: Khách hàng, Nhà hàng, và Admin vận hành.
+
+**Dự án**: Môn Công Nghệ Phần Mềm - Đại học Sài Gòn (SGU)
 
 ---
 
 ## ✨ Tính Năng
 
-### 📱 Customer Mobile App
+### 📱 Customer Mobile App (70% Complete)
 
-#### 🔐 Authentication
-- ✅ Đăng ký tài khoản mới
-- ✅ Đăng nhập với email/password
-- ✅ Quản lý session tự động
-- ✅ Xác thực người dùng
+**✅ Đã có** (Current Features):
+- 🔐 Authentication: Đăng ký, Đăng nhập, Profile management
+- 🍕 Menu browsing: Xem món ăn theo categories
+- 🛒 Cart: Add/remove items, Calculate total
+- 📦 Order history: Xem đơn hàng đã đặt
+- 👤 Profile: Edit thông tin, Upload avatar
 
-#### 🍕 Menu & Ordering
-- ✅ Xem danh sách món ăn theo danh mục
-- ✅ Tìm kiếm món ăn
-- ✅ Xem chi tiết món ăn (hình ảnh, giá, mô tả)
-- ✅ Tùy chỉnh món ăn (toppings, sides, sauces)
-- ✅ Thêm vào giỏ hàng
-- ✅ Quản lý giỏ hàng (thêm/bớt/xóa)
-- ✅ Xem tổng tiền tự động
-- ✅ Đặt hàng và xác nhận
-
-#### 📦 Order Management
-- ✅ Lịch sử đơn hàng
-- ✅ Chi tiết đơn hàng
-- ✅ Trạng thái đơn hàng (Pending, Processing, Delivered)
-- ✅ Thông tin giao hàng
-
-#### 👤 Profile Management
-- ✅ Xem và chỉnh sửa thông tin cá nhân
-- ✅ Upload/Update avatar
-- ✅ Cập nhật địa chỉ giao hàng
-- ✅ Quản lý số điện thoại
-- ✅ Đăng xuất
-
-### 💻 Admin Web Dashboard
-
-#### 📊 Dashboard
-- ✅ Tổng quan thống kê (Orders, Revenue, Customers, Products)
-- ✅ Biểu đồ doanh thu
-- ✅ Số liệu thời gian thực
-
-#### 🛍️ Order Management
-- ✅ Xem tất cả đơn hàng
-- ✅ Cập nhật trạng thái đơn hàng
-- ✅ Xem chi tiết đơn hàng
-- ✅ Lọc đơn hàng theo trạng thái
-- ✅ Tìm kiếm đơn hàng
-
-#### 👥 Customer Management
-- ✅ Xem danh sách khách hàng
-- ✅ Thông tin chi tiết khách hàng
-- ✅ Lịch sử đặt hàng của khách hàng
-
-#### 🍔 Product Management
-- ✅ Xem danh sách sản phẩm
-- ✅ Thêm sản phẩm mới
-- ✅ Chỉnh sửa sản phẩm
-- ✅ Xóa sản phẩm
-- ✅ Upload hình ảnh sản phẩm
-- ✅ Quản lý danh mục
-
-#### 🔒 Admin Authentication
-- ✅ Đăng nhập admin riêng biệt
-- ✅ Phân quyền theo role (admin/customer)
-- ✅ Bảo mật session
+**🔨 Đang phát triển** (Phase 2 - Issues #15-22):
+- 🏪 Restaurant selection & filtering
+- 💳 VNPay payment integration
+- 📍 Real-time order tracking với map
+- 🚁 Drone delivery visualization (60s countdown)
+- � Push notifications (FCM)
+- ⭐ Review & rating system
+- 🎟️ Voucher/promotion codes
 
 ---
 
-## 🛠 Công Nghệ Sử Dụng
+### 🏪 Restaurant Portal (0% - Week 2-3)
+
+**🎯 Planned Features** (Phase 1 - Issues #7-14):
+- 🔐 Restaurant authentication & role management
+- 📝 Onboarding flow với map picker
+- 🍔 Menu management (CRUD + categories + image upload)
+- 📊 Order dashboard với real-time updates
+- 🔔 Sound notification cho đơn mới
+- ⚡ Quick actions: Accept/Reject/Preparing/Ready
+- 📈 Analytics: Revenue, best sellers, completion rate
+- ⚙️ Settings: Profile, operating hours, availability
+
+---
+
+### 🎛️ Admin Dashboard (40% Complete)
+
+**✅ Đã có** (Current Features):
+- 🔐 Admin authentication riêng biệt
+- 📊 Dashboard: Orders, Revenue, Customers stats
+- 🛍️ Order management: View all, filter, update status
+- 👥 Customer list với thông tin chi tiết
+- 🍔 Product management: CRUD operations
+
+**🔨 Đang phát triển** (Phase 3 - Issues #23-30):
+- ✅ Restaurant approval workflow
+- � Drone fleet management
+- 🎮 Drone simulation engine (control panel)
+- 🌍 System-wide order monitoring
+- 📈 Advanced analytics (GMV, KPIs, trends)
+- 👤 User management (ban, reset password)
+- 📋 Audit logs viewer
+- 📢 Notification broadcast system
+
+---
+
+### 🚁 Drone Delivery System (0% - Week 4-5)
+
+**🎯 Planned Features** (Phase 3-4 - Issues #4, #17-18, #25):
+- 🚁 Drone fleet registration & status tracking
+- � Telemetry events (position, battery, altitude)
+- 🗺️ Real-time map visualization
+- ⏱️ 60-second delivery simulation
+- 🎯 Auto-assignment algorithm
+- 📊 Drone utilization analytics
+- 🔧 Maintenance scheduling
+
+---
+
+## 🛠 Tech Stack
 
 ### Frontend
+- **Mobile**: React Native (Expo 54) + TypeScript + NativeWind (TailwindCSS)
+- **Web**: Next.js 14 (App Router) + TypeScript + TailwindCSS
+- **State**: Zustand (mobile), Context API (web)
+- **Navigation**: Expo Router (mobile), Next.js App Router (web)
 
-#### 📱 Mobile App
-```json
-{
-  "Framework": "React Native 0.81.4",
-  "Runtime": "Expo SDK ~54.0",
-  "Language": "TypeScript 5.7",
-  "Styling": "NativeWind 4.2.1 (Tailwind CSS)",
-  "State Management": "Zustand 5.0.8",
-  "Navigation": "Expo Router 6.0.8",
-  "Image": "Expo Image 3.0.8",
-  "Camera": "Expo Image Picker 17.0.8"
-}
+### Backend
+- **BaaS**: Appwrite (Auth, Database, Storage, Functions, Realtime)
+- **Database**: 16 collections (6 existing + 10 new)
+- **Auth**: Email/Password, Role-based access (customer/restaurant/admin)
+
+### Integration
+- **Payment**: VNPay (planned)
+- **Maps**: Google Maps / Mapbox (planned)
+- **Notifications**: Firebase Cloud Messaging (planned)
+
+### Dev Tools
+- **Language**: TypeScript 5.7
+- **Package Manager**: npm
+- **Version Control**: Git + GitHub
+- **CI/CD**: GitHub Actions (planned)
+
+**Chi tiết**: [docs/PROJECT_REQUIREMENTS_vi.md](./docs/PROJECT_REQUIREMENTS_vi.md) Section 6
+
+---
+
+## � Cấu Trúc Dự Án
+
+```
+sgu_cnpm_foodfast/
+├── �📱 mobile/                    # React Native Mobile App (Expo)
+│   ├── app/                      # Expo Router screens
+│   │   ├── (auth)/              # Auth screens (sign-in, sign-up)
+│   │   ├── (tabs)/              # Tab screens (home, cart, profile, search)
+│   │   ├── menu-detail.tsx      # Menu item detail
+│   │   ├── order-history.tsx    # Order history
+│   │   └── edit-profile.tsx     # Profile editing
+│   ├── components/              # Reusable components
+│   ├── lib/                     # Appwrite client, hooks, utilities
+│   ├── store/                   # Zustand stores (auth, cart)
+│   ├── constants/               # Constants, dummy data
+│   └── package.json
+│
+├── 💻 admin/                     # Next.js Admin Dashboard
+│   ├── src/
+│   │   ├── pages/               # Dashboard pages
+│   │   │   ├── DashboardPage.tsx
+│   │   │   ├── OrdersPage.tsx
+│   │   │   ├── CustomersPage.tsx
+│   │   │   └── ProductsPage.tsx
+│   │   ├── components/          # Reusable components
+│   │   ├── lib/                 # Appwrite client, API
+│   │   └── store/               # Auth store
+│   └── package.json
+│
+├── 🏪 restaurant-portal/         # [TODO] Next.js Restaurant Portal
+│   └── (Will be created in Phase 1 - Issue #7)
+│
+├── 📚 docs/                      # 🔥 DOCUMENTATION HUB
+│   ├── README.md                # Documentation overview
+│   ├── PROJECT_REQUIREMENTS_vi.md  # Full requirements (Vietnamese)
+│   ├── DEVELOPMENT_ROADMAP.md   # 6-week roadmap, 4 phases
+│   ├── GITHUB_ISSUES.md         # 40 GitHub issues template
+│   ├── PROJECT_TRACKER.md       # Progress tracking
+│   ├── database/                # Database documentation
+│   │   ├── DATABASE_SCHEMA.md   # 16 collections schema
+│   │   ├── APPWRITE_SETUP_GUIDE.md  # Step-by-step setup
+│   │   ├── QUICK_REFERENCE.md   # Cheat sheet
+│   │   └── foodfast-database-erd-simple.drawio  # ERD diagram
+│   └── diagrams/                # System diagrams
+│
+├── 🎨 drawio/                    # Draw.io diagram sources
+└── README.md                    # This file
 ```
 
-#### 💻 Admin Web
-```json
+**Chi tiết cấu trúc**: [docs/README.md](./docs/README.md)
+
+---
+
+## 🗺️ Development Roadmap
+
+### Current Status (October 17, 2025)
+
+| Component | Progress | Status |
+|-----------|----------|--------|
+| Mobile App | 70% | ✅ Auth, Menu, Cart, History |
+| Admin Dashboard | 40% | ✅ Basic CRUD, Dashboard |
+| Restaurant Portal | 0% | 🔴 Not started |
+| Database | 37% | 🟡 6/16 collections |
+| Payment | 0% | 🔴 VNPay pending |
+| Drone System | 0% | 🔴 Not started |
+
+### 6-Week Plan
+
+**📊 Phase 0 - Database Foundation** (Week 1) - **START HERE**
+- Issues: #1-6
+- Goal: Setup tất cả 16 Appwrite collections
+- Time: 12-16 hours
+- **🔴 CRITICAL**: Blocks all development
+
+**🏗️ Phase 1 - Restaurant Portal MVP** (Week 2-3)
+- Issues: #7-14
+- Goal: Xây dựng web portal cho nhà hàng
+- Time: 60-80 hours
+- Features: Auth, Menu management, Order dashboard
+
+**📱 Phase 2 - Mobile App Enhancement** (Week 3-4)
+- Issues: #15-22
+- Goal: Nâng cấp mobile lên 100%
+- Time: 40-50 hours
+- Features: Payment, Tracking, Notifications, Reviews
+
+**🎛️ Phase 3 - Admin Enhancement** (Week 4-5)
+- Issues: #23-30
+- Goal: Hoàn thiện admin dashboard
+- Time: 50-60 hours
+- Features: Restaurant approval, Drone management, Analytics
+
+**🔗 Phase 4 - Integration & Polish** (Week 5-6)
+- Issues: #31-40
+- Goal: Tích hợp và testing
+- Time: 30-40 hours
+- Features: Webhooks, Automation, Testing, Docs
+
+**Chi tiết đầy đủ**: [docs/DEVELOPMENT_ROADMAP.md](./docs/DEVELOPMENT_ROADMAP.md)
+
+---
+
+## 🗄️ Database Architecture
+
+### 16 Collections (Appwrite)
+
+**✅ Existing (6)**:
+1. User - User accounts
+2. categories - Food categories
+3. menu - Menu items
+4. customizations - Toppings/add-ons
+5. menu_customizations - Menu-customization mapping
+6. orders - Customer orders
+
+**🆕 New (10)** - Need to create:
+7. **restaurants** 🔴 Critical - Restaurant partners
+8. **order_items** 🔴 Critical - Order line items
+9. **payments** 🔴 Critical - Payment transactions
+10. **reviews** - Restaurant/food reviews
+11. **notifications** - Push notifications
+12. **drones** - Drone fleet
+13. **drone_events** - Drone telemetry
+14. **promotions** - Promo codes
+15. **user_vouchers** - User's vouchers
+16. **audit_logs** - System audit trail
+
+**📊 ERD Diagram**: [docs/database/foodfast-database-erd-simple.drawio](./docs/database/foodfast-database-erd-simple.drawio)
+
+**📖 Full Schema**: [docs/database/DATABASE_SCHEMA.md](./docs/database/DATABASE_SCHEMA.md)
+
+**🛠️ Setup Guide**: [docs/database/APPWRITE_SETUP_GUIDE.md](./docs/database/APPWRITE_SETUP_GUIDE.md)
 {
   "Framework": "React 18.3.1",
   "Bundler": "Vite 6.0",

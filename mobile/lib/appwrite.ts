@@ -11,12 +11,26 @@ export const appwriteConfig = {
   androidPackage: Constants.expoConfig?.android?.package || "host.exp.exponent",
   databaseId: "68da5e73002cb68e70af",
   bucketId:"68dacda1003d6943981e",
+  
+  // Existing collections
   userCollectionId: "user", 
   categoriesCollectionId: "categories",
   menuCollectionId: "menu",
   customizationsCollectionId: "customizations",
   menuCustomizationsCollectionId: "menu_customizations",
   ordersCollectionId: "orders",
+  
+  // New collections (Phase 0 - Database Foundation)
+  restaurantsCollectionId: "restaurants",
+  orderItemsCollectionId: "order_items",
+  paymentsCollectionId: "payments",
+  reviewsCollectionId: "reviews",
+  notificationsCollectionId: "notifications",
+  dronesCollectionId: "drones",
+  droneEventsCollectionId: "drone_events",
+  promotionsCollectionId: "promotions",
+  userVouchersCollectionId: "user_vouchers",
+  auditLogsCollectionId: "audit_logs",
 };
 
 export const client = new Client();
