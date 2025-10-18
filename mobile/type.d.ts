@@ -50,6 +50,20 @@ export interface Restaurant extends Models.Document {
   updatedAt?: string;
 }
 
+export interface RestaurantFilters {
+  cuisine?: string;
+  rating?: number;
+  distance?: number;
+  search?: string;
+  sortBy?: 'rating' | 'distance' | 'name';
+}
+
+export interface RestaurantWithDistance extends Restaurant {
+  distance?: number; // Distance from user in km
+  isOpen?: boolean; // Whether restaurant is currently open
+  estimatedTime?: number; // Estimated delivery time in minutes
+}
+
 // ===================== USER =====================
 
 export type UserRole = 'customer' | 'admin' | 'restaurant' | 'staff';
@@ -87,7 +101,8 @@ export interface CartItemType {
 
 export interface CartStore {
   items: CartItemType[];
-  addItem: (item: Omit<CartItemType, "quantity">) => void;
+  restaurantId: string | null; // Track which restaurant items are from
+  addItem: (item: Omit<CartItemType, "quantity">, restaurantId: string) => void;
   removeItem: (id: string, customizations: CartCustomization[]) => void;
   increaseQty: (id: string, customizations: CartCustomization[]) => void;
   decreaseQty: (id: string, customizations: CartCustomization[]) => void;

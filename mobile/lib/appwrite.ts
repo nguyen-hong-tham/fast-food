@@ -1,24 +1,24 @@
 import Constants from "expo-constants";
 import { Platform } from "react-native";
 import { Account, Avatars, Client, Databases, ID, Query, Storage } from "react-native-appwrite";
-import { CreateUserParams, GetMenuParams, SignInParams } from "../type";
+import { CreateUserParams, GetMenuParams, RestaurantFilters, SignInParams } from "../type";
 
 export const appwriteConfig = {
-  endpoint: process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT!,
-  projectId: process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID!,
+  endpoint: process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT || "https://cloud.appwrite.io/v1",
+  projectId: process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID || "",
   // Use Expo defaults in development if bundle IDs are not set
-  iosBundleId: Constants.expoConfig?.ios?.bundleIdentifier || "host.exp.Exponent",
-  androidPackage: Constants.expoConfig?.android?.package || "host.exp.exponent",
-  databaseId: "68da5e73002cb68e70af",
-  bucketId:"68dacda1003d6943981e",
+  iosBundleId: process.env.EXPO_PUBLIC_APPWRITE_IOS_BUNDLE_ID || Constants.expoConfig?.ios?.bundleIdentifier || "host.exp.Exponent",
+  androidPackage: process.env.EXPO_PUBLIC_APPWRITE_ANDROID_PACKAGE || Constants.expoConfig?.android?.package || "host.exp.exponent",
+  databaseId: process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID || "68da5e73002cb68e70af",
+  bucketId: process.env.EXPO_PUBLIC_APPWRITE_BUCKET_ID || "68dacda1003d6943981e",
   
   // Existing collections
-  userCollectionId: "user", 
-  categoriesCollectionId: "categories",
-  menuCollectionId: "menu",
-  customizationsCollectionId: "customizations",
-  menuCustomizationsCollectionId: "menu_customizations",
-  ordersCollectionId: "orders",
+  userCollectionId: process.env.EXPO_PUBLIC_APPWRITE_USER_COLLECTION_ID || "user", 
+  categoriesCollectionId: process.env.EXPO_PUBLIC_APPWRITE_CATEGORIES_COLLECTION_ID || "categories",
+  menuCollectionId: process.env.EXPO_PUBLIC_APPWRITE_MENU_COLLECTION_ID || "menu",
+  customizationsCollectionId: process.env.EXPO_PUBLIC_APPWRITE_CUSTOMIZATIONS_COLLECTION_ID || "customizations",
+  menuCustomizationsCollectionId: process.env.EXPO_PUBLIC_APPWRITE_MENU_CUSTOMIZATIONS_COLLECTION_ID || "menu_customizations",
+  ordersCollectionId: process.env.EXPO_PUBLIC_APPWRITE_ORDERS_COLLECTION_ID || "orders",
   
   // New collections (Phase 0 - Database Foundation)
   restaurantsCollectionId: "restaurants",
@@ -446,5 +446,205 @@ export const createMenuItem = async (data: {
         return newItem;
     } catch (e) {
         throw new Error(e as string);
+    }
+}
+
+// ===================== RESTAURANT FUNCTIONS =====================
+
+/**
+ * Calculate distance between two coordinates using Haversine formula
+ * @returns distance in kilometers
+ */
+export const calculateDistance = (
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number
+): number => {
+    const R = 6371; // Radius of Earth in kilometers
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+}
+
+/**
+ * Check if restaurant is currently open based on operating hours
+ */
+export const isRestaurantOpen = (operatingHours?: Record<string, { open: string; close: string }>): boolean => {
+    if (!operatingHours) return true; // If no hours specified, assume always open
+
+    const now = new Date();
+    const day = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][now.getDay()];
+    const currentTime = now.getHours() * 60 + now.getMinutes(); // Current time in minutes
+
+    const todayHours = operatingHours[day];
+    if (!todayHours) return false;
+
+    const [openHour, openMin] = todayHours.open.split(':').map(Number);
+    const [closeHour, closeMin] = todayHours.close.split(':').map(Number);
+    const openTime = openHour * 60 + openMin;
+    const closeTime = closeHour * 60 + closeMin;
+
+    return currentTime >= openTime && currentTime <= closeTime;
+}
+
+/**
+ * Get all active restaurants with optional filters
+ */
+export const getRestaurants = async (filters?: RestaurantFilters, userLat?: number, userLng?: number) => {
+    try {
+        const queries: string[] = [Query.equal('isActive', true)];
+
+        // Apply filters
+        if (filters?.cuisine) {
+            queries.push(Query.equal('cuisine', filters.cuisine));
+        }
+
+        if (filters?.rating) {
+            queries.push(Query.greaterThanEqual('rating', filters.rating));
+        }
+
+        if (filters?.search) {
+            queries.push(Query.search('name', filters.search));
+        }
+
+        // Order by rating by default
+        if (!filters?.sortBy || filters.sortBy === 'rating') {
+            queries.push(Query.orderDesc('rating'));
+        } else if (filters.sortBy === 'name') {
+            queries.push(Query.orderAsc('name'));
+        }
+
+        const restaurants = await databases.listDocuments(
+            appwriteConfig.databaseId,
+            appwriteConfig.restaurantsCollectionId,
+            queries
+        );
+
+        // Enhance restaurants with distance and open status
+        const enhancedRestaurants = restaurants.documents.map((restaurant: any) => {
+            let distance: number | undefined;
+            if (userLat && userLng) {
+                distance = calculateDistance(userLat, userLng, restaurant.latitude, restaurant.longitude);
+            }
+
+            const isOpen = isRestaurantOpen(restaurant.operatingHours);
+            const estimatedTime = distance ? Math.ceil(distance * 3 + 20) : 30; // 3 min/km + 20 min prep
+
+            return {
+                ...restaurant,
+                distance,
+                isOpen,
+                estimatedTime
+            };
+        });
+
+        // Filter by distance if specified
+        let filteredRestaurants = enhancedRestaurants;
+        if (filters?.distance && userLat && userLng) {
+            filteredRestaurants = enhancedRestaurants.filter(r => r.distance && r.distance <= filters.distance!);
+        }
+
+        // Sort by distance if requested
+        if (filters?.sortBy === 'distance' && userLat && userLng) {
+            filteredRestaurants.sort((a, b) => (a.distance || 0) - (b.distance || 0));
+        }
+
+        return filteredRestaurants;
+    } catch (e) {
+        console.error('Error fetching restaurants:', e);
+        throw new Error(e as string);
+    }
+}
+
+/**
+ * Get restaurant by ID
+ */
+export const getRestaurantById = async (restaurantId: string) => {
+    try {
+        const restaurant = await databases.getDocument(
+            appwriteConfig.databaseId,
+            appwriteConfig.restaurantsCollectionId,
+            restaurantId
+        );
+
+        return restaurant;
+    } catch (e) {
+        throw new Error(e as string);
+    }
+}
+
+/**
+ * Get menu items for a specific restaurant
+ */
+export const getRestaurantMenu = async (restaurantId: string, category?: string, query?: string) => {
+    try {
+        const queries: string[] = [Query.equal('restaurantId', restaurantId)];
+
+        if (category) queries.push(Query.equal('categories', category));
+        if (query) queries.push(Query.contains('name', query));
+
+        const menus = await databases.listDocuments(
+            appwriteConfig.databaseId,
+            appwriteConfig.menuCollectionId,
+            queries
+        );
+
+        return menus.documents;
+    } catch (e) {
+        throw new Error(e as string);
+    }
+}
+
+/**
+ * Get reviews for a restaurant
+ */
+export const getRestaurantReviews = async (restaurantId: string, limit: number = 20) => {
+    try {
+        const reviews = await databases.listDocuments(
+            appwriteConfig.databaseId,
+            appwriteConfig.reviewsCollectionId,
+            [
+                Query.equal('restaurantId', restaurantId),
+                Query.equal('isVisible', true),
+                Query.orderDesc('$createdAt'),
+                Query.limit(limit)
+            ]
+        );
+
+        return reviews.documents;
+    } catch (e) {
+        console.error('Error fetching reviews:', e);
+        return []; // Return empty array if reviews collection doesn't exist yet
+    }
+}
+
+/**
+ * Get available cuisines from all restaurants
+ */
+export const getAvailableCuisines = async (): Promise<string[]> => {
+    try {
+        const restaurants = await databases.listDocuments(
+            appwriteConfig.databaseId,
+            appwriteConfig.restaurantsCollectionId,
+            [Query.equal('isActive', true)]
+        );
+
+        const cuisines = new Set<string>();
+        restaurants.documents.forEach((restaurant: any) => {
+            if (restaurant.cuisine) {
+                cuisines.add(restaurant.cuisine);
+            }
+        });
+
+        return Array.from(cuisines).sort();
+    } catch (e) {
+        console.error('Error fetching cuisines:', e);
+        return [];
     }
 }

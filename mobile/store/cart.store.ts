@@ -1,4 +1,5 @@
 import { CartCustomization, CartStore } from "@/type";
+import { Alert } from "react-native";
 import { create } from "zustand";
 
 function areCustomizationsEqual(
@@ -15,9 +16,32 @@ function areCustomizationsEqual(
 
 export const useCartStore = create<CartStore>((set, get) => ({
     items: [],
+    restaurantId: null,
 
-    addItem: (item) => {
+    addItem: (item, restaurantId) => {
+        const currentRestaurantId = get().restaurantId;
         const customizations = item.customizations ?? [];
+
+        // Check if adding item from different restaurant
+        if (currentRestaurantId && currentRestaurantId !== restaurantId) {
+            Alert.alert(
+                'Different Restaurant',
+                'Your cart has items from another restaurant. Clear cart to add items from this restaurant?',
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    { 
+                        text: 'Clear & Add', 
+                        onPress: () => {
+                            set({ 
+                                items: [{ ...item, quantity: 1, customizations }], 
+                                restaurantId 
+                            });
+                        }
+                    }
+                ]
+            );
+            return;
+        }
 
         const existing = get().items.find(
             (i) =>
@@ -37,6 +61,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
         } else {
             set({
                 items: [...get().items, { ...item, quantity: 1, customizations }],
+                restaurantId: restaurantId
             });
         }
     },
@@ -77,7 +102,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
         });
     },
 
-    clearCart: () => set({ items: [] }),
+    clearCart: () => set({ items: [], restaurantId: null }),
 
     getTotalItems: () =>
         get().items.reduce((total, item) => total + item.quantity, 0),
