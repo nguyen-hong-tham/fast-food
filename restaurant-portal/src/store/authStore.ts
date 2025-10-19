@@ -1,7 +1,9 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { account } from '@/lib/appwrite';
+import { account, databases } from '@/lib/appwrite';
+import { config } from '@/config';
 import { User, Restaurant } from '@/types';
+import { Query } from '@/lib/appwrite';
 
 interface AuthState {
   user: User | null;
@@ -35,10 +37,11 @@ export const useAuthStore = create<AuthState>()(
       logout: async () => {
         try {
           await account.deleteSession('current');
-          set({ user: null, restaurant: null, isAuthenticated: false });
         } catch (error) {
           console.error('Logout error:', error);
-          throw error;
+        } finally {
+          // Always clear state even if API call fails
+          set({ user: null, restaurant: null, isAuthenticated: false });
         }
       },
 
@@ -47,19 +50,65 @@ export const useAuthStore = create<AuthState>()(
           set({ isLoading: true });
           const session = await account.get();
           
-          // TODO: Fetch user details from users collection
-          // For now, just set basic info
+          // Fetch user details from users collection
+          const usersResponse = await databases.listDocuments(
+            config.appwrite.databaseId,
+            config.appwrite.usersCollectionId,
+            [Query.equal('accountId', session.$id)]
+          );
+
+          if (usersResponse.documents.length === 0) {
+            throw new Error('User document not found');
+          }
+
+          const userDoc = usersResponse.documents[0];
           const user: User = {
-            $id: session.$id,
-            email: session.email,
-            name: session.name,
-            role: 'restaurant_owner',
-            $createdAt: session.$createdAt,
-            $updatedAt: session.$updatedAt,
+            $id: userDoc.$id,
+            accountId: session.$id, // Store account ID for future use
+            email: userDoc.email,
+            name: userDoc.name,
+            role: userDoc.role,
+            $createdAt: userDoc.$createdAt,
+            $updatedAt: userDoc.$updatedAt,
           };
 
-          set({ user, isAuthenticated: true, isLoading: false });
+          // Fetch restaurant details if user is restaurant owner
+          let restaurant: Restaurant | null = null;
+          if (userDoc.role === 'restaurant') { // ✅ FIXED: Changed from 'restaurant_owner' to 'restaurant'
+            const restaurantsResponse = await databases.listDocuments(
+              config.appwrite.databaseId,
+              config.appwrite.restaurantsCollectionId,
+              [Query.equal('ownerId', session.$id)]
+            );
+
+            if (restaurantsResponse.documents.length > 0) {
+              const restaurantDoc = restaurantsResponse.documents[0];
+              restaurant = {
+                $id: restaurantDoc.$id,
+                name: restaurantDoc.name,
+                ownerId: restaurantDoc.ownerId,
+                description: restaurantDoc.description,
+                address: restaurantDoc.address,
+                phone: restaurantDoc.phone,
+                email: restaurantDoc.email,
+                status: restaurantDoc.status,
+                latitude: restaurantDoc.latitude,
+                longitude: restaurantDoc.longitude,
+                deliveryRadius: restaurantDoc.deliveryRadius,
+                isActive: restaurantDoc.isActive,
+                openingHours: restaurantDoc.openingHours,
+                imageUrl: restaurantDoc.imageUrl,
+                rating: restaurantDoc.rating,
+                totalReviews: restaurantDoc.totalReviews,
+                $createdAt: restaurantDoc.$createdAt,
+                $updatedAt: restaurantDoc.$updatedAt,
+              } as Restaurant;
+            }
+          }
+
+          set({ user, restaurant, isAuthenticated: true, isLoading: false });
         } catch (error) {
+          console.error('CheckAuth error:', error);
           set({ user: null, restaurant: null, isAuthenticated: false, isLoading: false });
         }
       },
@@ -71,9 +120,9 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'auth-storage',
       partialize: (state) => ({
-        user: state.user,
+        // Only persist restaurant info, not auth state
+        // Auth state should be verified on each app load
         restaurant: state.restaurant,
-        isAuthenticated: state.isAuthenticated,
       }),
     }
   )

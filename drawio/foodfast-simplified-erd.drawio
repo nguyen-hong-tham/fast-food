@@ -1,0 +1,171 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36" version="28.2.7">
+  <diagram name="FoodFast Simplified ERD" id="simplified-erd">
+    <mxGraphModel dx="2420" dy="1307" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="user-entity" value="User" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
+          <mxGeometry x="80" y="80" width="230" height="260" as="geometry" />
+        </mxCell>
+        <mxCell id="user-attrs" value="$id: ID&#xa;name: String(100) *&#xa;email: Email *&#xa;accountId: String(2200) *&#xa;avatar: URL&#xa;phone: String(15)&#xa;address_home: String(255)&#xa;address_home_label: String(50)&#xa;role: Enum * (customer/restaurant/admin)&#xa;status: Enum (active/inactive)&#xa;$createdAt: DateTime&#xa;$updatedAt: DateTime" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" parent="user-entity" vertex="1">
+          <mxGeometry y="26" width="230" height="234" as="geometry" />
+        </mxCell>
+        <mxCell id="restaurants-entity" value="Restaurants" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#fff2cc;strokeColor=#d6b656;" parent="1" vertex="1">
+          <mxGeometry x="80" y="400" width="200" height="390" as="geometry" />
+        </mxCell>
+        <mxCell id="restaurants-attrs" value="$id: ID&#xa;name: String(200) *&#xa;description: String(1000)&#xa;address: String(500) *&#xa;phone: String(20) *&#xa;email: Email *&#xa;logo: URL&#xa;coverImage: URL&#xa;cuisineType: String(100)&#xa;businessLicense: String(100)&#xa;taxCode: String(50)&#xa;bankAccount: String(100)&#xa;bankName: String(100)&#xa;latitude: Float *&#xa;longitude: Float *&#xa;rating: Float (default: 0)&#xa;totalRevenue: Float (default: 0)&#xa;totalOrders: Integer (default: 0)&#xa;status: Enum * (pending/approved/rejected/active/inactive)&#xa;isActive: Boolean (default: true)&#xa;approvedAt: DateTime&#xa;ownerId: Relationship → User *&#xa;$createdAt: DateTime&#xa;$updatedAt: DateTime" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" parent="restaurants-entity" vertex="1">
+          <mxGeometry y="26" width="200" height="364" as="geometry" />
+        </mxCell>
+        <mxCell id="categories-entity" value="Categories" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="1" vertex="1">
+          <mxGeometry x="360" y="80" width="200" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="categories-attrs" value="$id: ID&#xa;name: String(100) *&#xa;description: String(200) *&#xa;imageUrl: URL&#xa;displayOrder: Integer (default: 0)&#xa;$createdAt: DateTime&#xa;$updatedAt: DateTime" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" parent="categories-entity" vertex="1">
+          <mxGeometry y="26" width="200" height="114" as="geometry" />
+        </mxCell>
+        <mxCell id="menu-entity" value="Menu" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" vertex="1">
+          <mxGeometry x="360" y="280" width="200" height="280" as="geometry" />
+        </mxCell>
+        <mxCell id="menu-attrs" value="$id: ID&#xa;name: String(200) *&#xa;description: String(2200) *&#xa;image_url: URL *&#xa;rating: Float (default: 0)&#xa;calories: Integer (min:5, max:10000) *&#xa;protein: Integer (min:5, max:10000) *&#xa;price: Float (min:5, max:10000) *&#xa;restaurantId: Relationship → Restaurants *&#xa;categories: Relationship → Categories&#xa;isAvailable: Boolean (default: true)&#xa;stock: Integer (default: 0)&#xa;soldCount: Integer (default: 0)&#xa;$createdAt: DateTime&#xa;$updatedAt: DateTime" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" parent="menu-entity" vertex="1">
+          <mxGeometry y="26" width="200" height="254" as="geometry" />
+        </mxCell>
+        <mxCell id="orders-entity" value="Orders" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#f8cecc;strokeColor=#b85450;" parent="1" vertex="1">
+          <mxGeometry x="640" y="80" width="220" height="360" as="geometry" />
+        </mxCell>
+        <mxCell id="orders-attrs" value="$id: ID&#xa;userId: Relationship → User&#xa;restaurantId: Relationship → Restaurants&#xa;items: String(1000) * (JSON array)&#xa;total: Float (min:0) *&#xa;status: Enum * (pending/confirmed/preparing/ready/delivering/delivered/cancelled)&#xa;deliveryAddress: String(500) *&#xa;deliveryAddressLabel: String(100)&#xa;phone: String(20)&#xa;email: Email&#xa;notes: String(1000)&#xa;paymentStatus: Enum (pending/paid/failed/refunded)&#xa;paymentMethod: Enum (cod/momo/zalopay/vnpay)&#xa;droneId: Relationship → Drones&#xa;assignedAt: DateTime&#xa;confirmedAt: DateTime&#xa;readyAt: DateTime&#xa;deliveredAt: DateTime&#xa;cancelledAt: DateTime&#xa;estimatedDeliveryTime: DateTime&#xa;recipientName: String(255)&#xa;$createdAt: DateTime *&#xa;$updatedAt: DateTime" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" parent="orders-entity" vertex="1">
+          <mxGeometry y="26" width="220" height="334" as="geometry" />
+        </mxCell>
+        <mxCell id="order-items-entity" value="Order Items" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="1" vertex="1">
+          <mxGeometry x="640" y="550" width="200" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="order-items-attrs" value="$id: ID&#xa;orderId: Relationship → Orders *&#xa;menuItemId: String(100) *&#xa;name: String(200) *&#xa;imageUrl: URL&#xa;notes: String(500)&#xa;price: Float (min:0) *&#xa;subtotal: Float (min:0) *&#xa;quantity: Integer (min:1) *&#xa;$createdAt: DateTime&#xa;$updatedAt: DateTime" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" parent="order-items-entity" vertex="1">
+          <mxGeometry y="26" width="200" height="164" as="geometry" />
+        </mxCell>
+        <mxCell id="payments-entity" value="Payments" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#f5f5f5;strokeColor=#666666;" parent="1" vertex="1">
+          <mxGeometry x="920" y="80" width="200" height="240" as="geometry" />
+        </mxCell>
+        <mxCell id="payments-attrs" value="$id: ID&#xa;userId: String(100) *&#xa;orderId: Relationship → Orders&#xa;transactionId: String(200)&#xa;transactionRef: String(200)&#xa;currency: String(10) (default: VND)&#xa;failureReason: String(500)&#xa;refundReason: String(500)&#xa;rawResponse: String(5000)&#xa;provider: Enum * (cod/momo/zalopay/vnpay)&#xa;method: Enum (cash/e-wallet/bank_transfer)&#xa;status: Enum * (pending/completed/failed/refunded)&#xa;amount: Float (min:0) *&#xa;refundAmount: Float (min:0)&#xa;refundedAt: DateTime&#xa;$createdAt: DateTime&#xa;$updatedAt: DateTime" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" parent="payments-entity" vertex="1">
+          <mxGeometry y="26" width="200" height="214" as="geometry" />
+        </mxCell>
+        <mxCell id="drones-entity" value="Drones" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#b1ddf0;strokeColor=#10739e;" parent="1" vertex="1">
+          <mxGeometry x="920" y="380" width="200" height="280" as="geometry" />
+        </mxCell>
+        <mxCell id="drones-attrs" value="$id: ID&#xa;code: String(50) *&#xa;name: String(100) *&#xa;model: String(100)&#xa;assignedOrderId: String(100)&#xa;status: Enum * (available/busy/maintenance/offline)&#xa;batteryLevel: Integer (min:0, max:100) (default: 100)&#xa;totalFlights: Integer (default: 0)&#xa;currentLatitude: Float (min:-90, max:90)&#xa;currentLongitude: Float (min:-180, max:180)&#xa;maxPayload: Float (default: 5)&#xa;currentPayload: Float (default: 0)&#xa;maxSpeed: Float (default: 50)&#xa;maxRange: Float (default: 10)&#xa;totalDistance: Float (default: 0)&#xa;isActive: Boolean (default: true)&#xa;lastMaintenanceAt: DateTime&#xa;nextMaintenanceAt: DateTime&#xa;$createdAt: DateTime&#xa;$updatedAt: DateTime" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" parent="drones-entity" vertex="1">
+          <mxGeometry y="26" width="200" height="254" as="geometry" />
+        </mxCell>
+        <mxCell id="drone-events-entity" value="Drone Events" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#cdeb8b;strokeColor=#36393d;" parent="1" vertex="1">
+          <mxGeometry x="910" y="760" width="200" height="221" as="geometry" />
+        </mxCell>
+        <mxCell id="drone-events-attrs" value="$id: ID&#xa;droneId: Relationship → Drones&#xa;orderId: String(100)&#xa;payload: String(2000)&#xa;description: String(500)&#xa;eventType: Enum * (takeoff/landing/delivery_start/delivery_complete/battery_low/maintenance/error)&#xa;latitude: Float&#xa;longitude: Float&#xa;altitude: Float&#xa;speed: Float&#xa;batteryLevel: Integer (min:0, max:100) (default: 100)&#xa;$createdAt: DateTime&#xa;$updatedAt: DateTime" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" parent="drone-events-entity" vertex="1">
+          <mxGeometry y="26" width="200" height="195" as="geometry" />
+        </mxCell>
+        <mxCell id="notifications-entity" value="Notifications" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#fad7ac;strokeColor=#b46504;" parent="1" vertex="1">
+          <mxGeometry x="-380" y="70" width="340" height="280" as="geometry" />
+        </mxCell>
+        <mxCell id="notifications-attrs" value="$id: ID&#xa;userId: String(100) *&#xa;title: String(200) *&#xa;body: String(1000) *&#xa;data: String(2000)&#xa;imageUrl: URL&#xa;actionUrl: String(500)&#xa;fcmToken: String(500)&#xa;type: Enum * (order_status/promotion/system/drone_update)&#xa;channel: Enum * (push/email/sms/in_app)&#xa;status: Enum * (pending/sent/delivered/failed/read)&#xa;sentAt: DateTime&#xa;readAt: DateTime&#xa;$createdAt: DateTime&#xa;$updatedAt: DateTime" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" parent="notifications-entity" vertex="1">
+          <mxGeometry y="26" width="340" height="254" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-user-restaurants" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=ERmany;endFill=0;startArrow=ERone;startFill=0;" parent="1" source="user-entity" target="restaurants-entity" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-user-restaurants-label" value="owns" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="rel-user-restaurants" vertex="1" connectable="0">
+          <mxGeometry x="-0.2" y="1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel-restaurants-menu" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;endArrow=ERmany;endFill=0;startArrow=ERone;startFill=0;" parent="1" source="restaurants-entity" target="menu-entity" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-restaurants-menu-label" value="has" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="rel-restaurants-menu" vertex="1" connectable="0">
+          <mxGeometry x="-0.2" y="1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel-categories-menu" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;endArrow=ERmany;endFill=0;startArrow=ERone;startFill=0;" parent="1" source="categories-entity" target="menu-entity" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-categories-menu-label" value="belongs to" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="rel-categories-menu" vertex="1" connectable="0">
+          <mxGeometry x="-0.2" y="1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel-user-orders" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=ERmany;endFill=0;startArrow=ERone;startFill=0;" parent="1" source="user-entity" target="orders-entity" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="195" />
+              <mxPoint x="750" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel-user-orders-label" value="places" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="rel-user-orders" vertex="1" connectable="0">
+          <mxGeometry x="-0.2" y="1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel-restaurants-orders" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;endArrow=ERmany;endFill=0;startArrow=ERone;startFill=0;" parent="1" source="restaurants-entity" target="orders-entity" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="320" y="550" />
+              <mxPoint x="320" y="610" />
+              <mxPoint x="610" y="610" />
+              <mxPoint x="610" y="250" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel-restaurants-orders-label" value="receives" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="rel-restaurants-orders" vertex="1" connectable="0">
+          <mxGeometry x="-0.2" y="1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel-orders-items" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;endArrow=ERmany;endFill=0;startArrow=ERone;startFill=0;" parent="1" source="orders-entity" target="order-items-entity" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-orders-items-label" value="contains" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="rel-orders-items" vertex="1" connectable="0">
+          <mxGeometry x="-0.2" y="1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel-orders-payments" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;endArrow=ERone;endFill=0;startArrow=ERone;startFill=0;" parent="1" source="orders-entity" target="payments-entity" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-orders-payments-label" value="paid by" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="rel-orders-payments" vertex="1" connectable="0">
+          <mxGeometry x="-0.2" y="1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel-orders-drones" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.75;exitDx=0;exitDy=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;endArrow=ERmany;endFill=0;startArrow=ERone;startFill=0;" parent="1" source="orders-entity" target="drones-entity" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-orders-drones-label" value="delivered by" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="rel-orders-drones" vertex="1" connectable="0">
+          <mxGeometry x="-0.2" y="1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel-drones-events" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;endArrow=ERmany;endFill=0;startArrow=ERone;startFill=0;" parent="1" source="drones-entity" target="drone-events-entity" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-drones-events-label" value="logs" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="rel-drones-events" vertex="1" connectable="0">
+          <mxGeometry x="-0.2" y="1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel-user-notifications" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=ERmany;endFill=0;startArrow=ERone;startFill=0;" parent="1" source="user-entity" target="notifications-entity" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-user-notifications-label" value="receives" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="rel-user-notifications" vertex="1" connectable="0">
+          <mxGeometry x="-0.2" y="1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="title" value="FoodFast Simplified Database ERD&#xa;10 Core Entities - No Customizations, Reviews, Promotions, or Audit Logs" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;fontStyle=1" parent="1" vertex="1">
+          <mxGeometry x="350" y="-270" width="450" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-box" value="LEGEND" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#f5f5f5;strokeColor=#666666;" parent="1" vertex="1">
+          <mxGeometry x="1418" y="127" width="200" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-content" value="* = Required field&#xa;→ = Relationship&#xa;Enum = Predefined values&#xa;&#xa;Relationships:&#xa;1 (one) → N (many)&#xa;1 (one) → 1 (one)" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" parent="legend-box" vertex="1">
+          <mxGeometry y="26" width="200" height="154" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

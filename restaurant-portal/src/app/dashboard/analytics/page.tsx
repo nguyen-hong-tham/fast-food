@@ -23,9 +23,14 @@ export default function AnalyticsPage() {
   const COLORS = ['#f58b20', '#22c55e', '#3b82f6', '#a855f7', '#ef4444'];
 
   useEffect(() => {
-    if (restaurant?.$id) {
-      fetchAnalytics();
-    }
+    const loadAnalytics = async () => {
+      if (restaurant?.$id) {
+        await fetchAnalytics();
+      } else {
+        setIsLoading(false);
+      }
+    };
+    loadAnalytics();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restaurant]);
 
@@ -103,7 +108,7 @@ export default function AnalyticsPage() {
         totalRevenue,
         totalOrders,
         averageOrderValue: avgOrderValue,
-        averageRating: restaurant?.averageRating || 0,
+        averageRating: restaurant?.rating || 0, // Changed from averageRating to rating
       });
       setRevenueData(revenueByDay);
       setCategoryData(categoryStats);
@@ -119,6 +124,19 @@ export default function AnalyticsPage() {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+      </div>
+    );
+  }
+
+  if (!restaurant) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">No Restaurant Found</h2>
+          <p className="text-gray-600">
+            You need to have a restaurant associated with your account to view analytics.
+          </p>
+        </div>
       </div>
     );
   }

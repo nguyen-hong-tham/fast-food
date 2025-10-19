@@ -31,6 +31,8 @@ export default function OrdersPage() {
       // Set up real-time subscription
       const interval = setInterval(fetchOrders, 5000); // Refresh every 5 seconds
       return () => clearInterval(interval);
+    } else {
+      setIsLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restaurant]);
@@ -95,6 +97,19 @@ export default function OrdersPage() {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+      </div>
+    );
+  }
+
+  if (!restaurant) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">No Restaurant Found</h2>
+          <p className="text-gray-600">
+            You need to have a restaurant associated with your account to manage orders.
+          </p>
+        </div>
       </div>
     );
   }
