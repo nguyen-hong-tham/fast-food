@@ -18,13 +18,15 @@ export default function MenuItemModal({ item, restaurantId, onClose }: MenuItemM
     name: item?.name || '',
     description: item?.description || '',
     price: item?.price || 0,
+    calories: item?.calories || 100,
+    protein: item?.protein || 10,
     category: item?.category || 'main_course',
     preparationTime: item?.preparationTime || 15,
     isAvailable: item?.isAvailable ?? true,
     tags: item?.tags?.join(', ') || '',
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string>(item?.image || '');
+  const [imagePreview, setImagePreview] = useState<string>(item?.image_url || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -49,7 +51,7 @@ export default function MenuItemModal({ item, restaurantId, onClose }: MenuItemM
   };
 
   const uploadImage = async (): Promise<string | undefined> => {
-    if (!imageFile) return item?.image;
+    if (!imageFile) return item?.image_url;
 
     try {
       const fileId = ID.unique();
@@ -67,19 +69,34 @@ export default function MenuItemModal({ item, restaurantId, onClose }: MenuItemM
     setIsSubmitting(true);
 
     try {
+      // Validate image is provided for new items
+      if (!item && !imageFile) {
+        setError('Please upload an image for the menu item');
+        setIsSubmitting(false);
+        return;
+      }
+
       // Upload image if new file selected
       const imageUrl = await uploadImage();
+
+      if (!imageUrl) {
+        setError('Image is required');
+        setIsSubmitting(false);
+        return;
+      }
 
       const data = {
         restaurantId,
         name: formData.name,
         description: formData.description,
         price: Number(formData.price),
+        calories: Number(formData.calories),
+        protein: Number(formData.protein),
         category: formData.category,
         preparationTime: Number(formData.preparationTime),
         isAvailable: formData.isAvailable,
         tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
-        image: imageUrl,
+        image_url: imageUrl, // ✅ Fixed: Use image_url to match database schema
       };
 
       if (item) {
@@ -134,7 +151,7 @@ export default function MenuItemModal({ item, restaurantId, onClose }: MenuItemM
           {/* Image Upload */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Image
+              Image <span className="text-red-500">*</span>
             </label>
             <div className="flex items-start gap-4">
               {imagePreview && (
@@ -143,18 +160,30 @@ export default function MenuItemModal({ item, restaurantId, onClose }: MenuItemM
                   <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
                 </div>
               )}
-              <label className="flex-1 flex flex-col items-center px-4 py-6 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary-500 transition-colors">
-                <Upload className="w-8 h-8 text-gray-400 mb-2" />
-                <span className="text-sm text-gray-600">Click to upload image</span>
+              <label className={`flex-1 flex flex-col items-center px-4 py-6 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${
+                !item && !imageFile 
+                  ? 'border-red-300 hover:border-red-400 bg-red-50' 
+                  : 'border-gray-300 hover:border-primary-500'
+              }`}>
+                <Upload className={`w-8 h-8 mb-2 ${!item && !imageFile ? 'text-red-400' : 'text-gray-400'}`} />
+                <span className={`text-sm ${!item && !imageFile ? 'text-red-600 font-medium' : 'text-gray-600'}`}>
+                  {!item && !imageFile ? 'Image required - Click to upload' : 'Click to upload image'}
+                </span>
                 <span className="text-xs text-gray-400 mt-1">PNG, JPG up to 5MB</span>
                 <input
                   type="file"
                   accept="image/*"
                   onChange={handleImageChange}
                   className="hidden"
+                  required={!item}
                 />
               </label>
             </div>
+            {!item && !imageFile && (
+              <p className="mt-2 text-sm text-red-600">
+                ⚠️ You must upload an image before submitting
+              </p>
+            )}
           </div>
 
           {/* Name */}
@@ -167,7 +196,7 @@ export default function MenuItemModal({ item, restaurantId, onClose }: MenuItemM
               required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="text-black w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               placeholder="e.g. Phở Bò"
             />
           </div>
@@ -182,7 +211,7 @@ export default function MenuItemModal({ item, restaurantId, onClose }: MenuItemM
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={3}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="text-black w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               placeholder="Describe your dish..."
             />
           </div>
@@ -199,7 +228,7 @@ export default function MenuItemModal({ item, restaurantId, onClose }: MenuItemM
                 min="0"
                 value={formData.price}
                 onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="text-black w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 placeholder="50000"
               />
             </div>
@@ -212,7 +241,7 @@ export default function MenuItemModal({ item, restaurantId, onClose }: MenuItemM
                 required
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="text-black w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 {categories.map((cat) => (
                   <option key={cat.value} value={cat.value}>
@@ -220,6 +249,43 @@ export default function MenuItemModal({ item, restaurantId, onClose }: MenuItemM
                   </option>
                 ))}
               </select>
+            </div>
+          </div>
+
+          {/* Calories and Protein */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Calories (kcal) *
+              </label>
+              <input
+                type="number"
+                required
+                min="0"
+                max="10000"
+                value={formData.calories}
+                onChange={(e) => setFormData({ ...formData, calories: Number(e.target.value) })}
+                className="text-black w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="250"
+              />
+              <p className="mt-1 text-xs text-gray-500">Energy content (0-10000 kcal)</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Protein (g) *
+              </label>
+              <input
+                type="number"
+                required
+                min="5"
+                max="10000"
+                value={formData.protein}
+                onChange={(e) => setFormData({ ...formData, protein: Number(e.target.value) })}
+                className="text-black w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="15"
+              />
+              <p className="mt-1 text-xs text-gray-500">Protein content (5-10000g)</p>
             </div>
           </div>
 
@@ -235,8 +301,8 @@ export default function MenuItemModal({ item, restaurantId, onClose }: MenuItemM
                 min="1"
                 value={formData.preparationTime}
                 onChange={(e) => setFormData({ ...formData, preparationTime: Number(e.target.value) })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="15"
+                className="text-black w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="10"
               />
             </div>
 
@@ -265,7 +331,7 @@ export default function MenuItemModal({ item, restaurantId, onClose }: MenuItemM
               type="text"
               value={formData.tags}
               onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="text-black w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               placeholder="spicy, vegetarian, popular"
             />
           </div>

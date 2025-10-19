@@ -173,9 +173,9 @@ export default function MenuPage() {
             <div key={item.$id} className="bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transition-shadow">
               {/* Image */}
               <div className="relative h-48 bg-gray-200">
-                {item.image ? (
+                {item.image_url ? (
                   <Image
-                    src={item.image}
+                    src={item.image_url}
                     alt={item.name}
                     fill
                     className="object-cover"
