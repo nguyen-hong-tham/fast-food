@@ -46,9 +46,14 @@ export interface MenuItem {
   description: string;
   price: number;
   category: string;
-  image?: string;
+  image_url: string; // Required field
+  calories: number; // Required: 0-10000
+  protein: number; // Required: 5-10000
   isAvailable: boolean;
   preparationTime: number; // minutes
+  rating?: number; // 0-5
+  stock?: number; // Min: 0
+  soldCount?: number;
   tags?: string[];
   $createdAt: string;
   $updatedAt: string;
