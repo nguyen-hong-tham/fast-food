@@ -20,7 +20,7 @@ const navigation = [
   { name: 'Menu', href: '/dashboard/menu', icon: UtensilsCrossed },
   { name: 'Orders', href: '/dashboard/orders', icon: ShoppingBag },
   { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
-  { name: 'Settings', href: '/dashboard/settings', icon: Settings },
+  { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
 export default function DashboardLayout({

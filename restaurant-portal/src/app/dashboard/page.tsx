@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { databases, Query } from '@/lib/appwrite';
 import { config } from '@/config';
 import { useAuthStore } from '@/store/authStore';
@@ -8,14 +9,28 @@ import { DashboardStats } from '@/types';
 import { BarChart3, TrendingUp, ShoppingBag, Clock } from 'lucide-react';
 
 export default function DashboardPage() {
+  const router = useRouter();
   const { user, restaurant } = useAuthStore();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Redirect to setup if no restaurant
   useEffect(() => {
-    if (restaurant?.$id) {
-      fetchDashboardStats();
+    if (!isLoading && !restaurant) {
+      router.push('/setup');
     }
+  }, [restaurant, isLoading, router]);
+
+  useEffect(() => {
+    const loadStats = async () => {
+      if (restaurant?.$id) {
+        await fetchDashboardStats();
+      } else {
+        // No restaurant yet, stop loading
+        setIsLoading(false);
+      }
+    };
+    loadStats();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restaurant]);
 
@@ -58,6 +73,7 @@ export default function DashboardPage() {
     }
   };
 
+  // Show loading state
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -66,6 +82,116 @@ export default function DashboardPage() {
     );
   }
 
+  // If no restaurant, the useEffect will redirect to /setup
+  // This is just a fallback UI
+  if (!restaurant) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <p className="text-gray-600">Redirecting to restaurant setup...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Restaurant approval status banners
+  const getStatusBanner = () => {
+    if (!restaurant) return null;
+
+    if (restaurant.status === 'pending') {
+      return (
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <Clock className="h-5 w-5 text-yellow-400" />
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-yellow-800">
+                Pending Approval
+              </h3>
+              <div className="mt-2 text-sm text-yellow-700">
+                <p>
+                  Your restaurant registration is currently under review. You&apos;ll receive an email notification within 24-48 hours regarding the approval status.
+                </p>
+                <p className="mt-2">
+                  In the meantime, you can complete your restaurant profile by adding more information in the <a href="/settings" className="font-medium underline">Settings</a> page.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (restaurant.status === 'rejected') {
+      return (
+        <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">
+                Registration Rejected
+              </h3>
+              <div className="mt-2 text-sm text-red-700">
+                <p>
+                  Unfortunately, your restaurant registration was not approved.
+                </p>
+                {restaurant?.rejectionReason && (
+                  <p className="mt-2">
+                    <strong>Reason:</strong> {restaurant.rejectionReason}
+                  </p>
+                )}
+                <p className="mt-2">
+                  Please contact support at <a href="mailto:support@foodfast.vn" className="font-medium underline">support@foodfast.vn</a> for more information.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (restaurant.status === 'approved') {
+      return (
+        <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-lg">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-blue-800">
+                Restaurant Approved - Complete Your Profile
+              </h3>
+              <div className="mt-2 text-sm text-blue-700">
+                <p>
+                  Congratulations! Your restaurant has been approved. Please complete your profile to activate your restaurant:
+                </p>
+                <ul className="mt-2 list-disc list-inside">
+                  <li>Add menu items</li>
+                  <li>Upload restaurant logo and cover image</li>
+                  <li>Set operating hours</li>
+                  <li>Add bank account details</li>
+                </ul>
+                <p className="mt-2">
+                  Go to <a href="/settings" className="font-medium underline">Settings</a> to complete your profile.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return null;
+  };
+
+  // Main dashboard render
   return (
     <div className="space-y-6">
       <div>
@@ -74,6 +200,9 @@ export default function DashboardPage() {
           Welcome back, {restaurant?.name || user?.name}!
         </p>
       </div>
+
+      {/* Restaurant Status Alerts */}
+      {getStatusBanner()}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

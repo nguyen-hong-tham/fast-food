@@ -1,9 +1,10 @@
 export interface User {
   $id: string;
+  accountId: string; // Appwrite account ID (used for authentication)
   email: string;
   name: string;
   phone?: string;
-  role: 'customer' | 'restaurant_owner' | 'admin' | 'drone_operator';
+  role: 'customer' | 'restaurant' | 'admin'; // ✅ FIXED: Match Appwrite enum values
   avatar?: string;
   $createdAt: string;
   $updatedAt: string;
@@ -19,19 +20,21 @@ export interface Restaurant {
   email: string;
   latitude: number;
   longitude: number;
-  image?: string;
+  logo?: string;
   coverImage?: string;
-  status: 'pending' | 'approved' | 'rejected' | 'suspended';
-  cuisineTypes: string[];
-  openingHours: {
-    [key: string]: { open: string; close: string; closed?: boolean };
-  };
-  deliveryRadius: number; // km
-  averageRating?: number;
-  totalReviews?: number;
-  isActive: boolean;
+  status: 'pending' | 'approved' | 'rejected' | 'active' | 'inactive';
+  operatingHours?: string; // JSON string in database
+  rating?: number;
+  totalOrders?: number;
+  totalRevenue?: number;
   businessLicense?: string;
-  foodSafetyCert?: string;
+  taxCode?: string;
+  bankAccount?: string;
+  bankName?: string;
+  approvedAt?: string;
+  approvedBy?: string;
+  rejectionReason?: string;
+  isActive: boolean;
   $createdAt: string;
   $updatedAt: string;
 }
