@@ -23,11 +23,10 @@ export interface Restaurant {
   logo?: string;
   coverImage?: string;
   status: 'pending' | 'approved' | 'rejected' | 'active' | 'inactive';
-  operatingHours?: string; // JSON string in database
   rating?: number;
   totalOrders?: number;
   totalRevenue?: number;
-  businessLicense?: string;
+  businessLicense?: string; // Mapped from database field: business_license
   taxCode?: string;
   bankAccount?: string;
   bankName?: string;
@@ -35,6 +34,10 @@ export interface Restaurant {
   approvedBy?: string;
   rejectionReason?: string;
   isActive: boolean;
+  deliveryRadius?: number;
+  openingHours?: string;
+  imageUrl?: string;
+  totalReviews?: number;
   $createdAt: string;
   $updatedAt: string;
 }
