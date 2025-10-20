@@ -100,6 +100,11 @@ export const useAuthStore = create<AuthState>()(
                 imageUrl: restaurantDoc.imageUrl,
                 rating: restaurantDoc.rating,
                 totalReviews: restaurantDoc.totalReviews,
+                // ✅ Business fields from database
+                businessLicense: restaurantDoc.businessLicense,
+                taxCode: restaurantDoc.taxCode,
+                bankAccount: restaurantDoc.bankAccount,
+                bankName: restaurantDoc.bankName,
                 $createdAt: restaurantDoc.$createdAt,
                 $updatedAt: restaurantDoc.$updatedAt,
               } as Restaurant;

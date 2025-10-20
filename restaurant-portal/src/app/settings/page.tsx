@@ -7,29 +7,18 @@ import { config } from '@/config';
 import { Loader2, Save, Upload, Info } from 'lucide-react';
 
 interface RestaurantSettings {
-  // Basic Info
+  // Basic Info (from database)
   name: string;
   description: string;
   phone: string;
-  email: string;
+  email: string;  // Optional - restaurant contact email (different from owner's login email)
   address: string;
   
-  // Business Info (to be filled after registration)
-  businessLicense: string;
+  // Business Info (optional fields)
+  businessLicense: string;  // ✅ camelCase - matches database
   taxCode: string;
   bankAccount: string;
   bankName: string;
-  
-  // Operating Hours (to be filled after registration)
-  operatingHours: {
-    monday: { open: string; close: string; closed?: boolean };
-    tuesday: { open: string; close: string; closed?: boolean };
-    wednesday: { open: string; close: string; closed?: boolean };
-    thursday: { open: string; close: string; closed?: boolean };
-    friday: { open: string; close: string; closed?: boolean };
-    saturday: { open: string; close: string; closed?: boolean };
-    sunday: { open: string; close: string; closed?: boolean };
-  };
 }
 
 export default function SettingsPage() {
@@ -48,15 +37,6 @@ export default function SettingsPage() {
     taxCode: '',
     bankAccount: '',
     bankName: '',
-    operatingHours: {
-      monday: { open: '09:00', close: '22:00' },
-      tuesday: { open: '09:00', close: '22:00' },
-      wednesday: { open: '09:00', close: '22:00' },
-      thursday: { open: '09:00', close: '22:00' },
-      friday: { open: '09:00', close: '22:00' },
-      saturday: { open: '09:00', close: '22:00' },
-      sunday: { open: '09:00', close: '22:00' },
-    },
   });
 
   useEffect(() => {
@@ -72,25 +52,12 @@ export default function SettingsPage() {
       name: restaurant.name || '',
       description: restaurant.description || '',
       phone: restaurant.phone || '',
-      email: restaurant.email || '',
+      email: restaurant.email || '',  // Restaurant contact email (optional)
       address: restaurant.address || '',
       businessLicense: restaurant.businessLicense || '',
       taxCode: restaurant.taxCode || '',
       bankAccount: restaurant.bankAccount || '',
       bankName: restaurant.bankName || '',
-      operatingHours: restaurant.operatingHours
-        ? typeof restaurant.operatingHours === 'string'
-          ? JSON.parse(restaurant.operatingHours)
-          : restaurant.operatingHours
-        : {
-            monday: { open: '09:00', close: '22:00' },
-            tuesday: { open: '09:00', close: '22:00' },
-            wednesday: { open: '09:00', close: '22:00' },
-            thursday: { open: '09:00', close: '22:00' },
-            friday: { open: '09:00', close: '22:00' },
-            saturday: { open: '09:00', close: '22:00' },
-            sunday: { open: '09:00', close: '22:00' },
-          },
     });
   };
 
@@ -102,7 +69,7 @@ export default function SettingsPage() {
     setMessage(null);
 
     try {
-      // Update restaurant document
+      // Update restaurant document - only send fields that exist in database
       await databases.updateDocument(
         config.appwrite.databaseId,
         config.appwrite.restaurantsCollectionId,
@@ -111,12 +78,12 @@ export default function SettingsPage() {
           name: settings.name,
           description: settings.description,
           phone: settings.phone,
+          email: settings.email || '',  // Optional restaurant contact email
           address: settings.address,
-          businessLicense: settings.businessLicense,
-          taxCode: settings.taxCode,
-          bankAccount: settings.bankAccount,
-          bankName: settings.bankName,
-          operatingHours: JSON.stringify(settings.operatingHours),
+          businessLicense: settings.businessLicense || undefined,  // Optional
+          taxCode: settings.taxCode || undefined,  // Optional
+          bankAccount: settings.bankAccount || undefined,  // Optional
+          bankName: settings.bankName || undefined,  // Optional
         }
       );
 
@@ -237,15 +204,18 @@ export default function SettingsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email *
+                  Restaurant Contact Email
                 </label>
                 <input
                   type="email"
-                  required
                   value={settings.email}
                   onChange={(e) => setSettings({ ...settings, email: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-black"
+                  placeholder="Optional - for customer inquiries"
                 />
+                <p className="mt-1 text-xs text-gray-500">
+                  Public contact email for customers (different from your login email)
+                </p>
               </div>
             </div>
 
@@ -327,72 +297,6 @@ export default function SettingsPage() {
                 />
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Operating Hours */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold mb-4">Operating Hours</h2>
-          <p className="text-sm text-gray-600 mb-4">
-            Set your restaurant&apos;s operating hours for each day of the week.
-          </p>
-          <div className="space-y-4">
-            {Object.entries(settings.operatingHours).map(([day, hours]) => (
-              <div key={day} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
-                <div className="capitalize font-medium text-gray-700">{day}</div>
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1">Open</label>
-                  <input
-                    type="time"
-                    value={hours.open}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        operatingHours: {
-                          ...settings.operatingHours,
-                          [day]: { ...hours, open: e.target.value },
-                        },
-                      })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-black"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1">Close</label>
-                  <input
-                    type="time"
-                    value={hours.close}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        operatingHours: {
-                          ...settings.operatingHours,
-                          [day]: { ...hours, close: e.target.value },
-                        },
-                      })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-black"
-                  />
-                </div>
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={hours.closed || false}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        operatingHours: {
-                          ...settings.operatingHours,
-                          [day]: { ...hours, closed: e.target.checked },
-                        },
-                      })
-                    }
-                    className="mr-2"
-                  />
-                  <label className="text-sm text-gray-600">Closed</label>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
 
