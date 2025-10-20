@@ -20,7 +20,7 @@ export default function MenuItemModal({ item, restaurantId, onClose }: MenuItemM
     price: item?.price || 0,
     calories: item?.calories || 100,
     protein: item?.protein || 10,
-    category: item?.category || 'main_course',
+    // ❌ REMOVED: category - database uses categoryId relationship
     preparationTime: item?.preparationTime || 15,
     isAvailable: item?.isAvailable ?? true,
     tags: item?.tags?.join(', ') || '',
@@ -30,13 +30,7 @@ export default function MenuItemModal({ item, restaurantId, onClose }: MenuItemM
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const categories = [
-    { value: 'appetizers', label: 'Appetizers' },
-    { value: 'main_course', label: 'Main Course' },
-    { value: 'desserts', label: 'Desserts' },
-    { value: 'beverages', label: 'Beverages' },
-    { value: 'sides', label: 'Sides' },
-  ];
+  // ❌ REMOVED: categories array - database uses categoryId relationship
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -92,11 +86,11 @@ export default function MenuItemModal({ item, restaurantId, onClose }: MenuItemM
         price: Number(formData.price),
         calories: Number(formData.calories),
         protein: Number(formData.protein),
-        category: formData.category,
+        // ❌ REMOVED: category field - database uses categoryId relationship
+        image_url: imageUrl,
         preparationTime: Number(formData.preparationTime),
         isAvailable: formData.isAvailable,
         tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
-        image_url: imageUrl, // ✅ Fixed: Use image_url to match database schema
       };
 
       if (item) {
@@ -216,40 +210,20 @@ export default function MenuItemModal({ item, restaurantId, onClose }: MenuItemM
             />
           </div>
 
-          {/* Price and Category */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Price (₫) *
-              </label>
-              <input
-                type="number"
-                required
-                min="0"
-                value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
-                className="text-black w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="50000"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Category *
-              </label>
-              <select
-                required
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="text-black w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-              >
-                {categories.map((cat) => (
-                  <option key={cat.value} value={cat.value}>
-                    {cat.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+          {/* Price */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Price (₫) *
+            </label>
+            <input
+              type="number"
+              required
+              min="0"
+              value={formData.price}
+              onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
+              className="text-black w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              placeholder="50000"
+            />
           </div>
 
           {/* Calories and Protein */}
