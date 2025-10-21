@@ -13,12 +13,11 @@ export default function MenuPage() {
   const { restaurant } = useAuthStore();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
 
-  const categories = ['all', 'appetizers', 'main_course', 'desserts', 'beverages', 'sides'];
 
   useEffect(() => {
     const loadMenu = async () => {
@@ -49,18 +48,42 @@ export default function MenuPage() {
   };
 
   const handleDelete = async (itemId: string) => {
-    if (!confirm('Are you sure you want to delete this menu item?')) return;
+    if (!confirm('Bạn có chắc chắn muốn xóa món ăn này? Hành động này không thể hoàn tác.')) return;
 
+    setIsDeleting(itemId);
+    
     try {
+      console.log('Đang xóa món ăn:', itemId);
+      
       await databases.deleteDocument(
         config.appwrite.databaseId,
         config.appwrite.menuCollectionId,
         itemId
       );
+      
+      console.log('Đã xóa thành công');
       setMenuItems(menuItems.filter(item => item.$id !== itemId));
-    } catch (error) {
+      alert('Đã xóa món ăn thành công!');
+    } catch (error: any) {
       console.error('Error deleting menu item:', error);
-      alert('Failed to delete menu item');
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        type: error.type,
+        response: error.response
+      });
+      
+      // Hiển thị lỗi chi tiết cho user
+      let errorMessage = 'Không thể xóa món ăn. ';
+      if (error.message) {
+        errorMessage += error.message;
+      } else {
+        errorMessage += 'Vui lòng thử lại!';
+      }
+      
+      alert('❌ ' + errorMessage);
+    } finally {
+      setIsDeleting(null);
     }
   };
 
@@ -84,8 +107,7 @@ export default function MenuPage() {
 
   const filteredItems = menuItems.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+    return matchesSearch;
   });
 
   if (isLoading) {
@@ -140,19 +162,6 @@ export default function MenuPage() {
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
-
-          {/* Category filter */}
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-          >
-            {categories.map(cat => (
-              <option key={cat} value={cat}>
-                {cat.replace('_', ' ').toUpperCase()}
-              </option>
-            ))}
-          </select>
         </div>
       </div>
 
@@ -208,6 +217,34 @@ export default function MenuPage() {
                   {item.description}
                 </p>
 
+                {/* Action Buttons */}
+                <div className="flex gap-2 pt-3 border-t border-gray-100">
+                  <button
+                    onClick={() => handleEdit(item)}
+                    disabled={isDeleting === item.$id}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Pencil className="w-4 h-4" />
+                    <span className="font-medium">Edit</span>
+                  </button>
+                  <button
+                    onClick={() => handleDelete(item.$id)}
+                    disabled={isDeleting === item.$id}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isDeleting === item.$id ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                        <span className="font-medium">Đang xóa...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 className="w-4 h-4" />
+                        <span className="font-medium">Delete</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           ))}

@@ -78,25 +78,32 @@ export default function SettingsPage() {
         address: settings.address.trim(),
       };
 
-      // Only add optional fields if they have values (non-empty strings)
-      if (settings.email && settings.email.trim()) {
+      // Validate and add optional fields - ensure they're strings, not arrays
+      if (settings.email && typeof settings.email === 'string' && settings.email.trim()) {
         updateData.email = settings.email.trim();
       }
-      if (settings.businessLicense && settings.businessLicense.trim()) {
+      if (settings.businessLicense && typeof settings.businessLicense === 'string' && settings.businessLicense.trim()) {
         updateData.businessLicense = settings.businessLicense.trim();
       }
-      if (settings.taxCode && settings.taxCode.trim()) {
+      if (settings.taxCode && typeof settings.taxCode === 'string' && settings.taxCode.trim()) {
         updateData.taxCode = settings.taxCode.trim();
       }
-      if (settings.bankAccount && settings.bankAccount.trim()) {
+      if (settings.bankAccount && typeof settings.bankAccount === 'string' && settings.bankAccount.trim()) {
         updateData.bankAccount = settings.bankAccount.trim();
       }
-      if (settings.bankName && settings.bankName.trim()) {
+      if (settings.bankName && typeof settings.bankName === 'string' && settings.bankName.trim()) {
         updateData.bankName = settings.bankName.trim();
       }
 
       console.log('📤 Sending update data:', updateData);
-      console.log('📤 Data types:', Object.entries(updateData).map(([k, v]) => `${k}: ${typeof v}`).join(', '));
+      console.log('📤 Data types:', Object.entries(updateData).map(([k, v]) => `${k}: ${typeof v} ${Array.isArray(v) ? '[ARRAY]' : ''}`).join(', '));
+      
+      // Double check no arrays
+      for (const [key, value] of Object.entries(updateData)) {
+        if (Array.isArray(value)) {
+          throw new Error(`Field ${key} is an array, must be string`);
+        }
+      }
 
       await databases.updateDocument(
         config.appwrite.databaseId,
@@ -113,10 +120,24 @@ export default function SettingsPage() {
       // Refresh restaurant data in store
       // You might want to add a method in authStore to reload restaurant data
     } catch (error: any) {
-      console.error('Error saving settings:', error);
+      console.error('❌ Error saving settings:', error);
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        type: error.type,
+        response: error.response
+      });
+      
+      let errorMessage = 'Failed to save settings: ';
+      if (error.message) {
+        errorMessage += error.message;
+      } else {
+        errorMessage += 'Unknown error';
+      }
+      
       setMessage({
         type: 'error',
-        text: `Failed to save settings: ${error.message}`,
+        text: errorMessage,
       });
     } finally {
       setIsSaving(false);
