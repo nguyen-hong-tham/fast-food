@@ -11,15 +11,8 @@ interface MenuCardProps {
 const MenuCard = ({ item: { $id, image_url, name, price }, restaurantId }: MenuCardProps) => {
     const { addItem } = useCartStore();
 
-    const handleViewDetails = () => {
-        // Temporarily disabled to avoid API errors
-        // router.push({
-        //     pathname: '/menu-detail',
-        //     params: { menuId: $id }
-        // });
-        
-        // Show alert instead
-        alert('Menu details coming soon! Use "Add to Cart" for now.');
+    const handlePress = () => {
+        router.push(`/menu-detail?menuId=${$id}&restaurantId=${restaurantId}`);
     };
 
     const handleQuickAdd = (e: any) => {
@@ -35,7 +28,7 @@ const MenuCard = ({ item: { $id, image_url, name, price }, restaurantId }: MenuC
         <TouchableOpacity 
             className="menu-card" 
             style={Platform.OS === 'android' ? { elevation: 10, shadowColor: '#878787'}: {}}
-            onPress={handleViewDetails}
+            onPress={handlePress}
             activeOpacity={0.7}
         >
             <Image 

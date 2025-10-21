@@ -1,6 +1,5 @@
 import CustomButton from "@/components/CustomButton";
 import CustomHeader from "@/components/CustomHeader";
-import { icons } from "@/constants";
 import { getMenuById } from "@/lib/appwrite";
 import { useCartStore } from "@/store/cart.store";
 import { CartCustomization, MenuItem } from "@/type";
@@ -10,12 +9,22 @@ import { ActivityIndicator, Alert, Image, ScrollView, Text, TouchableOpacity, Vi
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const MenuDetail = () => {
-    const { menuId } = useLocalSearchParams<{ menuId: string }>();
+    const { menuId, restaurantId } = useLocalSearchParams<{ menuId: string; restaurantId: string }>();
     const [menuItem, setMenuItem] = useState<MenuItem | null>(null);
     const [loading, setLoading] = useState(true);
     const [quantity, setQuantity] = useState(1);
     const [selectedCustomizations, setSelectedCustomizations] = useState<CartCustomization[]>([]);
     const { addItem } = useCartStore();
+
+    // Mock customizations based on Vietnamese food
+    const mockCustomizations: CartCustomization[] = [
+        { id: '1', name: 'Extra Rice (Cơm thêm)', price: 5000, type: 'addon' },
+        { id: '2', name: 'Extra Meat (Thịt thêm)', price: 15000, type: 'addon' },
+        { id: '3', name: 'Extra Vegetables (Rau thêm)', price: 8000, type: 'addon' },
+        { id: '4', name: 'Less Spicy (Ít cay)', price: 0, type: 'preference' },
+        { id: '5', name: 'No Vegetables (Không rau)', price: 0, type: 'preference' },
+        { id: '6', name: 'Extra Fish Sauce (Nước mắm thêm)', price: 2000, type: 'addon' },
+    ];
 
     useEffect(() => {
         const fetchMenuItem = async () => {
@@ -27,7 +36,7 @@ const MenuDetail = () => {
                 setMenuItem(item as unknown as MenuItem);
             } catch (error) {
                 console.error('Error fetching menu item:', error);
-                Alert.alert('Error', 'Failed to load menu item details');
+                Alert.alert('Error', 'Failed to load menu item details. Please try again.');
             } finally {
                 setLoading(false);
             }
@@ -50,41 +59,44 @@ const MenuDetail = () => {
     const calculateTotal = () => {
         if (!menuItem) return 0;
         const basePrice = menuItem.price * quantity;
-        const customizationsPrice = selectedCustomizations.reduce((sum, c) => sum + c.price, 0) * quantity;
-        return basePrice + customizationsPrice;
+        const customizationPrice = selectedCustomizations.reduce((sum, c) => sum + c.price, 0) * quantity;
+        return basePrice + customizationPrice;
     };
 
     const handleAddToCart = () => {
-        if (!menuItem) return;
+        if (!menuItem || !restaurantId) return;
 
-        addItem({
-            id: menuItem.$id,
-            name: menuItem.name,
-            price: menuItem.price,
-            image_url: menuItem.image_url,
-            quantity,
-            customizations: selectedCustomizations
-        });
+        addItem(
+            {
+                id: menuItem.$id,
+                name: menuItem.name,
+                price: menuItem.price,
+                image_url: menuItem.image_url,
+                customizations: selectedCustomizations
+            },
+            restaurantId
+        );
 
         Alert.alert(
-            'Added to Cart!',
-            `${quantity}x ${menuItem.name} has been added to your cart.`,
+            'Added to Cart',
+            `${quantity}x ${menuItem.name} has been added to your cart`,
             [
-                { text: 'View Cart', onPress: () => router.push('/(tabs)/cart') },
-                { text: 'Continue Shopping', style: 'cancel' }
+                { text: 'Continue Shopping', style: 'default' },
+                { 
+                    text: 'View Cart', 
+                    onPress: () => router.push('/cart' as any)
+                }
             ]
         );
     };
 
     if (loading) {
         return (
-            <SafeAreaView className="flex-1 bg-white" edges={['top']}>
-                <CustomHeader title="Menu Details" />
+            <SafeAreaView className="flex-1 bg-white">
+                <CustomHeader title="Menu Detail" />
                 <View className="flex-1 items-center justify-center">
-                    <ActivityIndicator size="large" color="#FE8C00" />
-                    <Text className="paragraph-regular text-gray-500 mt-4">
-                        Loading menu details...
-                    </Text>
+                    <ActivityIndicator size="large" color="#f59e0b" />
+                    <Text className="mt-4 text-gray-600">Loading menu item...</Text>
                 </View>
             </SafeAreaView>
         );
@@ -92,195 +104,137 @@ const MenuDetail = () => {
 
     if (!menuItem) {
         return (
-            <SafeAreaView className="flex-1 bg-white" edges={['top']}>
-                <CustomHeader title="Menu Details" />
+            <SafeAreaView className="flex-1 bg-white">
+                <CustomHeader title="Menu Detail" />
                 <View className="flex-1 items-center justify-center px-6">
-                    <Image
-                        source={icons.search}
-                        className="size-24 mb-6"
-                        resizeMode="contain"
-                        tintColor="#D1D5DB"
-                    />
-                    <Text className="h3-bold text-dark-100 text-center mb-2">
-                        Item Not Found
-                    </Text>
-                    <Text className="paragraph-regular text-gray-500 text-center">
-                        This menu item could not be found.
-                    </Text>
+                    <Text className="text-xl text-gray-600 text-center mb-4">Menu item not found</Text>
+                    <TouchableOpacity 
+                        className="bg-amber-500 px-6 py-3 rounded-lg"
+                        onPress={() => router.back()}
+                    >
+                        <Text className="text-white font-semibold">Go Back</Text>
+                    </TouchableOpacity>
                 </View>
             </SafeAreaView>
         );
     }
 
-    // Giả sử có customizations từ backend
-    const toppings: CartCustomization[] = [
-        { id: '1', name: 'Tomato', price: 0.5, type: 'topping' },
-        { id: '2', name: 'Onion', price: 0.3, type: 'topping' },
-        { id: '3', name: 'Cheese', price: 1.0, type: 'topping' },
-        { id: '4', name: 'Bacon', price: 1.5, type: 'topping' },
-    ];
-
-    const sides: CartCustomization[] = [
-        { id: '5', name: 'Fries', price: 3.0, type: 'side' },
-        { id: '6', name: 'Coleslaw', price: 2.5, type: 'side' },
-        { id: '7', name: 'Salad', price: 4.0, type: 'side' },
-        { id: '8', name: 'Vinegar', price: 0.5, type: 'side' },
-    ];
-
     return (
-        <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+        <SafeAreaView className="flex-1 bg-white">
             <CustomHeader title={menuItem.name} />
             
             <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-                {/* Image */}
-                <View className="items-center justify-center py-8 bg-gray-50">
-                    <Image
-                        source={{ uri: menuItem.image_url }}
-                        className="w-64 h-64"
-                        resizeMode="contain"
+                {/* Image Section */}
+                <View className="relative h-64 bg-gray-100">
+                    <Image 
+                        source={{ uri: menuItem.image_url }} 
+                        className="w-full h-full"
+                        resizeMode="cover"
                     />
+                    <View className="absolute top-4 right-4 bg-white px-3 py-1 rounded-full">
+                        <Text className="text-sm font-semibold text-amber-600">
+                            ⭐ {menuItem.rating ? menuItem.rating.toFixed(1) : '0.0'}
+                        </Text>
+                    </View>
                 </View>
 
-                <View className="px-6 pt-6">
-                    {/* Title & Price */}
-                    <View className="flex-row items-start justify-between mb-2">
-                        <View className="flex-1 mr-4">
-                            <Text className="h3-bold text-dark-100 mb-1">
-                                {menuItem.name}
-                            </Text>
-                            <Text className="body-regular text-gray-500">
-                                {menuItem.description}
-                            </Text>
-                        </View>
-                        <Text className="h3-bold text-primary">
-                            ${menuItem.price.toFixed(2)}
+                {/* Content Section */}
+                <View className="px-6 py-4">
+                    {/* Title and Price */}
+                    <View className="mb-4">
+                        <Text className="text-2xl font-bold text-gray-900 mb-2">{menuItem.name}</Text>
+                        <Text className="text-xl font-semibold text-amber-600">
+                            {menuItem.price.toLocaleString('vi-VN')}₫
                         </Text>
                     </View>
 
-                    {/* Rating */}
-                    <View className="flex-row items-center mb-4">
-                        <Image
-                            source={icons.star}
-                            className="size-5 mr-1"
-                            resizeMode="contain"
-                            tintColor="#FE8C00"
-                        />
-                        <Text className="paragraph-semibold text-dark-100 mr-1">
-                            {menuItem.rating}
-                        </Text>
-                        <Text className="body-regular text-gray-500">
-                            / 5
-                        </Text>
+                    {/* Description */}
+                    <View className="mb-6">
+                        <Text className="text-gray-700 leading-6">{menuItem.description}</Text>
                     </View>
 
                     {/* Nutrition Info */}
-                    <View className="flex-row items-center gap-x-6 mb-6 pb-6 border-b border-gray-200">
-                        <View className="flex-row items-center">
-                            <Text className="body-regular text-gray-500 mr-2">Calories:</Text>
-                            <Text className="paragraph-semibold text-dark-100">
-                                {menuItem.calories} Cal
-                            </Text>
+                    <View className="flex-row bg-gray-50 rounded-lg p-4 mb-6">
+                        <View className="flex-1">
+                            <Text className="text-sm text-gray-500">Calories</Text>
+                            <Text className="text-lg font-semibold text-gray-900">{menuItem.calories || 'N/A'}</Text>
                         </View>
-                        <View className="flex-row items-center">
-                            <Text className="body-regular text-gray-500 mr-2">Protein:</Text>
-                            <Text className="paragraph-semibold text-dark-100">
-                                {menuItem.protein}g
-                            </Text>
+                        <View className="flex-1">
+                            <Text className="text-sm text-gray-500">Protein</Text>
+                            <Text className="text-lg font-semibold text-gray-900">{menuItem.protein ? `${menuItem.protein}g` : 'N/A'}</Text>
+                        </View>
+                        <View className="flex-1">
+                            <Text className="text-sm text-gray-500">Stock</Text>
+                            <Text className="text-lg font-semibold text-gray-900">{menuItem.stock ?? 'Unlimited'}</Text>
                         </View>
                     </View>
 
-                    {/* Toppings */}
+                    {/* Customizations */}
                     <View className="mb-6">
-                        <Text className="h4-bold text-dark-100 mb-3">Toppings</Text>
-                        <View className="flex-row flex-wrap gap-3">
-                            {toppings.map((topping) => {
-                                const isSelected = selectedCustomizations.some(c => c.id === topping.id);
-                                return (
-                                    <TouchableOpacity
-                                        key={topping.id}
-                                        onPress={() => toggleCustomization(topping)}
-                                        className={`px-4 py-2 rounded-full border-2 ${
-                                            isSelected 
-                                                ? 'bg-primary border-primary' 
-                                                : 'bg-white border-gray-200'
-                                        }`}
-                                    >
-                                        <Text className={`body-medium ${
-                                            isSelected ? 'text-white' : 'text-dark-100'
-                                        }`}>
-                                            {topping.name} {topping.price > 0 ? `+$${topping.price.toFixed(2)}` : ''}
-                                        </Text>
-                                    </TouchableOpacity>
-                                );
-                            })}
-                        </View>
-                    </View>
-
-                    {/* Side Options */}
-                    <View className="mb-6">
-                        <Text className="h4-bold text-dark-100 mb-3">Side options</Text>
-                        <View className="flex-row flex-wrap gap-3">
-                            {sides.map((side) => {
-                                const isSelected = selectedCustomizations.some(c => c.id === side.id);
-                                return (
-                                    <TouchableOpacity
-                                        key={side.id}
-                                        onPress={() => toggleCustomization(side)}
-                                        className={`px-4 py-2 rounded-full border-2 ${
-                                            isSelected 
-                                                ? 'bg-primary border-primary' 
-                                                : 'bg-white border-gray-200'
-                                        }`}
-                                    >
-                                        <Text className={`body-medium ${
-                                            isSelected ? 'text-white' : 'text-dark-100'
-                                        }`}>
-                                            {side.name} +${side.price.toFixed(2)}
-                                        </Text>
-                                    </TouchableOpacity>
-                                );
-                            })}
-                        </View>
-                    </View>
-
-                    {/* Quantity */}
-                    <View className="flex-row items-center justify-between mb-8">
-                        <Text className="h4-bold text-dark-100">Quantity</Text>
-                        <View className="flex-row items-center gap-x-4">
+                        <Text className="text-lg font-semibold text-gray-900 mb-3">Customizations</Text>
+                        {mockCustomizations.map((custom) => (
                             <TouchableOpacity
-                                onPress={() => setQuantity(prev => Math.max(1, prev - 1))}
-                                className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center"
+                                key={custom.id}
+                                className={`flex-row items-center justify-between p-3 rounded-lg mb-2 ${
+                                    selectedCustomizations.find(c => c.id === custom.id) 
+                                        ? 'bg-amber-50 border border-amber-200' 
+                                        : 'bg-gray-50'
+                                }`}
+                                onPress={() => toggleCustomization(custom)}
                             >
-                                <Image
-                                    source={icons.minus}
-                                    className="size-5"
-                                    resizeMode="contain"
-                                    tintColor="#1A1A1A"
-                                />
+                                <View className="flex-1">
+                                    <Text className="font-medium text-gray-900">{custom.name}</Text>
+                                    <Text className="text-sm text-gray-500">{custom.type}</Text>
+                                </View>
+                                <Text className="text-amber-600 font-semibold">
+                                    {custom.price > 0 ? `+${custom.price.toLocaleString('vi-VN')}₫` : 'Free'}
+                                </Text>
+                                <View className={`w-5 h-5 rounded-full border-2 ml-3 ${
+                                    selectedCustomizations.find(c => c.id === custom.id)
+                                        ? 'bg-amber-500 border-amber-500'
+                                        : 'border-gray-300'
+                                }`}>
+                                    {selectedCustomizations.find(c => c.id === custom.id) && (
+                                        <Text className="text-white text-xs text-center">✓</Text>
+                                    )}
+                                </View>
                             </TouchableOpacity>
-                            <Text className="h3-bold text-dark-100 min-w-[40px] text-center">
-                                {quantity}
-                            </Text>
+                        ))}
+                    </View>
+
+                    {/* Quantity Selector */}
+                    <View className="flex-row items-center justify-between mb-6">
+                        <Text className="text-lg font-semibold text-gray-900">Quantity</Text>
+                        <View className="flex-row items-center">
                             <TouchableOpacity
-                                onPress={() => setQuantity(prev => prev + 1)}
-                                className="w-10 h-10 rounded-full bg-primary items-center justify-center"
+                                className="w-10 h-10 bg-gray-200 rounded-full items-center justify-center"
+                                onPress={() => setQuantity(Math.max(1, quantity - 1))}
                             >
-                                <Image
-                                    source={icons.plus}
-                                    className="size-5"
-                                    resizeMode="contain"
-                                    tintColor="#FFFFFF"
-                                />
+                                <Text className="text-lg font-bold text-gray-700">−</Text>
+                            </TouchableOpacity>
+                            <Text className="mx-4 text-lg font-semibold">{quantity}</Text>
+                            <TouchableOpacity
+                                className="w-10 h-10 bg-amber-500 rounded-full items-center justify-center"
+                                onPress={() => setQuantity(quantity + 1)}
+                            >
+                                <Text className="text-lg font-bold text-white">+</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
                 </View>
             </ScrollView>
 
-            {/* Bottom Button */}
-            <View className="px-6 py-4 bg-white border-t border-gray-200">
+            {/* Bottom Section */}
+            <View className="px-6 py-4 border-t border-gray-200">
+                <View className="flex-row items-center justify-between mb-4">
+                    <Text className="text-lg font-semibold text-gray-900">Total</Text>
+                    <Text className="text-xl font-bold text-amber-600">
+                        {calculateTotal().toLocaleString('vi-VN')}₫
+                    </Text>
+                </View>
+                
                 <CustomButton
-                    title={`Add to cart ($${calculateTotal().toFixed(2)})`}
+                    title={`Add ${quantity} to Cart`}
                     onPress={handleAddToCart}
                 />
             </View>
