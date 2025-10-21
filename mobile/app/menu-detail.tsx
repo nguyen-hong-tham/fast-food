@@ -2,7 +2,7 @@ import CustomButton from "@/components/CustomButton";
 import CustomHeader from "@/components/CustomHeader";
 import { getMenuById } from "@/lib/appwrite";
 import { useCartStore } from "@/store/cart.store";
-import { CartCustomization, MenuItem } from "@/type";
+import { MenuItem } from "@/type";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
@@ -13,18 +13,7 @@ const MenuDetail = () => {
     const [menuItem, setMenuItem] = useState<MenuItem | null>(null);
     const [loading, setLoading] = useState(true);
     const [quantity, setQuantity] = useState(1);
-    const [selectedCustomizations, setSelectedCustomizations] = useState<CartCustomization[]>([]);
     const { addItem } = useCartStore();
-
-    // Mock customizations based on Vietnamese food
-    const mockCustomizations: CartCustomization[] = [
-        { id: '1', name: 'Extra Rice (Cơm thêm)', price: 5000, type: 'addon' },
-        { id: '2', name: 'Extra Meat (Thịt thêm)', price: 15000, type: 'addon' },
-        { id: '3', name: 'Extra Vegetables (Rau thêm)', price: 8000, type: 'addon' },
-        { id: '4', name: 'Less Spicy (Ít cay)', price: 0, type: 'preference' },
-        { id: '5', name: 'No Vegetables (Không rau)', price: 0, type: 'preference' },
-        { id: '6', name: 'Extra Fish Sauce (Nước mắm thêm)', price: 2000, type: 'addon' },
-    ];
 
     useEffect(() => {
         const fetchMenuItem = async () => {
@@ -45,22 +34,9 @@ const MenuDetail = () => {
         fetchMenuItem();
     }, [menuId]);
 
-    const toggleCustomization = (custom: CartCustomization) => {
-        setSelectedCustomizations(prev => {
-            const exists = prev.find(c => c.id === custom.id);
-            if (exists) {
-                return prev.filter(c => c.id !== custom.id);
-            } else {
-                return [...prev, custom];
-            }
-        });
-    };
-
     const calculateTotal = () => {
         if (!menuItem) return 0;
-        const basePrice = menuItem.price * quantity;
-        const customizationPrice = selectedCustomizations.reduce((sum, c) => sum + c.price, 0) * quantity;
-        return basePrice + customizationPrice;
+        return menuItem.price * quantity;
     };
 
     const handleAddToCart = () => {
@@ -72,7 +48,7 @@ const MenuDetail = () => {
                 name: menuItem.name,
                 price: menuItem.price,
                 image_url: menuItem.image_url,
-                customizations: selectedCustomizations
+                customizations: []
             },
             restaurantId
         );
@@ -167,39 +143,6 @@ const MenuDetail = () => {
                             <Text className="text-sm text-gray-500">Stock</Text>
                             <Text className="text-lg font-semibold text-gray-900">{menuItem.stock ?? 'Unlimited'}</Text>
                         </View>
-                    </View>
-
-                    {/* Customizations */}
-                    <View className="mb-6">
-                        <Text className="text-lg font-semibold text-gray-900 mb-3">Customizations</Text>
-                        {mockCustomizations.map((custom) => (
-                            <TouchableOpacity
-                                key={custom.id}
-                                className={`flex-row items-center justify-between p-3 rounded-lg mb-2 ${
-                                    selectedCustomizations.find(c => c.id === custom.id) 
-                                        ? 'bg-amber-50 border border-amber-200' 
-                                        : 'bg-gray-50'
-                                }`}
-                                onPress={() => toggleCustomization(custom)}
-                            >
-                                <View className="flex-1">
-                                    <Text className="font-medium text-gray-900">{custom.name}</Text>
-                                    <Text className="text-sm text-gray-500">{custom.type}</Text>
-                                </View>
-                                <Text className="text-amber-600 font-semibold">
-                                    {custom.price > 0 ? `+${custom.price.toLocaleString('vi-VN')}₫` : 'Free'}
-                                </Text>
-                                <View className={`w-5 h-5 rounded-full border-2 ml-3 ${
-                                    selectedCustomizations.find(c => c.id === custom.id)
-                                        ? 'bg-amber-500 border-amber-500'
-                                        : 'border-gray-300'
-                                }`}>
-                                    {selectedCustomizations.find(c => c.id === custom.id) && (
-                                        <Text className="text-white text-xs text-center">✓</Text>
-                                    )}
-                                </View>
-                            </TouchableOpacity>
-                        ))}
                     </View>
 
                     {/* Quantity Selector */}
