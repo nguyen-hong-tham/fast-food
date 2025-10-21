@@ -179,6 +179,7 @@ export const getPaymentByOrderId = async (orderId: string): Promise<Payment | nu
 };
 
 // ===================== REVIEWS =====================
+// Reviews collection doesn't exist in current database - all review functions disabled
 
 export const createReview = async (reviewData: {
     userId: string;
@@ -190,56 +191,60 @@ export const createReview = async (reviewData: {
     service?: number;
     comment?: string;
 }): Promise<Review> => {
-    const review = await databases.createDocument(
-        databaseId,
-        appwriteConfig.reviewsCollectionId,
-        ID.unique(),
-        {
-            ...reviewData,
-            isVisible: true,
-            createdAt: new Date().toISOString(),
-        }
-    );
+    // const review = await databases.createDocument(
+    //     databaseId,
+    //     appwriteConfig.reviewsCollectionId,
+    //     ID.unique(),
+    //     {
+    //         ...reviewData,
+    //         isVisible: true,
+    //         createdAt: new Date().toISOString(),
+    //     }
+    // );
     
-    // Update restaurant rating
-    await updateRestaurantRating(reviewData.restaurantId);
+    // // Update restaurant rating
+    // await updateRestaurantRating(reviewData.restaurantId);
     
-    return review as unknown as Review;
+    // return review as unknown as Review;
+    throw new Error('Reviews feature not implemented - reviews collection does not exist');
 };
 
 export const getRestaurantReviews = async (restaurantId: string): Promise<Review[]> => {
-    const response = await databases.listDocuments(
-        databaseId,
-        appwriteConfig.reviewsCollectionId,
-        [
-            Query.equal('restaurantId', restaurantId),
-            Query.equal('isVisible', true),
-            Query.orderDesc('$createdAt'),
-            Query.limit(50)
-        ]
-    );
+    // Reviews collection doesn't exist in current database
+    // const response = await databases.listDocuments(
+    //     databaseId,
+    //     appwriteConfig.reviewsCollectionId,
+    //     [
+    //         Query.equal('restaurantId', restaurantId),
+    //         Query.equal('isVisible', true),
+    //         Query.orderDesc('$createdAt'),
+    //         Query.limit(50)
+    //     ]
+    // );
     
-    return response.documents as unknown as Review[];
+    // return response.documents as unknown as Review[];
+    return []; // Return empty array since reviews collection doesn't exist
 };
 
 export const updateRestaurantRating = async (restaurantId: string): Promise<void> => {
-    // Get all reviews for restaurant
-    const reviews = await getRestaurantReviews(restaurantId);
+    // Reviews collection doesn't exist - skip rating update
+    // // Get all reviews for restaurant
+    // const reviews = await getRestaurantReviews(restaurantId);
     
-    if (reviews.length === 0) return;
+    // if (reviews.length === 0) return;
     
-    // Calculate average rating
-    const avgRating = reviews.reduce((sum, review) => sum + review.overallRating, 0) / reviews.length;
+    // // Calculate average rating
+    // const avgRating = reviews.reduce((sum, review) => sum + review.overallRating, 0) / reviews.length;
     
-    // Update restaurant
-    await databases.updateDocument(
-        databaseId,
-        appwriteConfig.restaurantsCollectionId,
-        restaurantId,
-        {
-            rating: Math.round(avgRating * 10) / 10, // Round to 1 decimal
-        }
-    );
+    // // Update restaurant
+    // await databases.updateDocument(
+    //     databaseId,
+    //     appwriteConfig.restaurantsCollectionId,
+    //     restaurantId,
+    //     {
+    //         rating: Math.round(avgRating * 10) / 10, // Round to 1 decimal
+    //     }
+    // );
 };
 
 // ===================== NOTIFICATIONS =====================

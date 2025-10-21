@@ -206,7 +206,10 @@ export default function MenuPage() {
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1">
                     <h3 className="text-lg font-semibold text-gray-900">{item.name}</h3>
-                    {/* ❌ REMOVED: Category display - field doesn't exist in database */}
+                    {/* Category display - conditional based on categoryId field */}
+                    {item.categoryId && (
+                      <p className="text-sm text-gray-500 capitalize">{item.categoryId.replace('_', ' ')}</p>
+                    )}
                   </div>
                   <span className="text-lg font-bold text-primary-600">
                     {item.price.toLocaleString('vi-VN')}₫

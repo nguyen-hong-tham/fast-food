@@ -2,13 +2,11 @@ import { View, Text, ScrollView, ActivityIndicator, FlatList, Image, TouchableOp
 import React, { useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
-import { getRestaurantById, getRestaurantMenu, getRestaurantReviews } from '@/lib/appwrite';
+import { getRestaurantById, getRestaurantMenu, getCategories } from '@/lib/appwrite';
 import { Restaurant, MenuItem, Review } from '@/type';
 import RestaurantHeader from '@/components/RestaurantHeader';
 import MenuCard from '@/components/MenuCard';
 import Filter from '@/components/Filter';
-import useAppwrite from '@/lib/useAppwrite';
-import { getCategories } from '@/lib/appwrite';
 import cn from 'clsx';
 
 const RestaurantDetailScreen = () => {
@@ -17,8 +15,8 @@ const RestaurantDetailScreen = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'menu' | 'reviews'>('menu');
   
-  // Menu state
-  const { data: categories } = useAppwrite({ fn: getCategories });
+  // Real data state
+  const [categories, setCategories] = useState<any[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [filteredMenuItems, setFilteredMenuItems] = useState<MenuItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -43,10 +41,30 @@ const RestaurantDetailScreen = () => {
     })();
   }, [id]);
 
+  // Fetch categories
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await getCategories();
+        setCategories(data as any[]);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        // Set fallback categories if API fails
+        setCategories([
+          { $id: 'all', name: 'All', icon: '🍽️' },
+          { $id: '1', name: 'Main Course', icon: '🍽️' },
+          { $id: '2', name: 'Appetizers', icon: '🥗' },
+          { $id: '3', name: 'Desserts', icon: '🍰' },
+          { $id: '4', name: 'Drinks', icon: '🥤' }
+        ]);
+      }
+    })();
+  }, []);
+
   // Fetch menu items
   useEffect(() => {
     if (!id) return;
-
+    
     (async () => {
       try {
         const data = await getRestaurantMenu(id);
@@ -54,22 +72,31 @@ const RestaurantDetailScreen = () => {
         setFilteredMenuItems(data as any as MenuItem[]);
       } catch (error) {
         console.error('Error fetching menu:', error);
+        // Set empty array if no menu items found
+        setMenuItems([]);
+        setFilteredMenuItems([]);
       }
     })();
   }, [id]);
 
-  // Fetch reviews
+  // Fetch reviews - Temporarily disabled until reviews collection is created
   useEffect(() => {
     if (!id) return;
-
-    (async () => {
-      try {
-        const data = await getRestaurantReviews(id);
-        setReviews(data as any as Review[]);
-      } catch (error) {
-        console.error('Error fetching reviews:', error);
-      }
-    })();
+    
+    // TODO: Enable when reviews collection is created in database
+    // (async () => {
+    //   try {
+    //     const data = await getRestaurantReviews(id);
+    //     setReviews(data as any as Review[]);
+    //   } catch (error) {
+    //     console.error('Error fetching reviews:', error);
+    //     // Set empty array if no reviews found
+    //     setReviews([]);
+    //   }
+    // })();
+    
+    // For now, set empty reviews
+    setReviews([]);
   }, [id]);
 
   // Filter menu by category
@@ -173,7 +200,7 @@ const RestaurantDetailScreen = () => {
                         }
                       })}
                     >
-                      <MenuCard item={item} />
+                      <MenuCard item={item} restaurantId={restaurant.$id} />
                     </TouchableOpacity>
                   ))}
                 </View>
