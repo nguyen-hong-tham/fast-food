@@ -1,7 +1,7 @@
 import Constants from "expo-constants";
 import { Platform } from "react-native";
 import { Account, Avatars, Client, Databases, ID, Query, Storage } from "react-native-appwrite";
-import { CreateUserParams, GetMenuParams, RestaurantFilters, SignInParams } from "../type";
+import { CreateUserParams, GetMenuParams, RestaurantFilters, SignInParams, VNPayPaymentRequest, VNPayPaymentResponse, VNPayCallbackParams, PaymentResult, PaymentMethod } from "../type";
 
 export const appwriteConfig = {
   endpoint: process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT || "https://cloud.appwrite.io/v1",
@@ -276,6 +276,81 @@ export const createOrder = async (orderData: any) => {
     }
 }
 
+/**
+ * Create comprehensive order with items and payment integration
+ */
+export const createOrderWithPayment = async (orderData: {
+    userId: string;
+    restaurantId: string;
+    items: Array<{
+        menuItemId: string;
+        name: string;
+        price: number;
+        quantity: number;
+        image_url: string;
+        customizations?: Array<{ id: string; name: string; price: number; type: string; }>;
+    }>;
+    total: number;
+    deliveryAddress: string;
+    deliveryAddressLabel?: string;
+    phone: string;
+    notes?: string;
+    paymentMethod: 'cod' | 'vnpay';
+}) => {
+    try {
+        // Create main order
+        const order = await databases.createDocument(
+            appwriteConfig.databaseId,
+            appwriteConfig.ordersCollectionId,
+            ID.unique(),
+            {
+                userId: orderData.userId,
+                restaurantId: orderData.restaurantId,
+                total: orderData.total,
+                status: 'pending',
+                paymentStatus: 'pending',
+                paymentMethod: orderData.paymentMethod,
+                deliveryAddress: orderData.deliveryAddress,
+                deliveryAddressLabel: orderData.deliveryAddressLabel || '',
+                phone: orderData.phone,
+                notes: orderData.notes || '',
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+            }
+        );
+
+        // Create order items
+        const orderItems = await Promise.all(
+            orderData.items.map(async (item) => {
+                return await databases.createDocument(
+                    appwriteConfig.databaseId,
+                    appwriteConfig.orderItemsCollectionId,
+                    ID.unique(),
+                    {
+                        orderId: order.$id,
+                        menuItemId: item.menuItemId,
+                        name: item.name,
+                        price: item.price,
+                        quantity: item.quantity,
+                        image_url: item.image_url,
+                        customizations: JSON.stringify(item.customizations || []),
+                        subtotal: item.price * item.quantity + (item.customizations?.reduce((sum, c) => sum + c.price, 0) || 0) * item.quantity,
+                        createdAt: new Date().toISOString(),
+                    }
+                );
+            })
+        );
+
+        return {
+            order,
+            orderItems
+        };
+    } catch (e) {
+        console.error('Error creating order:', e);
+        throw new Error(e as string);
+    }
+}
+
 export const getUserOrders = async (userId: string) => {
     try {
         const orders = await databases.listDocuments(
@@ -302,6 +377,26 @@ export const getOrderById = async (orderId: string) => {
         );
 
         return order;
+    } catch (e) {
+        throw new Error(e as string);
+    }
+}
+
+/**
+ * Get order items for a specific order
+ */
+export const getOrderItems = async (orderId: string) => {
+    try {
+        const orderItems = await databases.listDocuments(
+            appwriteConfig.databaseId,
+            appwriteConfig.orderItemsCollectionId,
+            [
+                Query.equal('orderId', orderId),
+                Query.orderAsc('createdAt')
+            ]
+        );
+
+        return orderItems.documents;
     } catch (e) {
         throw new Error(e as string);
     }
@@ -648,3 +743,262 @@ export const getAvailableCuisines = async (): Promise<string[]> => {
         return [];
     }
 }
+
+// ===================== PAYMENT FUNCTIONS =====================
+
+/**
+ * Generate VNPay payment URL (mock implementation)
+ * In production, this should call an Appwrite Function or backend service
+ */
+export const generateVNPayUrl = async (params: VNPayPaymentRequest): Promise<string> => {
+    const {
+        orderId,
+        amount,
+        returnUrl = 'foodfast://payment-result',
+        ipAddr = '127.0.0.1',
+        orderInfo = `Payment for order ${orderId}`
+    } = params;
+
+    // VNPay parameters
+    const vnpParams = {
+        vnp_Version: '2.1.0',
+        vnp_Command: 'pay',
+        vnp_TmnCode: 'DEMO', // Replace with actual TMN Code
+        vnp_Amount: (amount * 100).toString(), // VNPay expects amount in đồng * 100
+        vnp_CurrCode: 'VND',
+        vnp_TxnRef: orderId,
+        vnp_OrderInfo: orderInfo,
+        vnp_OrderType: 'other',
+        vnp_Locale: 'vn',
+        vnp_ReturnUrl: returnUrl,
+        vnp_IpAddr: ipAddr,
+        vnp_CreateDate: new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14)
+    };
+
+    // Sort parameters
+    const sortedParams = Object.keys(vnpParams)
+        .sort()
+        .map(key => `${key}=${encodeURIComponent(vnpParams[key as keyof typeof vnpParams])}`)
+        .join('&');
+
+    // For demo purposes, return a mock URL
+    // In production, you would hash this with your secret key and return real VNPay URL
+    const baseUrl = 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html';
+    return `${baseUrl}?${sortedParams}`;
+};
+
+/**
+ * Create VNPay payment intent
+ */
+export const createVNPayPayment = async (params: VNPayPaymentRequest): Promise<VNPayPaymentResponse> => {
+    try {
+        // Generate payment URL
+        const paymentUrl = await generateVNPayUrl(params);
+        
+        // Generate unique secret for this payment
+        const secret = ID.unique();
+
+        // Create payment document in database
+        await databases.createDocument(
+            appwriteConfig.databaseId,
+            appwriteConfig.paymentsCollectionId,
+            ID.unique(),
+            {
+                secret,
+                provider: 'vnpay',
+                status: 'pending',
+                amount: params.amount,
+                currency: 'VND',
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            }
+        );
+
+        return {
+            paymentUrl,
+            secret
+        };
+    } catch (e) {
+        console.error('Error creating VNPay payment:', e);
+        throw new Error(e as string);
+    }
+};
+
+/**
+ * Process VNPay callback and update payment status
+ */
+export const processVNPayCallback = async (callbackParams: VNPayCallbackParams): Promise<PaymentResult> => {
+    try {
+        const {
+            vnp_ResponseCode,
+            vnp_TransactionStatus,
+            vnp_TxnRef,
+            vnp_Amount,
+            vnp_TransactionNo,
+            vnp_BankTranNo
+        } = callbackParams;
+
+        const orderId = vnp_TxnRef;
+        const amount = parseInt(vnp_Amount) / 100; // Convert back from VNPay format
+        const success = vnp_ResponseCode === '00' && vnp_TransactionStatus === '00';
+
+        // Update payment status in database
+        const payments = await databases.listDocuments(
+            appwriteConfig.databaseId,
+            appwriteConfig.paymentsCollectionId,
+            [Query.equal('secret', orderId)] // Using orderId as secret for simplicity
+        );
+
+        if (payments.documents.length > 0) {
+            const payment = payments.documents[0];
+            await databases.updateDocument(
+                appwriteConfig.databaseId,
+                appwriteConfig.paymentsCollectionId,
+                payment.$id,
+                {
+                    status: success ? 'completed' : 'failed',
+                    resultCode: vnp_ResponseCode,
+                    transactionRef: vnp_TransactionNo,
+                    mvrResponse: JSON.stringify(callbackParams),
+                    updatedAt: new Date().toISOString()
+                }
+            );
+        }
+
+        // Update order payment status
+        if (success) {
+            await updateOrderPaymentStatus(orderId, 'paid');
+        }
+
+        return {
+            success,
+            method: 'vnpay',
+            orderId,
+            transactionRef: vnp_TransactionNo,
+            amount,
+            message: success 
+                ? 'Payment completed successfully' 
+                : `Payment failed: ${getVNPayErrorMessage(vnp_ResponseCode)}`
+        };
+    } catch (e) {
+        console.error('Error processing VNPay callback:', e);
+        throw new Error(e as string);
+    }
+};
+
+/**
+ * Update order payment status
+ */
+export const updateOrderPaymentStatus = async (orderId: string, paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded') => {
+    try {
+        const orders = await databases.listDocuments(
+            appwriteConfig.databaseId,
+            appwriteConfig.ordersCollectionId,
+            [Query.equal('$id', orderId)]
+        );
+
+        if (orders.documents.length > 0) {
+            const order = orders.documents[0];
+            await databases.updateDocument(
+                appwriteConfig.databaseId,
+                appwriteConfig.ordersCollectionId,
+                order.$id,
+                {
+                    paymentStatus,
+                    updatedAt: new Date().toISOString()
+                }
+            );
+        }
+    } catch (e) {
+        console.error('Error updating order payment status:', e);
+        throw new Error(e as string);
+    }
+};
+
+/**
+ * Create COD payment (cash on delivery)
+ */
+export const createCODPayment = async (orderId: string, amount: number): Promise<PaymentResult> => {
+    try {
+        const secret = ID.unique();
+
+        // Create payment document
+        await databases.createDocument(
+            appwriteConfig.databaseId,
+            appwriteConfig.paymentsCollectionId,
+            ID.unique(),
+            {
+                secret,
+                provider: 'cod',
+                status: 'pending',
+                amount,
+                currency: 'VND',
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            }
+        );
+
+        // Update order with COD payment method
+        await updateOrderPaymentStatus(orderId, 'pending');
+
+        return {
+            success: true,
+            method: 'cod',
+            orderId,
+            amount,
+            message: 'Cash on Delivery order created successfully'
+        };
+    } catch (e) {
+        console.error('Error creating COD payment:', e);
+        throw new Error(e as string);
+    }
+};
+
+/**
+ * Get VNPay error message from response code
+ */
+export const getVNPayErrorMessage = (responseCode: string): string => {
+    const errorMessages: Record<string, string> = {
+        '01': 'Transaction is pending',
+        '02': 'Transaction failed',
+        '04': 'Transaction was reversed',
+        '05': 'Transaction processing failed',
+        '06': 'Transaction was cancelled',
+        '07': 'Money was deducted but transaction failed',
+        '09': 'Card/Account not registered for internet banking',
+        '10': 'Customer authenticated incorrectly more than 3 times',
+        '11': 'Payment timed out',
+        '12': 'Card/Account locked',
+        '13': 'Invalid OTP',
+        '24': 'Transaction cancelled',
+        '51': 'Insufficient account balance',
+        '65': 'Exceeded daily transaction limit',
+        '75': 'Payment bank under maintenance',
+        '79': 'Incorrect payment password more than allowed times',
+        '99': 'Other error'
+    };
+
+    return errorMessages[responseCode] || 'Unknown error occurred';
+};
+
+/**
+ * Get payment methods available
+ */
+export const getPaymentMethods = (): PaymentMethod[] => {
+    return [
+        {
+            id: 'vnpay',
+            name: 'VNPay',
+            description: 'Pay with bank card or e-wallet',
+            icon: '💳',
+            enabled: true
+        },
+        {
+            id: 'cod',
+            name: 'Cash on Delivery',
+            description: 'Pay when your order arrives',
+            icon: '💰',
+            enabled: true
+        }
+    ];
+};

@@ -109,6 +109,12 @@ export interface CartStore {
   clearCart: () => void;
   getTotalItems: () => number;
   getTotalPrice: () => number;
+  getCartForCheckout: () => {
+    items: CartItemType[];
+    restaurantId: string | null;
+    totalAmount: number;
+    totalItems: number;
+  };
 }
 
 // ===================== ORDER =====================
@@ -161,17 +167,66 @@ export interface OrderItemDocument extends Models.Document {
 // ===================== PAYMENT =====================
 
 export interface Payment extends Models.Document {
-  orderId: string;
-  userId: string;
-  provider: 'cod' | 'vnpay';
-  amount: number;
-  status: 'pending' | 'completed' | 'failed' | 'refunded';
-  transactionId?: string;
+  secret: string; // From database schema
+  resultCode?: string;
   transactionRef?: string;
-  refundAmount?: number;
+  currency: string; // Default: "VND"
   refundReason?: string;
+  refundAmount?: number;
+  mvrResponse?: string;
+  provider: 'vnpay' | 'cod';
+  status: 'pending' | 'completed' | 'failed' | 'refunded';
+  amount: number;
+  refundCount?: number;
   createdAt: string;
   updatedAt?: string;
+}
+
+// ===================== VNPAY PAYMENT =====================
+
+export interface VNPayPaymentRequest {
+  orderId: string;
+  amount: number;
+  returnUrl?: string;
+  ipAddr?: string;
+  orderInfo?: string;
+}
+
+export interface VNPayPaymentResponse {
+  paymentUrl: string;
+  secret: string;
+}
+
+export interface VNPayCallbackParams {
+  vnp_Amount: string;
+  vnp_BankCode?: string;
+  vnp_BankTranNo?: string;
+  vnp_CardType?: string;
+  vnp_OrderInfo: string;
+  vnp_PayDate: string;
+  vnp_ResponseCode: string;
+  vnp_TmnCode: string;
+  vnp_TransactionNo: string;
+  vnp_TransactionStatus: string;
+  vnp_TxnRef: string;
+  vnp_SecureHash: string;
+}
+
+export interface PaymentMethod {
+  id: 'vnpay' | 'cod';
+  name: string;
+  description: string;
+  icon: string;
+  enabled: boolean;
+}
+
+export interface PaymentResult {
+  success: boolean;
+  method: 'vnpay' | 'cod';
+  orderId: string;
+  transactionRef?: string;
+  amount: number;
+  message: string;
 }
 
 // ===================== REVIEW =====================

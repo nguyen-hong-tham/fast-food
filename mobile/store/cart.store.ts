@@ -117,4 +117,14 @@ export const useCartStore = create<CartStore>((set, get) => ({
                 ) ?? 0;
             return total + item.quantity * (base + customPrice);
         }, 0),
+
+    getCartForCheckout: () => {
+        const state = get();
+        return {
+            items: state.items,
+            restaurantId: state.restaurantId,
+            totalAmount: state.getTotalPrice(),
+            totalItems: state.getTotalItems()
+        };
+    },
 }));
