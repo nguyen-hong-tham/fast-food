@@ -21,6 +21,7 @@ const CheckoutScreen = () => {
   const [deliveryAddressLabel, setDeliveryAddressLabel] = useState(user?.address_home_label || 'Home');
   const [phone, setPhone] = useState(user?.phone || '');
   const [notes, setNotes] = useState('');
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'vnpay' | 'cod'>('vnpay');
   const [processing, setProcessing] = useState(false);
 
   const total = parseFloat(totalAmount || '0');
@@ -61,20 +62,34 @@ const CheckoutScreen = () => {
         deliveryAddressLabel: deliveryAddressLabel.trim(),
         phone: phone.trim(),
         notes: notes.trim(),
-        paymentMethod: 'vnpay' as const // Will be updated after payment selection
+        paymentMethod: selectedPaymentMethod
       };
 
       const { order } = await createOrderWithPayment(orderData);
 
-      // Navigate to payment selection with order ID
-      router.replace({
-        pathname: '/payment-selection' as any,
-        params: {
-          orderId: order.$id,
-          amount: totalAmount,
-          restaurantId
-        }
-      });
+      if (selectedPaymentMethod === 'cod') {
+        // For COD, order is complete, navigate to success
+        clearCart();
+        router.replace({
+          pathname: '/payment-result' as any,
+          params: {
+            success: 'true',
+            orderId: order.$id,
+            amount: totalAmount,
+            method: 'cod'
+          }
+        });
+      } else {
+        // For VNPay, navigate to payment selection
+        router.replace({
+          pathname: '/payment-selection' as any,
+          params: {
+            orderId: order.$id,
+            amount: totalAmount,
+            restaurantId
+          }
+        });
+      }
 
     } catch (error) {
       console.error('Checkout error:', error);
@@ -206,6 +221,67 @@ const CheckoutScreen = () => {
             </View>
           </View>
 
+          {/* Payment Method */}
+          <View className="bg-white rounded-xl p-4 mb-4"
+            style={Platform.OS === 'android' ? { elevation: 2 } : {}}
+          >
+            <Text className="text-lg font-bold text-gray-800 mb-4">Payment Method</Text>
+            
+            {/* VNPay Option */}
+            <TouchableOpacity
+              className={cn(
+                'flex-row items-center p-4 rounded-lg border mb-3',
+                selectedPaymentMethod === 'vnpay' 
+                  ? 'border-amber-500 bg-amber-50' 
+                  : 'border-gray-300 bg-white'
+              )}
+              onPress={() => setSelectedPaymentMethod('vnpay')}
+            >
+              <View className={cn(
+                'w-5 h-5 rounded-full border-2 mr-3 items-center justify-center',
+                selectedPaymentMethod === 'vnpay' 
+                  ? 'border-amber-500 bg-amber-500' 
+                  : 'border-gray-300'
+              )}>
+                {selectedPaymentMethod === 'vnpay' && (
+                  <View className="w-2 h-2 rounded-full bg-white" />
+                )}
+              </View>
+              <View className="flex-1">
+                <Text className="font-semibold text-gray-800">VNPay</Text>
+                <Text className="text-sm text-gray-600">Pay instantly with VNPay gateway</Text>
+              </View>
+              <Text className="text-2xl">💳</Text>
+            </TouchableOpacity>
+
+            {/* COD Option */}
+            <TouchableOpacity
+              className={cn(
+                'flex-row items-center p-4 rounded-lg border',
+                selectedPaymentMethod === 'cod' 
+                  ? 'border-amber-500 bg-amber-50' 
+                  : 'border-gray-300 bg-white'
+              )}
+              onPress={() => setSelectedPaymentMethod('cod')}
+            >
+              <View className={cn(
+                'w-5 h-5 rounded-full border-2 mr-3 items-center justify-center',
+                selectedPaymentMethod === 'cod' 
+                  ? 'border-amber-500 bg-amber-500' 
+                  : 'border-gray-300'
+              )}>
+                {selectedPaymentMethod === 'cod' && (
+                  <View className="w-2 h-2 rounded-full bg-white" />
+                )}
+              </View>
+              <View className="flex-1">
+                <Text className="font-semibold text-gray-800">Cash on Delivery</Text>
+                <Text className="text-sm text-gray-600">Pay when you receive your order</Text>
+              </View>
+              <Text className="text-2xl">💰</Text>
+            </TouchableOpacity>
+          </View>
+
           {/* Delivery Time */}
           <View className="bg-white rounded-xl p-4 mb-4"
             style={Platform.OS === 'android' ? { elevation: 2 } : {}}
@@ -233,7 +309,12 @@ const CheckoutScreen = () => {
           disabled={processing}
         >
           <Text className="text-white font-bold text-center text-lg">
-            {processing ? 'Creating Order...' : `Proceed to Payment • ${total.toLocaleString('vi-VN')}₫`}
+            {processing 
+              ? 'Creating Order...' 
+              : selectedPaymentMethod === 'vnpay' 
+                ? `Pay with VNPay • ${total.toLocaleString('vi-VN')}₫`
+                : `Place Order • ${total.toLocaleString('vi-VN')}₫`
+            }
           </Text>
         </TouchableOpacity>
       </View>
