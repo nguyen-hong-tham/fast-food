@@ -16,8 +16,6 @@ export const appwriteConfig = {
   userCollectionId: process.env.EXPO_PUBLIC_APPWRITE_USER_COLLECTION_ID || "user", 
   categoriesCollectionId: process.env.EXPO_PUBLIC_APPWRITE_CATEGORIES_COLLECTION_ID || "categories",
   menuCollectionId: process.env.EXPO_PUBLIC_APPWRITE_MENU_COLLECTION_ID || "menu",
-  customizationsCollectionId: process.env.EXPO_PUBLIC_APPWRITE_CUSTOMIZATIONS_COLLECTION_ID || "customizations",
-  menuCustomizationsCollectionId: process.env.EXPO_PUBLIC_APPWRITE_MENU_CUSTOMIZATIONS_COLLECTION_ID || "menu_customizations",
   ordersCollectionId: process.env.EXPO_PUBLIC_APPWRITE_ORDERS_COLLECTION_ID || "orders",
   
   // New collections (Phase 0 - Database Foundation)
@@ -285,7 +283,6 @@ export const createOrderWithPayment = async (orderData: {
         price: number;
         quantity: number;
         image_url: string;
-        customizations?: Array<{ id: string; name: string; price: number; type: string; }>;
     }>;
     total: number;
     deliveryAddress: string;
@@ -293,54 +290,78 @@ export const createOrderWithPayment = async (orderData: {
     phone: string;
     notes?: string;
     paymentMethod: 'cod' | 'vnpay';
+    status?: string;
 }) => {
     try {
-        // ✅ Hàm xác định trạng thái ban đầu của đơn hàng
-        const getInitialOrderStatus = (paymentMethod: string): string => {
-            switch (paymentMethod) {
-                case 'cod':
-                    return 'pending';    // COD: chờ xác nhận
-                case 'vnpay':
-                    return 'pending';    // VNPay: chờ thanh toán
-                default:
-                    return 'pending';    // fallback
-            }
-        };
-
-        const autoStatus = getInitialOrderStatus(orderData.paymentMethod);
+        // ✅ Xác định trạng thái ban đầu của đơn hàng
+        // Các giá trị hợp lệ: "pending", "confirmed", "preparing", "ready", "delivering", "delivered", "cancelled"
+        const initialStatus = orderData.status || "pending";
 
         // 🧾 Log để kiểm tra giá trị status trước khi gửi
-        console.log("🧾 STATUS SENT:", autoStatus);
+        console.log("🧾 ORDER STATUS:", initialStatus);
         console.log("💳 PAYMENT METHOD:", orderData.paymentMethod);
+        console.log("📦 ORDER DATA:", {
+            userId: orderData.userId,
+            restaurantId: orderData.restaurantId,
+            total: orderData.total,
+            deliveryAddress: orderData.deliveryAddress,
+            phone: orderData.phone
+        });
 
         // ✅ Tạo đơn hàng chính
+        // Chỉ lưu thông tin cần thiết trong items (không bao gồm image_url)
+        const itemsForOrder = orderData.items.map(item => ({
+            menuItemId: item.menuItemId,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+        }));
+
+        const orderPayload: any = {
+            userId: orderData.userId,
+            restaurantId: orderData.restaurantId,
+            total: orderData.total,
+            deliveryAddress: orderData.deliveryAddress,
+            phone: orderData.phone,
+            items: JSON.stringify(itemsForOrder),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+        };
+
+        // Chỉ thêm các field optional nếu có giá trị
+        if (orderData.deliveryAddressLabel) {
+            orderPayload.deliveryAddressLabel = orderData.deliveryAddressLabel;
+        }
+        if (orderData.notes) {
+            orderPayload.notes = orderData.notes;
+        }
+        
+        // Thêm các enum fields - đảm bảo giá trị chính xác
+        // Validate paymentMethod trước khi gửi
+        const validPaymentMethods = ['cod', 'vnpay'];
+        const paymentMethod = validPaymentMethods.includes(orderData.paymentMethod) 
+            ? orderData.paymentMethod 
+            : 'cod'; // fallback to cod
+        
+        orderPayload.status = initialStatus;
+        orderPayload.paymentMethod = paymentMethod;
+        orderPayload.paymentStatus = "pending";
+
+        console.log("📤 SENDING PAYLOAD:", JSON.stringify(orderPayload, null, 2));
+
         const order = await databases.createDocument(
             appwriteConfig.databaseId,
             appwriteConfig.ordersCollectionId,
             ID.unique(),
-            {
-                userId: orderData.userId,
-                restaurantId: orderData.restaurantId,
-                status: autoStatus, // 🎯 Giá trị hợp lệ: pending
-                total: orderData.total,
-                deliveryAddress: orderData.deliveryAddress,
-                deliveryAddressLabel: orderData.deliveryAddressLabel || '',
-                phone: orderData.phone,
-                notes: orderData.notes || '',
-                paymentMethod: orderData.paymentMethod,
-                items: JSON.stringify(orderData.items),
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-            }
+            orderPayload
         );
 
         // ✅ Tạo từng dòng order item
         const orderItems = await Promise.all(
             orderData.items.map(async (item) => {
                 const subtotal =
-                    item.price * item.quantity +
-                    ((item.customizations?.reduce((sum, c) => sum + c.price, 0) || 0) *
-                        item.quantity);
+                    item.price * item.quantity 
+
 
                 return await databases.createDocument(
                     appwriteConfig.databaseId,
@@ -353,7 +374,6 @@ export const createOrderWithPayment = async (orderData: {
                         price: item.price,
                         quantity: item.quantity,
                         image_url: item.image_url,
-                        customizations: JSON.stringify(item.customizations || []),
                         subtotal: subtotal,
                         createdAt: new Date().toISOString(),
                         updatedAt: new Date().toISOString(),

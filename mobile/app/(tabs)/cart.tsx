@@ -32,8 +32,8 @@ const Cart = () => {
 
     const totalItems = getTotalItems();
     const totalPrice = getTotalPrice();
-    const deliveryFee = 5.00;
-    const discount = 0.50;
+    const deliveryFee = 15000; // 15,000 VND
+    const discount = 5000; // 5,000 VND
     const finalTotal = totalPrice + deliveryFee - discount;
 
     const handleOrderNow = async () => {
@@ -110,21 +110,21 @@ const Cart = () => {
 
                             <PaymentInfoStripe
                                 label={`Total Items (${totalItems})`}
-                                value={`$${totalPrice.toFixed(2)}`}
+                                value={`${totalPrice.toLocaleString('vi-VN')}đ`}
                             />
                             <PaymentInfoStripe
                                 label={`Delivery Fee`}
-                                value={`$${deliveryFee.toFixed(2)}`}
+                                value={`${deliveryFee.toLocaleString('vi-VN')}đ`}
                             />
                             <PaymentInfoStripe
                                 label={`Discount`}
-                                value={`- $${discount.toFixed(2)}`}
+                                value={`- ${discount.toLocaleString('vi-VN')}đ`}
                                 valueStyle="!text-success"
                             />
                             <View className="border-t border-gray-300 my-2" />
                             <PaymentInfoStripe
                                 label={`Total`}
-                                value={`$${finalTotal.toFixed(2)}`}
+                                value={`${finalTotal.toLocaleString('vi-VN')}đ`}
                                 labelStyle="base-bold !text-dark-100"
                                 valueStyle="base-bold !text-dark-100 !text-right"
                             />

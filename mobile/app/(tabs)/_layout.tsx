@@ -49,10 +49,10 @@ export default function TabLayout() {
                 }}
             />
             <Tabs.Screen
-                name='search'
+                name='restaurants'
                 options={{
-                    title: 'Menu',
-                    tabBarIcon: ({ focused }) => <TabBarIcon title="Menu" icon={icons.menu} focused={focused} />
+                    title: 'Restaurants',
+                    tabBarIcon: ({ focused }) => <TabBarIcon title="Places" icon={icons.restaurant} focused={focused} />
                 }}
             />
             <Tabs.Screen
@@ -67,6 +67,13 @@ export default function TabLayout() {
                 options={{
                     title: 'Profile',
                     tabBarIcon: ({ focused }) => <TabBarIcon title="Profile" icon={icons.person} focused={focused} />
+                }}
+            />
+            {/* Hidden tabs */}
+            <Tabs.Screen
+                name='search'
+                options={{
+                    href: null, // Hide from tab bar
                 }}
             />
         </Tabs>
