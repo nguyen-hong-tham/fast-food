@@ -66,7 +66,8 @@ const CheckoutScreen = () => {
         deliveryAddressLabel: deliveryAddressLabel.trim(),
         phone: phone.trim(),
         notes: notes.trim(),
-        paymentMethod: selectedPaymentMethod
+        paymentMethod: selectedPaymentMethod,
+        status: "pending",
       };
 
       const { order } = await createOrderWithPayment(orderData);

@@ -90,15 +90,48 @@ const CartScreen = () => {
       return;
     }
 
-    // Navigate to checkout with cart data
-    router.push({
-      pathname: '/checkout' as any,
-      params: {
+    try {
+      setProcessing(true);
+
+      // Create order with required fields for direct payment
+      const orderData = {
+        userId: user.$id,
         restaurantId,
-        totalAmount: total.toString(),
-        itemCount: itemCount.toString()
-      }
-    });
+        items: items.map(item => ({
+          menuItemId: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          image_url: item.image_url,
+          customizations: item.customizations || []
+        })),
+        total,
+        deliveryAddress: user.address_home || 'Quick Order',
+        phone: user.phone || '0000000000',
+        notes: '',
+        paymentMethod: 'vnpay' as const // Default to VNPay for quick order
+      };
+
+      const { order } = await createOrderWithPayment(orderData);
+      
+      // Clear cart after successful order creation
+      clearCart();
+      
+      // Navigate directly to payment selection
+      router.push({
+        pathname: '/payment-selection' as any,
+        params: {
+          orderId: order.$id,
+          amount: total.toString(),
+          restaurantId
+        }
+      });
+    } catch (error) {
+      console.error('Order creation failed:', error);
+      Alert.alert('Error', 'Failed to create order. Please try again.');
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const getItemSubtotal = (item: any) => {

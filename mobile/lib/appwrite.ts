@@ -295,18 +295,25 @@ export const createOrderWithPayment = async (orderData: {
     paymentMethod: 'cod' | 'vnpay';
 }) => {
     try {
-        // Debug log the order data before creating
-        console.log('Creating order with data:', {
-            userId: orderData.userId,
-            restaurantId: orderData.restaurantId,
-            status: 'pending',
-            total: orderData.total,
-            deliveryAddress: orderData.deliveryAddress,
-            paymentMethod: orderData.paymentMethod,
-            itemsCount: orderData.items.length
-        });
+        // ✅ Hàm xác định trạng thái ban đầu của đơn hàng
+        const getInitialOrderStatus = (paymentMethod: string): string => {
+            switch (paymentMethod) {
+                case 'cod':
+                    return 'pending';    // COD: chờ xác nhận
+                case 'vnpay':
+                    return 'pending';    // VNPay: chờ thanh toán
+                default:
+                    return 'pending';    // fallback
+            }
+        };
 
-        // Create main order - try without status first
+        const autoStatus = getInitialOrderStatus(orderData.paymentMethod);
+
+        // 🧾 Log để kiểm tra giá trị status trước khi gửi
+        console.log("🧾 STATUS SENT:", autoStatus);
+        console.log("💳 PAYMENT METHOD:", orderData.paymentMethod);
+
+        // ✅ Tạo đơn hàng chính
         const order = await databases.createDocument(
             appwriteConfig.databaseId,
             appwriteConfig.ordersCollectionId,
@@ -314,22 +321,27 @@ export const createOrderWithPayment = async (orderData: {
             {
                 userId: orderData.userId,
                 restaurantId: orderData.restaurantId,
-                // status: 'confirmed', // Temporarily remove status
+                status: autoStatus, // 🎯 Giá trị hợp lệ: pending
                 total: orderData.total,
                 deliveryAddress: orderData.deliveryAddress,
                 deliveryAddressLabel: orderData.deliveryAddressLabel || '',
                 phone: orderData.phone,
                 notes: orderData.notes || '',
                 paymentMethod: orderData.paymentMethod,
-                items: JSON.stringify(orderData.items), // Add required items field
+                items: JSON.stringify(orderData.items),
                 createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(), // Add required updatedAt field
+                updatedAt: new Date().toISOString(),
             }
         );
 
-        // Create order items
+        // ✅ Tạo từng dòng order item
         const orderItems = await Promise.all(
             orderData.items.map(async (item) => {
+                const subtotal =
+                    item.price * item.quantity +
+                    ((item.customizations?.reduce((sum, c) => sum + c.price, 0) || 0) *
+                        item.quantity);
+
                 return await databases.createDocument(
                     appwriteConfig.databaseId,
                     appwriteConfig.orderItemsCollectionId,
@@ -342,23 +354,23 @@ export const createOrderWithPayment = async (orderData: {
                         quantity: item.quantity,
                         image_url: item.image_url,
                         customizations: JSON.stringify(item.customizations || []),
-                        subtotal: item.price * item.quantity + (item.customizations?.reduce((sum, c) => sum + c.price, 0) || 0) * item.quantity,
+                        subtotal: subtotal,
                         createdAt: new Date().toISOString(),
-                        updatedAt: new Date().toISOString(), // Add required updatedAt field
+                        updatedAt: new Date().toISOString(),
                     }
                 );
             })
         );
 
-        return {
-            order,
-            orderItems
-        };
-    } catch (e) {
-        console.error('Error creating order:', e);
-        throw new Error(e as string);
+        console.log("✅ Order created successfully:", order.$id);
+
+        return { order, orderItems };
+    } catch (e: any) {
+        console.error("❌ Error creating order:", e.message || e);
+        throw new Error(e.message || "Unknown error while creating order");
     }
-}
+};
+
 
 export const getUserOrders = async (userId: string) => {
     try {
@@ -366,7 +378,7 @@ export const getUserOrders = async (userId: string) => {
             appwriteConfig.databaseId,
             appwriteConfig.ordersCollectionId,
             [
-                Query.equal('user', userId),
+                Query.equal('userId', userId), // Fixed: 'user' → 'userId'
                 Query.orderDesc('createdAt')
             ]
         );

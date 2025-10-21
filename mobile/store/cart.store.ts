@@ -22,27 +22,9 @@ export const useCartStore = create<CartStore>((set, get) => ({
         const currentRestaurantId = get().restaurantId;
         const customizations = item.customizations ?? [];
 
-        // Check if adding item from different restaurant
-        if (currentRestaurantId && currentRestaurantId !== restaurantId) {
-            Alert.alert(
-                'Different Restaurant',
-                'Your cart has items from another restaurant. Clear cart to add items from this restaurant?',
-                [
-                    { text: 'Cancel', style: 'cancel' },
-                    { 
-                        text: 'Clear & Add', 
-                        onPress: () => {
-                            set({ 
-                                items: [{ ...item, quantity: 1, customizations }], 
-                                restaurantId 
-                            });
-                        }
-                    }
-                ]
-            );
-            return;
-        }
-
+        // 🚨 Note: Restaurant conflict check moved to menu-detail.tsx
+        // This function now assumes conflict already handled
+        
         const existing = get().items.find(
             (i) =>
                 i.id === item.id &&

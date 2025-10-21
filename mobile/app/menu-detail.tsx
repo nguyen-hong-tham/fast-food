@@ -43,6 +43,38 @@ const MenuDetail = () => {
     const handleAddToCart = () => {
         if (!menuItem || !restaurantId) return;
 
+        // 🚨 Leader's Fix: Check restaurant conflict FIRST
+        const currentRestaurantId = useCartStore.getState().restaurantId;
+        
+        if (currentRestaurantId && currentRestaurantId !== restaurantId) {
+            // Show restaurant conflict alert IMMEDIATELY
+            Alert.alert(
+                'Different Restaurant',
+                'Cart contains items from another restaurant. Do you want to clear cart and add this item?',
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    { 
+                        text: 'Clear & Add', 
+                        style: 'destructive',
+                        onPress: () => {
+                            // Clear cart và add item mới
+                            useCartStore.getState().clearCart();
+                            addItemAndShowSuccess();
+                        }
+                    }
+                ]
+            );
+            return; // STOP HERE - không show popup success
+        }
+
+        // Nếu không conflict, proceed bình thường
+        addItemAndShowSuccess();
+    };
+
+    const addItemAndShowSuccess = () => {
+        if (!menuItem || !restaurantId) return; // Safety check
+        
+        // Add item to cart (no conflict check needed)
         addItem(
             {
                 id: menuItem.$id,
@@ -55,14 +87,32 @@ const MenuDetail = () => {
             restaurantId
         );
 
+        // 🎯 Show success popup với choices
         Alert.alert(
             'Added to Cart',
-            `${quantity}x ${menuItem.name} has been added to your cart`,
+            `${quantity}x ${menuItem.name} has been added to cart.\n\nWhat would you like to do next?`,
             [
-                { text: 'Continue Shopping', style: 'default' },
                 { 
-                    text: 'View Cart', 
-                    onPress: () => router.push('/cart' as any)
+                    text: 'Continue Shopping', 
+                    style: 'default',
+                    onPress: () => {
+                        console.log('User chọn mua tiếp');
+                    }
+                },
+                { 
+                    text: 'Checkout Now', 
+                    style: 'default',
+                    onPress: () => {
+                        const cartData = useCartStore.getState().getCartForCheckout();
+                        router.push({
+                            pathname: '/checkout' as any,
+                            params: {
+                                restaurantId: cartData.restaurantId,
+                                totalAmount: cartData.totalAmount.toString(),
+                                itemCount: cartData.totalItems.toString()
+                            }
+                        });
+                    }
                 }
             ]
         );

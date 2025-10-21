@@ -30,7 +30,7 @@ const SignUp = () => {
 
             // Show success message
             Alert.alert(
-                '🎉 Welcome!', 
+                'Welcome', 
                 `Registration successful! Welcome to FoodFast, ${name}!`,
                 [{ text: 'Get Started', onPress: () => router.replace('/') }]
             );

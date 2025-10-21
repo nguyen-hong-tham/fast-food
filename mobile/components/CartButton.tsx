@@ -5,11 +5,29 @@ import React from 'react';
 import { Image, Text, TouchableOpacity, View } from 'react-native';
 
 const CartButton = () => {
-    const { getTotalItems } = useCartStore();
+    const { getTotalItems, getCartForCheckout } = useCartStore();
     const totalItems = getTotalItems();
 
+    const handleCartPress = () => {
+        if (totalItems === 0) {
+            // Nếu cart rỗng, có thể show message hoặc không làm gì
+            return;
+        }
+
+        // 🎯 Leader's Request: Cart button → Checkout directly
+        const cartData = getCartForCheckout();
+        router.push({
+            pathname: '/checkout' as any,
+            params: {
+                restaurantId: cartData.restaurantId,
+                totalAmount: cartData.totalAmount.toString(),
+                itemCount: cartData.totalItems.toString()
+            }
+        });
+    };
+
     return (
-        <TouchableOpacity className="cart-btn" onPress={()=> router.push('/cart')}>
+        <TouchableOpacity className="cart-btn" onPress={handleCartPress}>
             <Image source={icons.bag} className="size-5" resizeMode="contain" />
 
             {totalItems > 0 && (
