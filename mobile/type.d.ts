@@ -46,6 +46,9 @@ export interface Restaurant extends Models.Document {
   totalRevenue: number;
   businessLicense?: string;
   isActive: boolean;
+  deliveryFee?: number;
+  minimumOrder?: number;
+  estimatedDeliveryTime?: number; // in minutes
   createdAt: string;
   updatedAt?: string;
 }
@@ -55,7 +58,7 @@ export interface RestaurantFilters {
   rating?: number;
   distance?: number;
   search?: string;
-  sortBy?: 'rating' | 'distance' | 'name';
+  sortBy?: 'rating' | 'distance' | 'name' | 'newest';
 }
 
 export interface RestaurantWithDistance extends Restaurant {

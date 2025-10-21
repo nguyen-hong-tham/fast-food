@@ -20,25 +20,13 @@ const RestaurantsScreen = () => {
   const [selectedCuisine, setSelectedCuisine] = useState<string>('all');
   const [selectedRating, setSelectedRating] = useState<number | null>(null);
   const [selectedDistance, setSelectedDistance] = useState<number | null>(null);
-  const [sortBy, setSortBy] = useState<'rating' | 'distance' | 'name'>('rating');
+  const [sortBy, setSortBy] = useState<'rating' | 'distance' | 'name' | 'newest'>('rating');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'active'>('active');
 
-  // Get user location (optional - will work without location)
+  // Get user location (mock for Ho Chi Minh City)
   useEffect(() => {
-    (async () => {
-      try {
-        // For now, we'll skip location to avoid dependency
-        // You can add expo-location later if needed
-        // const { status } = await Location.requestForegroundPermissionsAsync();
-        // if (status !== 'granted') return;
-        // const location = await Location.getCurrentPositionAsync({});
-        // setUserLocation({ latitude: location.coords.latitude, longitude: location.coords.longitude });
-        
-        // Mock location for Ho Chi Minh City
-        setUserLocation({ latitude: 10.8231, longitude: 106.6297 });
-      } catch (error) {
-        console.error('Error getting location:', error);
-      }
-    })();
+    // Mock location for Ho Chi Minh City
+    setUserLocation({ latitude: 10.8231, longitude: 106.6297 });
   }, []);
 
   // Fetch cuisines
@@ -49,6 +37,8 @@ const RestaurantsScreen = () => {
         setCuisines(availableCuisines);
       } catch (error) {
         console.error('Error fetching cuisines:', error);
+        // Fallback cuisines
+        setCuisines(['Vietnamese', 'Korean', 'Japanese', 'Thai', 'Chinese', 'Western', 'Fast Food']);
       }
     })();
   }, []);
@@ -80,10 +70,25 @@ const RestaurantsScreen = () => {
         userLocation?.longitude
       );
 
-      setRestaurants(data as RestaurantWithDistance[]);
-      setFilteredRestaurants(data as RestaurantWithDistance[]);
+      let processedData = data as RestaurantWithDistance[];
+
+      // Apply status filter
+      if (statusFilter === 'open') {
+        processedData = processedData.filter(restaurant => {
+          const isOpen = restaurant.isActive && restaurant.status === 'active';
+          // Add operating hours check here if needed
+          return isOpen;
+        });
+      } else if (statusFilter === 'active') {
+        processedData = processedData.filter(restaurant => restaurant.status === 'active');
+      }
+
+      setRestaurants(processedData);
+      setFilteredRestaurants(processedData);
     } catch (error) {
       console.error('Error fetching restaurants:', error);
+      setRestaurants([]);
+      setFilteredRestaurants([]);
     } finally {
       setLoading(false);
     }
@@ -91,7 +96,7 @@ const RestaurantsScreen = () => {
 
   useEffect(() => {
     fetchRestaurants();
-  }, [selectedCuisine, selectedRating, selectedDistance, sortBy, userLocation]);
+  }, [selectedCuisine, selectedRating, selectedDistance, sortBy, statusFilter, userLocation]);
 
   // Search filter
   useEffect(() => {
@@ -100,7 +105,8 @@ const RestaurantsScreen = () => {
     } else {
       const filtered = restaurants.filter((restaurant) =>
         restaurant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        restaurant.cuisine?.toLowerCase().includes(searchQuery.toLowerCase())
+        restaurant.cuisine?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        restaurant.address.toLowerCase().includes(searchQuery.toLowerCase())
       );
       setFilteredRestaurants(filtered);
     }
@@ -115,7 +121,7 @@ const RestaurantsScreen = () => {
   const renderHeader = () => (
     <View className="px-4 pb-2">
       {/* Search Bar */}
-      <View className="flex-row items-center bg-white rounded-xl px-4 py-3 border border-gray-200"
+      <View className="flex-row items-center bg-white rounded-xl px-4 py-3 border border-gray-200 mb-4"
         style={Platform.OS === 'android' ? { elevation: 2 } : {}}
       >
         <Image
@@ -126,16 +132,55 @@ const RestaurantsScreen = () => {
         />
         <TextInput
           className="flex-1 text-base"
-          placeholder="Search restaurants or cuisine..."
+          placeholder="Search restaurants, cuisine, or area..."
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholderTextColor="#9CA3AF"
         />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity onPress={() => setSearchQuery('')}>
+            <Text className="text-gray-400 text-lg">✕</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Quick Filters */}
+      <View className="mb-4">
+        <Text className="text-sm font-semibold text-gray-700 mb-2">Quick Filters</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <View className="flex-row gap-2">
+            {[
+              { id: 'all', label: 'All', icon: '🍽️' },
+              { id: 'active', label: 'Active', icon: '✅' },
+              { id: 'open', label: 'Open Now', icon: '🕐' }
+            ].map((filter) => (
+              <TouchableOpacity
+                key={filter.id}
+                className={cn(
+                  'flex-row items-center px-4 py-2 rounded-full border',
+                  statusFilter === filter.id 
+                    ? 'bg-amber-500 border-amber-500' 
+                    : 'bg-white border-gray-300'
+                )}
+                style={Platform.OS === 'android' ? { elevation: 2 } : {}}
+                onPress={() => setStatusFilter(filter.id as any)}
+              >
+                <Text className="mr-2">{filter.icon}</Text>
+                <Text className={cn(
+                  'text-sm font-medium',
+                  statusFilter === filter.id ? 'text-white' : 'text-gray-700'
+                )}>
+                  {filter.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </ScrollView>
       </View>
 
       {/* Cuisine Filter */}
-      <View className="mt-4">
-        <Text className="text-sm font-semibold text-gray-700 mb-2">Cuisine</Text>
+      <View className="mb-4">
+        <Text className="text-sm font-semibold text-gray-700 mb-2">Cuisine Types</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <View className="flex-row gap-2">
             <TouchableOpacity
@@ -152,7 +197,7 @@ const RestaurantsScreen = () => {
                 'text-sm font-medium',
                 selectedCuisine === 'all' ? 'text-white' : 'text-gray-700'
               )}>
-                All
+                All Cuisines
               </Text>
             </TouchableOpacity>
             {cuisines.map((cuisine) => (
@@ -179,110 +224,132 @@ const RestaurantsScreen = () => {
         </ScrollView>
       </View>
 
-      {/* Rating & Distance Filter */}
-      <View className="mt-4 flex-row gap-2">
-        {/* Rating */}
-        <View className="flex-1">
-          <Text className="text-sm font-semibold text-gray-700 mb-2">Min Rating</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View className="flex-row gap-2">
-              {[4.0, 4.5].map((rating) => (
-                <TouchableOpacity
-                  key={rating}
-                  className={cn(
-                    'px-3 py-2 rounded-full border',
-                    selectedRating === rating 
-                      ? 'bg-amber-500 border-amber-500' 
-                      : 'bg-white border-gray-300'
-                  )}
-                  style={Platform.OS === 'android' ? { elevation: 2 } : {}}
-                  onPress={() => setSelectedRating(selectedRating === rating ? null : rating)}
-                >
-                  <Text className={cn(
-                    'text-sm font-medium',
-                    selectedRating === rating ? 'text-white' : 'text-gray-700'
-                  )}>
-                    {rating}+ ★
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </ScrollView>
-        </View>
-
-        {/* Distance */}
-        {userLocation && (
+      {/* Advanced Filters */}
+      <View className="mb-4">
+        <Text className="text-sm font-semibold text-gray-700 mb-2">Filters & Sort</Text>
+        
+        {/* Rating & Distance Row */}
+        <View className="flex-row gap-2 mb-2">
+          {/* Rating */}
           <View className="flex-1">
-            <Text className="text-sm font-semibold text-gray-700 mb-2">Max Distance</Text>
+            <Text className="text-xs text-gray-600 mb-1">Minimum Rating</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View className="flex-row gap-2">
-                {[5, 10, 15].map((distance) => (
+                {[4.0, 4.2, 4.5, 4.8].map((rating) => (
                   <TouchableOpacity
-                    key={distance}
+                    key={rating}
                     className={cn(
-                      'px-3 py-2 rounded-full border',
-                      selectedDistance === distance 
-                        ? 'bg-amber-500 border-amber-500' 
+                      'px-3 py-1.5 rounded-lg border',
+                      selectedRating === rating 
+                        ? 'bg-yellow-100 border-yellow-400' 
                         : 'bg-white border-gray-300'
                     )}
-                    style={Platform.OS === 'android' ? { elevation: 2 } : {}}
-                    onPress={() => setSelectedDistance(selectedDistance === distance ? null : distance)}
+                    onPress={() => setSelectedRating(selectedRating === rating ? null : rating)}
                   >
                     <Text className={cn(
-                      'text-sm font-medium',
-                      selectedDistance === distance ? 'text-white' : 'text-gray-700'
+                      'text-xs font-medium',
+                      selectedRating === rating ? 'text-yellow-700' : 'text-gray-700'
                     )}>
-                      {distance} km
+                      {rating}+ ★
                     </Text>
                   </TouchableOpacity>
                 ))}
               </View>
             </ScrollView>
           </View>
-        )}
-      </View>
 
-      {/* Sort Options */}
-      <View className="mt-4">
-        <Text className="text-sm font-semibold text-gray-700 mb-2">Sort By</Text>
-        <View className="flex-row gap-2">
-          {[
-            { value: 'rating', label: 'Rating' },
-            { value: 'distance', label: 'Distance', disabled: !userLocation },
-            { value: 'name', label: 'Name' }
-          ].map((option) => (
-            <TouchableOpacity
-              key={option.value}
-              disabled={option.disabled}
-              className={cn(
-                'px-4 py-2 rounded-full border',
-                option.disabled 
-                  ? 'bg-gray-200 border-gray-300'
-                  : sortBy === option.value 
-                    ? 'bg-amber-500 border-amber-500' 
-                    : 'bg-white border-gray-300'
-              )}
-              style={Platform.OS === 'android' ? { elevation: 2 } : {}}
-              onPress={() => !option.disabled && setSortBy(option.value as any)}
-            >
-              <Text className={cn(
-                'text-sm font-medium',
-                option.disabled
-                  ? 'text-gray-400'
-                  : sortBy === option.value ? 'text-white' : 'text-gray-700'
-              )}>
-                {option.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
+          {/* Distance */}
+          {userLocation && (
+            <View className="flex-1">
+              <Text className="text-xs text-gray-600 mb-1">Max Distance</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                <View className="flex-row gap-2">
+                  {[2, 5, 10, 20].map((distance) => (
+                    <TouchableOpacity
+                      key={distance}
+                      className={cn(
+                        'px-3 py-1.5 rounded-lg border',
+                        selectedDistance === distance 
+                          ? 'bg-blue-100 border-blue-400' 
+                          : 'bg-white border-gray-300'
+                      )}
+                      onPress={() => setSelectedDistance(selectedDistance === distance ? null : distance)}
+                    >
+                      <Text className={cn(
+                        'text-xs font-medium',
+                        selectedDistance === distance ? 'text-blue-700' : 'text-gray-700'
+                      )}>
+                        {distance} km
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </ScrollView>
+            </View>
+          )}
+        </View>
+
+        {/* Sort Options */}
+        <View>
+          <Text className="text-xs text-gray-600 mb-1">Sort By</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View className="flex-row gap-2">
+              {[
+                { value: 'rating', label: 'Rating', icon: '⭐' },
+                { value: 'distance', label: 'Distance', icon: '📍', disabled: !userLocation },
+                { value: 'name', label: 'Name', icon: '🔤' },
+                { value: 'newest', label: 'Newest', icon: '🆕' }
+              ].map((option) => (
+                <TouchableOpacity
+                  key={option.value}
+                  disabled={option.disabled}
+                  className={cn(
+                    'flex-row items-center px-3 py-1.5 rounded-lg border',
+                    option.disabled 
+                      ? 'bg-gray-200 border-gray-300'
+                      : sortBy === option.value 
+                        ? 'bg-green-100 border-green-400' 
+                        : 'bg-white border-gray-300'
+                  )}
+                  onPress={() => !option.disabled && setSortBy(option.value as any)}
+                >
+                  <Text className="mr-1 text-xs">{option.icon}</Text>
+                  <Text className={cn(
+                    'text-xs font-medium',
+                    option.disabled
+                      ? 'text-gray-400'
+                      : sortBy === option.value ? 'text-green-700' : 'text-gray-700'
+                  )}>
+                    {option.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
         </View>
       </View>
 
-      {/* Results Count */}
-      <View className="mt-4 mb-2">
+      {/* Results Summary */}
+      <View className="flex-row justify-between items-center mb-2">
         <Text className="text-sm text-gray-600">
-          Found {filteredRestaurants.length} restaurant{filteredRestaurants.length !== 1 ? 's' : ''}
+          {filteredRestaurants.length} restaurant{filteredRestaurants.length !== 1 ? 's' : ''} found
         </Text>
+        
+        {/* Clear Filters */}
+        {(selectedCuisine !== 'all' || selectedRating || selectedDistance || statusFilter !== 'active') && (
+          <TouchableOpacity
+            onPress={() => {
+              setSelectedCuisine('all');
+              setSelectedRating(null);
+              setSelectedDistance(null);
+              setStatusFilter('active');
+              setSearchQuery('');
+            }}
+            className="px-3 py-1 bg-gray-100 rounded-lg"
+          >
+            <Text className="text-xs text-gray-600">Clear Filters</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
@@ -292,7 +359,7 @@ const RestaurantsScreen = () => {
       <SafeAreaView className="flex-1 bg-gray-50">
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#f59e0b" />
-          <Text className="mt-4 text-gray-600">Loading restaurants...</Text>
+          <Text className="mt-4 text-gray-600">Discovering restaurants...</Text>
         </View>
       </SafeAreaView>
     );
@@ -300,10 +367,11 @@ const RestaurantsScreen = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
+      {/* Header */}
       <View className="px-4 pt-4 pb-2 bg-white border-b border-gray-200">
         <Text className="text-2xl font-bold text-gray-800">Restaurants</Text>
         <Text className="text-sm text-gray-600 mt-1">
-          Discover great food near you
+          Discover amazing food delivered by drone 🚁
         </Text>
       </View>
 
@@ -315,17 +383,34 @@ const RestaurantsScreen = () => {
         contentContainerClassName="px-4 pt-4"
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#f59e0b']} />
+          <RefreshControl 
+            refreshing={refreshing} 
+            onRefresh={onRefresh} 
+            colors={['#f59e0b']} 
+            tintColor="#f59e0b"
+          />
         }
         ListEmptyComponent={
           <View className="items-center justify-center py-12">
-            <Text className="text-4xl mb-4">🍽️</Text>
-            <Text className="text-gray-600 text-center">
+            <Text className="text-6xl mb-4">🍽️</Text>
+            <Text className="text-lg font-semibold text-gray-800 mb-2">
               No restaurants found
             </Text>
-            <Text className="text-gray-500 text-sm text-center mt-2">
-              Try adjusting your filters
+            <Text className="text-gray-500 text-sm text-center mb-4">
+              Try adjusting your filters or search terms
             </Text>
+            <TouchableOpacity
+              onPress={() => {
+                setSelectedCuisine('all');
+                setSelectedRating(null);
+                setSelectedDistance(null);
+                setStatusFilter('active');
+                setSearchQuery('');
+              }}
+              className="bg-amber-500 px-4 py-2 rounded-lg"
+            >
+              <Text className="text-white font-semibold">Reset Filters</Text>
+            </TouchableOpacity>
           </View>
         }
       />

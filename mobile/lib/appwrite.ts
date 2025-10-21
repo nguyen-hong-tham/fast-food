@@ -593,7 +593,7 @@ export const isRestaurantOpen = (operatingHours?: Record<string, { open: string;
  */
 export const getRestaurants = async (filters?: RestaurantFilters, userLat?: number, userLng?: number) => {
     try {
-        const queries: string[] = [Query.equal('isActive', true)];
+        const queries: string[] = [Query.equal('status', 'active')];
 
         // Apply filters
         if (filters?.cuisine) {
@@ -608,12 +608,15 @@ export const getRestaurants = async (filters?: RestaurantFilters, userLat?: numb
             queries.push(Query.search('name', filters.search));
         }
 
-        // Order by rating by default
+        // Apply sorting
         if (!filters?.sortBy || filters.sortBy === 'rating') {
             queries.push(Query.orderDesc('rating'));
         } else if (filters.sortBy === 'name') {
             queries.push(Query.orderAsc('name'));
+        } else if (filters.sortBy === 'newest') {
+            queries.push(Query.orderDesc('createdAt'));
         }
+        // Note: distance sorting is handled after distance calculation
 
         const restaurants = await databases.listDocuments(
             appwriteConfig.databaseId,
@@ -629,7 +632,7 @@ export const getRestaurants = async (filters?: RestaurantFilters, userLat?: numb
             }
 
             const isOpen = isRestaurantOpen(restaurant.operatingHours);
-            const estimatedTime = distance ? Math.ceil(distance * 3 + 20) : 30; // 3 min/km + 20 min prep
+            const estimatedTime = restaurant.estimatedDeliveryTime || (distance ? Math.ceil(distance * 3 + 20) : 30);
 
             return {
                 ...restaurant,
@@ -645,7 +648,7 @@ export const getRestaurants = async (filters?: RestaurantFilters, userLat?: numb
             filteredRestaurants = enhancedRestaurants.filter(r => r.distance && r.distance <= filters.distance!);
         }
 
-        // Sort by distance if requested
+        // Sort by distance if requested (after distance calculation)
         if (filters?.sortBy === 'distance' && userLat && userLng) {
             filteredRestaurants.sort((a, b) => (a.distance || 0) - (b.distance || 0));
         }
