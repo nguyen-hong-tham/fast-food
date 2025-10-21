@@ -48,12 +48,12 @@ export interface MenuItem {
   name: string;
   description: string;
   price: number;
-  category: string;
-  image_url: string; // Required field
-  calories: number; // Required: 0-10000
-  protein: number; // Required: 5-10000
+  categoryId?: string; // Changed from category to categoryId to match database
+  image_url?: string; // Made optional since some items might not have images
+  calories?: number; // Made optional: 0-10000
+  protein?: number; // Made optional: 5-10000
   isAvailable: boolean;
-  preparationTime: number; // minutes
+  preparationTime?: number; // minutes - made optional
   rating?: number; // 0-5
   stock?: number; // Min: 0
   soldCount?: number;

@@ -197,7 +197,7 @@ export default function MenuPage() {
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1">
                     <h3 className="text-lg font-semibold text-gray-900">{item.name}</h3>
-                    <p className="text-sm text-gray-500 capitalize">{item.category.replace('_', ' ')}</p>
+                    <p className="text-sm text-gray-500 capitalize">{item.category?.replace('_', ' ') || 'Unknown Category'}</p>
                   </div>
                   <span className="text-lg font-bold text-primary-600">
                     {item.price.toLocaleString('vi-VN')}₫
