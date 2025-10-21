@@ -127,11 +127,11 @@ export default function MenuPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow p-4">
+      <div className=" text-black bg-white rounded-lg shadow p-4">
         <div className="flex flex-col sm:flex-row gap-4">
           {/* Search */}
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <div className=" flex-1 relative">
+            <Search className=" text-black absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5" />
             <input
               type="text"
               placeholder="Search menu items..."
@@ -197,7 +197,10 @@ export default function MenuPage() {
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1">
                     <h3 className="text-lg font-semibold text-gray-900">{item.name}</h3>
-                    <p className="text-sm text-gray-500 capitalize">{item.category?.replace('_', ' ') || 'Unknown Category'}</p>
+                    {/* Category display - conditional based on categoryId field */}
+                    {item.categoryId && (
+                      <p className="text-sm text-gray-500 capitalize">{item.categoryId.replace('_', ' ')}</p>
+                    )}
                   </div>
                   <span className="text-lg font-bold text-primary-600">
                     {item.price.toLocaleString('vi-VN')}₫
@@ -208,25 +211,6 @@ export default function MenuPage() {
                   {item.description}
                 </p>
 
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500">
-                    Prep: {item.preparationTime}min
-                  </span>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleEdit(item)}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(item.$id)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
               </div>
             </div>
           ))}
