@@ -2,7 +2,7 @@ import { View, Text, ScrollView, ActivityIndicator, FlatList, Image, TouchableOp
 import React, { useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
-import { getRestaurantById, getRestaurantMenu, getCategories, getRestaurantReviews } from '@/lib/appwrite';
+import { getRestaurantById, getRestaurantMenu, getCategories } from '@/lib/appwrite';
 import { Restaurant, MenuItem, Review } from '@/type';
 import RestaurantHeader from '@/components/RestaurantHeader';
 import MenuCard from '@/components/MenuCard';
@@ -79,20 +79,24 @@ const RestaurantDetailScreen = () => {
     })();
   }, [id]);
 
-  // Fetch reviews
+  // Fetch reviews - Temporarily disabled until reviews collection is created
   useEffect(() => {
     if (!id) return;
     
-    (async () => {
-      try {
-        const data = await getRestaurantReviews(id);
-        setReviews(data as any as Review[]);
-      } catch (error) {
-        console.error('Error fetching reviews:', error);
-        // Set empty array if no reviews found
-        setReviews([]);
-      }
-    })();
+    // TODO: Enable when reviews collection is created in database
+    // (async () => {
+    //   try {
+    //     const data = await getRestaurantReviews(id);
+    //     setReviews(data as any as Review[]);
+    //   } catch (error) {
+    //     console.error('Error fetching reviews:', error);
+    //     // Set empty array if no reviews found
+    //     setReviews([]);
+    //   }
+    // })();
+    
+    // For now, set empty reviews
+    setReviews([]);
   }, [id]);
 
   // Filter menu by category

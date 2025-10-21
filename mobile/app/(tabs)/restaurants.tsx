@@ -24,7 +24,7 @@ const RestaurantsScreen = () => {
   const [sortBy, setSortBy] = useState<'rating' | 'distance' | 'name' | 'newest'>('rating');
   const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'active'>('active');
 
-  // Get user location (real geolocation)
+  // Get user location (mock for Ho Chi Minh City)
   useEffect(() => {
     const getCurrentLocation = async () => {
       try {

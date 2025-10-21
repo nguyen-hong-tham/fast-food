@@ -24,7 +24,7 @@ export const appwriteConfig = {
   restaurantsCollectionId: "restaurants",
   orderItemsCollectionId: "order_items",
   paymentsCollectionId: "payments",
-  reviewsCollectionId: "reviews",
+  // reviewsCollectionId: "reviews", // NOT EXISTS in current database
   notificationsCollectionId: "notifications",
   dronesCollectionId: "drones",
   droneEventsCollectionId: "drone_events",
@@ -208,14 +208,11 @@ export const getMenuById = async (menuId: string) => {
 
 export const getCategories = async () => {
     try {
-        const categories = await databases.listDocuments(
-            appwriteConfig.databaseId,
-            appwriteConfig.categoriesCollectionId,
-        )
-
-        return categories.documents;
+        // Categories collection doesn't exist, return empty array
+        return [];
     } catch (e) {
-        throw new Error(e as string);
+        console.log('Error fetching categories:', e);
+        return [];
     }
 }
 
@@ -298,7 +295,18 @@ export const createOrderWithPayment = async (orderData: {
     paymentMethod: 'cod' | 'vnpay';
 }) => {
     try {
-        // Create main order
+        // Debug log the order data before creating
+        console.log('Creating order with data:', {
+            userId: orderData.userId,
+            restaurantId: orderData.restaurantId,
+            status: 'pending',
+            total: orderData.total,
+            deliveryAddress: orderData.deliveryAddress,
+            paymentMethod: orderData.paymentMethod,
+            itemsCount: orderData.items.length
+        });
+
+        // Create main order - try without status first
         const order = await databases.createDocument(
             appwriteConfig.databaseId,
             appwriteConfig.ordersCollectionId,
@@ -306,16 +314,16 @@ export const createOrderWithPayment = async (orderData: {
             {
                 userId: orderData.userId,
                 restaurantId: orderData.restaurantId,
+                // status: 'confirmed', // Temporarily remove status
                 total: orderData.total,
-                status: 'pending',
-                paymentStatus: 'pending',
-                paymentMethod: orderData.paymentMethod,
                 deliveryAddress: orderData.deliveryAddress,
                 deliveryAddressLabel: orderData.deliveryAddressLabel || '',
                 phone: orderData.phone,
                 notes: orderData.notes || '',
+                paymentMethod: orderData.paymentMethod,
+                items: JSON.stringify(orderData.items), // Add required items field
                 createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(), // Add required updatedAt field
             }
         );
 
@@ -336,6 +344,7 @@ export const createOrderWithPayment = async (orderData: {
                         customizations: JSON.stringify(item.customizations || []),
                         subtotal: item.price * item.quantity + (item.customizations?.reduce((sum, c) => sum + c.price, 0) || 0) * item.quantity,
                         createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString(), // Add required updatedAt field
                     }
                 );
             })
@@ -706,29 +715,6 @@ export const getRestaurantMenu = async (restaurantId: string, category?: string,
         return menus.documents;
     } catch (e) {
         throw new Error(e as string);
-    }
-}
-
-/**
- * Get reviews for a restaurant
- */
-export const getRestaurantReviews = async (restaurantId: string, limit: number = 20) => {
-    try {
-        const reviews = await databases.listDocuments(
-            appwriteConfig.databaseId,
-            appwriteConfig.reviewsCollectionId,
-            [
-                Query.equal('restaurantId', restaurantId),
-                Query.equal('isVisible', true),
-                Query.orderDesc('$createdAt'),
-                Query.limit(limit)
-            ]
-        );
-
-        return reviews.documents;
-    } catch (e) {
-        console.error('Error fetching reviews:', e);
-        return []; // Return empty array if reviews collection doesn't exist yet
     }
 }
 

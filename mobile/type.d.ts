@@ -139,11 +139,12 @@ export interface Order extends Models.Document {
   total: number;
   status:
     | "pending"
+    | "confirmed" 
     | "preparing"
     | "ready"
     | "delivering"
-    | "completed"
-    | "cancelled";
+    | "delivered"
+    | "cancelled"; // Updated to match ACTUAL database enum from error message
   paymentStatus?: 'pending' | 'paid' | 'failed' | 'refunded'; // NEW: Phase 0
   paymentMethod?: 'cod' | 'vnpay'; // NEW: Phase 0
   droneId?: string; // NEW: Phase 0
