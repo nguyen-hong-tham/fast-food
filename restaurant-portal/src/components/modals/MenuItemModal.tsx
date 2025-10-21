@@ -21,9 +21,7 @@ export default function MenuItemModal({ item, restaurantId, onClose }: MenuItemM
     calories: item?.calories || 100,
     protein: item?.protein || 10,
     image_url: item?.image_url || '', // ✅ URL input instead of file upload
-    preparationTime: item?.preparationTime || 15,
     isAvailable: item?.isAvailable ?? true,
-    tags: item?.tags?.join(', ') || '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -51,9 +49,7 @@ export default function MenuItemModal({ item, restaurantId, onClose }: MenuItemM
         calories: Number(formData.calories),
         protein: Number(formData.protein),
         image_url: formData.image_url.trim(), // ✅ Use URL from form
-        preparationTime: Number(formData.preparationTime),
-        isAvailable: formData.isAvailable,
-        tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
+        isAvailable: formData.isAvailable
       };
 
       if (item) {

@@ -4,11 +4,23 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'cloud.appwrite.io',
+        hostname: '**.appwrite.io',
       },
       {
         protocol: 'https',
-        hostname: 'nyc.cloud.appwrite.io',
+        hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.imgur.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.googleusercontent.com',
       },
       {
         protocol: 'https',
