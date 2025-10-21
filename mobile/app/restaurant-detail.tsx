@@ -41,25 +41,6 @@ const RestaurantDetailScreen = () => {
     })();
   }, [id]);
 
-  // Fetch categories
-  useEffect(() => {
-    (async () => {
-      try {
-        const data = await getCategories();
-        setCategories(data as any[]);
-      } catch (error) {
-        console.error('Error fetching categories:', error);
-        // Set fallback categories if API fails
-        setCategories([
-          { $id: 'all', name: 'All', icon: '🍽️' },
-          { $id: '1', name: 'Main Course', icon: '🍽️' },
-          { $id: '2', name: 'Appetizers', icon: '🥗' },
-          { $id: '3', name: 'Desserts', icon: '🍰' },
-          { $id: '4', name: 'Drinks', icon: '🥤' }
-        ]);
-      }
-    })();
-  }, []);
 
   // Fetch menu items
   useEffect(() => {
@@ -206,7 +187,7 @@ const RestaurantDetailScreen = () => {
                 </View>
               ) : (
                 <View className="items-center justify-center py-12">
-                  <Text className="text-4xl mb-4">🍽️</Text>
+                  <Text className="text-4xl mb-4"></Text>
                   <Text className="text-gray-600 text-center">
                     No menu items available
                   </Text>
@@ -226,7 +207,7 @@ const RestaurantDetailScreen = () => {
                     {/* Reviewer Info */}
                     <View className="flex-row items-center mb-3">
                       <View className="w-10 h-10 bg-amber-100 rounded-full items-center justify-center mr-3">
-                        <Text className="text-lg">👤</Text>
+                        <Text className="text-lg"></Text>
                       </View>
                       <View className="flex-1">
                         <Text className="font-semibold text-gray-800">
@@ -296,7 +277,7 @@ const RestaurantDetailScreen = () => {
               </View>
             ) : (
               <View className="items-center justify-center py-12">
-                <Text className="text-4xl mb-4">💬</Text>
+                <Text className="text-4xl mb-4"></Text>
                 <Text className="text-gray-600 text-center">
                   No reviews yet
                 </Text>

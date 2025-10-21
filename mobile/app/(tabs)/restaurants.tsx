@@ -176,9 +176,9 @@ const RestaurantsScreen = () => {
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <View className="flex-row gap-2">
             {[
-              { id: 'all', label: 'All', icon: '🍽️' },
-              { id: 'active', label: 'Active', icon: '✅' },
-              { id: 'open', label: 'Open Now', icon: '🕐' }
+              { id: 'all', label: 'All'},
+              { id: 'active', label: 'Active'},
+              { id: 'open', label: 'Open Now' }
             ].map((filter) => (
               <TouchableOpacity
                 key={filter.id}
@@ -191,7 +191,6 @@ const RestaurantsScreen = () => {
                 style={Platform.OS === 'android' ? { elevation: 2 } : {}}
                 onPress={() => setStatusFilter(filter.id as any)}
               >
-                <Text className="mr-2">{filter.icon}</Text>
                 <Text className={cn(
                   'text-sm font-medium',
                   statusFilter === filter.id ? 'text-white' : 'text-gray-700'
@@ -321,10 +320,10 @@ const RestaurantsScreen = () => {
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View className="flex-row gap-2">
               {[
-                { value: 'rating', label: 'Rating', icon: '⭐' },
-                { value: 'distance', label: 'Distance', icon: '📍', disabled: !userLocation },
-                { value: 'name', label: 'Name', icon: '🔤' },
-                { value: 'newest', label: 'Newest', icon: '🆕' }
+                { value: 'rating', label: 'Rating'},
+                { value: 'distance', label: 'Distance', disabled: !userLocation },
+                { value: 'name', label: 'Name'},
+                { value: 'newest', label: 'Newest' }
               ].map((option) => (
                 <TouchableOpacity
                   key={option.value}
@@ -339,7 +338,6 @@ const RestaurantsScreen = () => {
                   )}
                   onPress={() => !option.disabled && setSortBy(option.value as any)}
                 >
-                  <Text className="mr-1 text-xs">{option.icon}</Text>
                   <Text className={cn(
                     'text-xs font-medium',
                     option.disabled
@@ -397,7 +395,7 @@ const RestaurantsScreen = () => {
       <View className="px-4 pt-4 pb-2 bg-white border-b border-gray-200">
         <Text className="text-2xl font-bold text-gray-800">Restaurants</Text>
         <Text className="text-sm text-gray-600 mt-1">
-          Discover amazing food delivered by drone 🚁
+          Discover amazing food delivered by drone
         </Text>
       </View>
 
@@ -418,7 +416,7 @@ const RestaurantsScreen = () => {
         }
         ListEmptyComponent={
           <View className="items-center justify-center py-12">
-            <Text className="text-6xl mb-4">🍽️</Text>
+            <Text className="text-6xl mb-4"></Text>
             <Text className="text-lg font-semibold text-gray-800 mb-2">
               No restaurants found
             </Text>
