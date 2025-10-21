@@ -146,25 +146,7 @@ const CheckoutScreen = () => {
             <View className="mb-4">
               <Text className="text-gray-700 font-semibold mb-2">Address Label</Text>
               <View className="flex-row space-x-2">
-                {['Home', 'Work', 'Other'].map((label) => (
-                  <TouchableOpacity
-                    key={label}
-                    className={cn(
-                      'px-4 py-2 rounded-lg border',
-                      deliveryAddressLabel === label
-                        ? 'bg-amber-500 border-amber-500'
-                        : 'bg-white border-gray-300'
-                    )}
-                    onPress={() => setDeliveryAddressLabel(label)}
-                  >
-                    <Text className={cn(
-                      'font-semibold',
-                      deliveryAddressLabel === label ? 'text-white' : 'text-gray-700'
-                    )}>
-                      {label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                <Text className="text-gray-800">{deliveryAddressLabel}</Text>
               </View>
             </View>
 

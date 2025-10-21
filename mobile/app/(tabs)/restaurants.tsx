@@ -2,7 +2,7 @@ import { View, Text, FlatList, ActivityIndicator, TouchableOpacity, ScrollView, 
 import React, { useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
-import { getRestaurants, getAvailableCuisines } from '@/lib/appwrite';
+import { getRestaurants } from '@/lib/appwrite';
 import { RestaurantWithDistance, RestaurantFilters } from '@/type';
 import RestaurantCard from '@/components/RestaurantCard';
 import cn from 'clsx';
@@ -13,12 +13,10 @@ const RestaurantsScreen = () => {
   const [filteredRestaurants, setFilteredRestaurants] = useState<RestaurantWithDistance[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [cuisines, setCuisines] = useState<string[]>([]);
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCuisine, setSelectedCuisine] = useState<string>('all');
   const [selectedRating, setSelectedRating] = useState<number | null>(null);
   const [selectedDistance, setSelectedDistance] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState<'rating' | 'distance' | 'name' | 'newest'>('rating');
@@ -55,19 +53,6 @@ const RestaurantsScreen = () => {
     getCurrentLocation();
   }, []);
 
-  // Fetch cuisines
-  useEffect(() => {
-    (async () => {
-      try {
-        const availableCuisines = await getAvailableCuisines();
-        setCuisines(availableCuisines);
-      } catch (error) {
-        console.error('Error fetching cuisines:', error);
-        // Fallback cuisines
-        setCuisines(['Vietnamese', 'Korean', 'Japanese', 'Thai', 'Chinese', 'Western', 'Fast Food']);
-      }
-    })();
-  }, []);
 
   // Fetch restaurants
   const fetchRestaurants = async () => {
@@ -77,10 +62,6 @@ const RestaurantsScreen = () => {
       const filters: RestaurantFilters = {
         sortBy
       };
-
-      if (selectedCuisine && selectedCuisine !== 'all') {
-        filters.cuisine = selectedCuisine;
-      }
 
       if (selectedRating) {
         filters.rating = selectedRating;
@@ -122,7 +103,7 @@ const RestaurantsScreen = () => {
 
   useEffect(() => {
     fetchRestaurants();
-  }, [selectedCuisine, selectedRating, selectedDistance, sortBy, statusFilter, userLocation]);
+  }, [selectedRating, selectedDistance, sortBy, statusFilter, userLocation]);
 
   // Search filter
   useEffect(() => {
@@ -131,7 +112,6 @@ const RestaurantsScreen = () => {
     } else {
       const filtered = restaurants.filter((restaurant) =>
         restaurant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        restaurant.cuisine?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         restaurant.address.toLowerCase().includes(searchQuery.toLowerCase())
       );
       setFilteredRestaurants(filtered);
@@ -158,7 +138,7 @@ const RestaurantsScreen = () => {
         />
         <TextInput
           className="flex-1 text-base"
-          placeholder="Search restaurants, cuisine, or area..."
+          placeholder="Search restaurants, or area..."
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholderTextColor="#9CA3AF"
@@ -196,52 +176,6 @@ const RestaurantsScreen = () => {
                   statusFilter === filter.id ? 'text-white' : 'text-gray-700'
                 )}>
                   {filter.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </ScrollView>
-      </View>
-
-      {/* Cuisine Filter */}
-      <View className="mb-4">
-        <Text className="text-sm font-semibold text-gray-700 mb-2">Cuisine Types</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View className="flex-row gap-2">
-            <TouchableOpacity
-              className={cn(
-                'px-4 py-2 rounded-full border',
-                selectedCuisine === 'all' 
-                  ? 'bg-amber-500 border-amber-500' 
-                  : 'bg-white border-gray-300'
-              )}
-              style={Platform.OS === 'android' ? { elevation: 2 } : {}}
-              onPress={() => setSelectedCuisine('all')}
-            >
-              <Text className={cn(
-                'text-sm font-medium',
-                selectedCuisine === 'all' ? 'text-white' : 'text-gray-700'
-              )}>
-                All Cuisines
-              </Text>
-            </TouchableOpacity>
-            {cuisines.map((cuisine) => (
-              <TouchableOpacity
-                key={cuisine}
-                className={cn(
-                  'px-4 py-2 rounded-full border',
-                  selectedCuisine === cuisine 
-                    ? 'bg-amber-500 border-amber-500' 
-                    : 'bg-white border-gray-300'
-                )}
-                style={Platform.OS === 'android' ? { elevation: 2 } : {}}
-                onPress={() => setSelectedCuisine(cuisine)}
-              >
-                <Text className={cn(
-                  'text-sm font-medium',
-                  selectedCuisine === cuisine ? 'text-white' : 'text-gray-700'
-                )}>
-                  {cuisine}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -360,10 +294,9 @@ const RestaurantsScreen = () => {
         </Text>
         
         {/* Clear Filters */}
-        {(selectedCuisine !== 'all' || selectedRating || selectedDistance || statusFilter !== 'active') && (
+        {(selectedRating || selectedDistance || statusFilter !== 'active') && (
           <TouchableOpacity
             onPress={() => {
-              setSelectedCuisine('all');
               setSelectedRating(null);
               setSelectedDistance(null);
               setStatusFilter('active');
@@ -425,7 +358,6 @@ const RestaurantsScreen = () => {
             </Text>
             <TouchableOpacity
               onPress={() => {
-                setSelectedCuisine('all');
                 setSelectedRating(null);
                 setSelectedDistance(null);
                 setStatusFilter('active');
