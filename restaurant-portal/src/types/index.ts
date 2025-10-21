@@ -48,8 +48,8 @@ export interface MenuItem {
   name: string;
   description: string;
   price: number;
-  category: string;
-  image_url: string; // Required field
+  // ❌ REMOVED: category - simplified, no categories needed
+  image_url: string; // Required field - URL to image
   calories: number; // Required: 0-10000
   protein: number; // Required: 5-10000
   isAvailable: boolean;

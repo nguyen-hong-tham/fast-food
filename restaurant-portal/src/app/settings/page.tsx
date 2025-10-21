@@ -70,21 +70,39 @@ export default function SettingsPage() {
 
     try {
       // Update restaurant document - only send fields that exist in database
+      // Build data object, only include non-empty optional fields
+      const updateData: any = {
+        name: settings.name.trim(),
+        description: settings.description.trim(),
+        phone: settings.phone.trim(),
+        address: settings.address.trim(),
+      };
+
+      // Only add optional fields if they have values (non-empty strings)
+      if (settings.email && settings.email.trim()) {
+        updateData.email = settings.email.trim();
+      }
+      if (settings.businessLicense && settings.businessLicense.trim()) {
+        updateData.businessLicense = settings.businessLicense.trim();
+      }
+      if (settings.taxCode && settings.taxCode.trim()) {
+        updateData.taxCode = settings.taxCode.trim();
+      }
+      if (settings.bankAccount && settings.bankAccount.trim()) {
+        updateData.bankAccount = settings.bankAccount.trim();
+      }
+      if (settings.bankName && settings.bankName.trim()) {
+        updateData.bankName = settings.bankName.trim();
+      }
+
+      console.log('📤 Sending update data:', updateData);
+      console.log('📤 Data types:', Object.entries(updateData).map(([k, v]) => `${k}: ${typeof v}`).join(', '));
+
       await databases.updateDocument(
         config.appwrite.databaseId,
         config.appwrite.restaurantsCollectionId,
         restaurant.$id,
-        {
-          name: settings.name,
-          description: settings.description,
-          phone: settings.phone,
-          email: settings.email || '',  // Optional restaurant contact email
-          address: settings.address,
-          businessLicense: settings.businessLicense || undefined,  // Optional
-          taxCode: settings.taxCode || undefined,  // Optional
-          bankAccount: settings.bankAccount || undefined,  // Optional
-          bankName: settings.bankName || undefined,  // Optional
-        }
+        updateData
       );
 
       setMessage({
