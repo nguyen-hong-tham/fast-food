@@ -3,26 +3,32 @@ import { MenuItem } from "@/type";
 import { router } from "expo-router";
 import { Image, Platform, Text, TouchableOpacity } from 'react-native';
 
-const MenuCard = ({ item: { $id, image_url, name, price }}: { item: MenuItem}) => {
+interface MenuCardProps {
+    item: MenuItem;
+    restaurantId?: string;
+}
+
+const MenuCard = ({ item: { $id, image_url, name, price }, restaurantId }: MenuCardProps) => {
     const { addItem } = useCartStore();
 
-    const handleViewDetails = () => {
-        router.push({
-            pathname: '/menu-detail',
-            params: { menuId: $id }
-        });
+    const handlePress = () => {
+        router.push(`/menu-detail?menuId=${$id}&restaurantId=${restaurantId}`);
     };
 
     const handleQuickAdd = (e: any) => {
         e.stopPropagation();
-        addItem({ id: $id, name, price, image_url, customizations: []});
+        if (restaurantId) {
+            addItem({ id: $id, name, price, image_url, customizations: [] }, restaurantId);
+        } else {
+            alert('Restaurant ID not available');
+        }
     };
 
     return (
         <TouchableOpacity 
             className="menu-card" 
             style={Platform.OS === 'android' ? { elevation: 10, shadowColor: '#878787'}: {}}
-            onPress={handleViewDetails}
+            onPress={handlePress}
             activeOpacity={0.7}
         >
             <Image 

@@ -143,7 +143,7 @@ const OrderDetail = () => {
                     <Text className="h4-bold text-dark-100 mb-4">Order Items</Text>
                     {items.map((item, index) => (
                         <View 
-                            key={index}
+                            key={`${item.menuItemId}-${index}-${item.quantity}`}
                             className="flex-row mb-4 last:mb-0"
                         >
                             <Image

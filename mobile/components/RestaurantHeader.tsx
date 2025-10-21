@@ -133,7 +133,7 @@ const RestaurantHeader = ({ restaurant, showBackButton = true }: RestaurantHeade
         </View>
 
         {/* Currently Unavailable Warning */}
-        {!restaurant.isActive && (
+        {restaurant.isActive === false && (
           <View className="mt-3 bg-red-50 border border-red-200 rounded-lg p-3">
             <Text className="text-red-600 text-sm text-center font-medium">
               ⚠️ This restaurant is currently unavailable for orders

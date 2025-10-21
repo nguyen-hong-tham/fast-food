@@ -1,17 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: [
-      'cloud.appwrite.io',
-      'nyc.cloud.appwrite.io',
-      'images.unsplash.com',
-      'i.imgur.com',
-      'imgur.com',
-      'res.cloudinary.com',
-      'lh3.googleusercontent.com',
-      'i.pinimg.com',
-      'jollibee.com'
-    ],
     remotePatterns: [
       {
         protocol: 'https',
@@ -32,6 +21,18 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: '**.googleusercontent.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'fra.cloud.appwrite.io',
+      },
+      {
+        protocol: 'https',
+        hostname: 'lon.cloud.appwrite.io',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.cloud.appwrite.io',
       },
     ],
   },
