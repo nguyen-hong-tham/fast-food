@@ -14,6 +14,7 @@ interface AuthState {
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
   setRestaurant: (restaurant: Restaurant | null) => void;
+  refreshRestaurant: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -83,6 +84,9 @@ export const useAuthStore = create<AuthState>()(
 
             if (restaurantsResponse.documents.length > 0) {
               const restaurantDoc = restaurantsResponse.documents[0];
+              
+              // ⚠️ CRITICAL: Explicitly map ONLY the fields we need
+              // DO NOT spread restaurantDoc - it may contain relationship expansions
               restaurant = {
                 $id: restaurantDoc.$id,
                 name: restaurantDoc.name,
@@ -108,6 +112,8 @@ export const useAuthStore = create<AuthState>()(
                 $createdAt: restaurantDoc.$createdAt,
                 $updatedAt: restaurantDoc.$updatedAt,
               } as Restaurant;
+              
+              console.log('✅ Restaurant loaded (explicit fields only):', restaurant);
             }
           }
 
@@ -120,6 +126,56 @@ export const useAuthStore = create<AuthState>()(
 
       setRestaurant: (restaurant: Restaurant | null) => {
         set({ restaurant });
+      },
+
+      refreshRestaurant: async () => {
+        try {
+          const state = get();
+          if (!state.restaurant?.$id) {
+            console.warn('No restaurant ID to refresh');
+            return;
+          }
+
+          console.log('🔄 Refreshing restaurant data...');
+          
+          // Fetch latest restaurant data from database
+          const restaurantDoc = await databases.getDocument(
+            config.appwrite.databaseId,
+            config.appwrite.restaurantsCollectionId,
+            state.restaurant.$id
+          );
+
+          // Map to Restaurant type (same as checkAuth)
+          const restaurant: Restaurant = {
+            $id: restaurantDoc.$id,
+            name: restaurantDoc.name,
+            ownerId: restaurantDoc.ownerId,
+            description: restaurantDoc.description,
+            address: restaurantDoc.address,
+            phone: restaurantDoc.phone,
+            email: restaurantDoc.email,
+            status: restaurantDoc.status,
+            latitude: restaurantDoc.latitude,
+            longitude: restaurantDoc.longitude,
+            deliveryRadius: restaurantDoc.deliveryRadius,
+            isActive: restaurantDoc.isActive,
+            openingHours: restaurantDoc.openingHours,
+            imageUrl: restaurantDoc.imageUrl,
+            rating: restaurantDoc.rating,
+            totalReviews: restaurantDoc.totalReviews,
+            businessLicense: restaurantDoc.businessLicense,
+            taxCode: restaurantDoc.taxCode,
+            bankAccount: restaurantDoc.bankAccount,
+            bankName: restaurantDoc.bankName,
+            $createdAt: restaurantDoc.$createdAt,
+            $updatedAt: restaurantDoc.$updatedAt,
+          } as Restaurant;
+
+          set({ restaurant });
+          console.log('✅ Restaurant data refreshed:', restaurant);
+        } catch (error) {
+          console.error('❌ Error refreshing restaurant:', error);
+        }
       },
     }),
     {

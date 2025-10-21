@@ -11,18 +11,17 @@ interface RestaurantSettings {
   name: string;
   description: string;
   phone: string;
-  email: string;  // Optional - restaurant contact email (different from owner's login email)
   address: string;
   
   // Business Info (optional fields)
-  businessLicense: string;  // ✅ camelCase - matches database
+  businessLicense: string;  // camelCase - matches database
   taxCode: string;
   bankAccount: string;
   bankName: string;
 }
 
 export default function SettingsPage() {
-  const { restaurant } = useAuthStore();
+  const { restaurant, user } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -31,7 +30,6 @@ export default function SettingsPage() {
     name: '',
     description: '',
     phone: '',
-    email: '',
     address: '',
     businessLicense: '',
     taxCode: '',
@@ -48,16 +46,46 @@ export default function SettingsPage() {
   const loadRestaurantData = () => {
     if (!restaurant) return;
 
+    console.log('🔍 Loading restaurant data:', restaurant);
+    
+    // Log each field type individually to find the culprit
+    console.log('🔍 businessLicense type:', typeof restaurant.businessLicense, 'value:', restaurant.businessLicense);
+    console.log('🔍 taxCode type:', typeof restaurant.taxCode, 'value:', restaurant.taxCode);
+    console.log('🔍 bankAccount type:', typeof restaurant.bankAccount, 'value:', restaurant.bankAccount);
+    console.log('🔍 bankName type:', typeof restaurant.bankName, 'value:', restaurant.bankName);
+    
+    // Check for relationship fields that shouldn't be here
+    if ('menuItems' in restaurant) {
+      console.warn('⚠️ menuItems found in restaurant:', (restaurant as any).menuItems);
+    }
+    if ('orders' in restaurant) {
+      console.warn('⚠️ orders found in restaurant:', (restaurant as any).orders);
+    }
+
+    // ✅ Safely extract ONLY primitive string values
+    // If a field is object/array (relationship), convert to empty string
+    const safeString = (value: any): string => {
+      if (typeof value === 'string') return value;
+      if (value === null || value === undefined) return '';
+      // If it's object/array (relationship), ignore it
+      if (typeof value === 'object') {
+        console.warn('⚠️ Field is object/array, converting to empty:', value);
+        return '';
+      }
+      return String(value);
+    };
+
     setSettings({
       name: restaurant.name || '',
       description: restaurant.description || '',
       phone: restaurant.phone || '',
-      email: restaurant.email || '',  // Restaurant contact email (optional)
       address: restaurant.address || '',
-      businessLicense: restaurant.businessLicense || '',
-      taxCode: restaurant.taxCode || '',
-      bankAccount: restaurant.bankAccount || '',
-      bankName: restaurant.bankName || '',
+      // Skip email - might be relationship in Appwrite
+      // email: safeString(restaurant.email),
+      businessLicense: safeString(restaurant.businessLicense),
+      taxCode: safeString(restaurant.taxCode),
+      bankAccount: safeString(restaurant.bankAccount),
+      bankName: safeString(restaurant.bankName),
     });
   };
 
@@ -69,41 +97,80 @@ export default function SettingsPage() {
     setMessage(null);
 
     try {
-      // Update restaurant document - only send fields that exist in database
-      // Build data object, only include non-empty optional fields
-      const updateData: any = {
+      // ⚠️ CRITICAL: ONLY send plain string/number fields
+      // DO NOT send relationship fields (menuItems, orders, ownerId)
+      // DO NOT send computed fields (rating, totalRevenue, etc)
+      
+      const updateData: Record<string, string> = {
         name: settings.name.trim(),
         description: settings.description.trim(),
         phone: settings.phone.trim(),
         address: settings.address.trim(),
       };
 
-      // Validate and add optional fields - ensure they're strings, not arrays
-      if (settings.email && typeof settings.email === 'string' && settings.email.trim()) {
-        updateData.email = settings.email.trim();
+      // ⚠️ DO NOT send ownerId if it's an array or object!
+      // Only send if it's a valid string (document ID)
+      let ownerIdToSend: string | null = null;
+      
+      if (restaurant.ownerId) {
+        const ownerIdType = typeof restaurant.ownerId;
+        const isArray = Array.isArray(restaurant.ownerId);
+        
+        console.log('🔍 ownerId type:', ownerIdType);
+        console.log('🔍 ownerId is array:', isArray);
+        console.log('🔍 ownerId value:', restaurant.ownerId);
+        
+        if (ownerIdType === 'string' && restaurant.ownerId.length > 0) {
+          ownerIdToSend = restaurant.ownerId;
+          console.log('✅ Using ownerId from restaurant as string');
+        } else if (ownerIdType === 'object' && !isArray && (restaurant.ownerId as any).$id) {
+          ownerIdToSend = (restaurant.ownerId as any).$id;
+          console.log('✅ Extracted ownerId from object');
+        } else if (isArray || restaurant.ownerId === null) {
+          // ownerId is array or null, use user's accountId instead
+          if (user?.accountId) {
+            ownerIdToSend = user.accountId;
+            console.log('✅ Using user.accountId as fallback:', user.accountId);
+          } else {
+            console.warn('⚠️ ownerId is array/null and no user.accountId available!');
+          }
+        }
+      } else if (user?.accountId) {
+        // No ownerId at all, use user's accountId
+        ownerIdToSend = user.accountId;
+        console.log('✅ No ownerId, using user.accountId:', user.accountId);
       }
-      if (settings.businessLicense && typeof settings.businessLicense === 'string' && settings.businessLicense.trim()) {
-        updateData.businessLicense = settings.businessLicense.trim();
-      }
-      if (settings.taxCode && typeof settings.taxCode === 'string' && settings.taxCode.trim()) {
-        updateData.taxCode = settings.taxCode.trim();
-      }
-      if (settings.bankAccount && typeof settings.bankAccount === 'string' && settings.bankAccount.trim()) {
-        updateData.bankAccount = settings.bankAccount.trim();
-      }
-      if (settings.bankName && typeof settings.bankName === 'string' && settings.bankName.trim()) {
-        updateData.bankName = settings.bankName.trim();
+      
+      // Add ownerId to update data if we have a valid value
+      if (ownerIdToSend) {
+        updateData.ownerId = ownerIdToSend;
       }
 
       console.log('📤 Sending update data:', updateData);
-      console.log('📤 Data types:', Object.entries(updateData).map(([k, v]) => `${k}: ${typeof v} ${Array.isArray(v) ? '[ARRAY]' : ''}`).join(', '));
+      console.log('📤 Field count:', Object.keys(updateData).length);
       
-      // Double check no arrays
-      for (const [key, value] of Object.entries(updateData)) {
-        if (Array.isArray(value)) {
-          throw new Error(`Field ${key} is an array, must be string`);
-        }
+      // Add optional business fields
+      if (settings.businessLicense?.trim()) {
+        updateData.businessLicense = settings.businessLicense.trim();
       }
+      if (settings.taxCode?.trim()) {
+        updateData.taxCode = settings.taxCode.trim();
+      }
+      if (settings.bankAccount?.trim()) {
+        updateData.bankAccount = settings.bankAccount.trim();
+      }
+      if (settings.bankName?.trim()) {
+        updateData.bankName = settings.bankName.trim();
+      }
+      
+      console.log('📤 Final update data with optional fields:', updateData);
+
+      // Log each field individually to verify types
+      for (const [key, value] of Object.entries(updateData)) {
+        console.log(`📤 Field "${key}":`, typeof value, JSON.stringify(value));
+      }
+
+      console.log('📤 Final data JSON:', JSON.stringify(updateData, null, 2));
 
       await databases.updateDocument(
         config.appwrite.databaseId,
@@ -112,13 +179,18 @@ export default function SettingsPage() {
         updateData
       );
 
+      console.log('✅ Settings updated in database');
+
+      // ✅ Refresh restaurant data in authStore to get latest data
+      const { refreshRestaurant } = useAuthStore.getState();
+      await refreshRestaurant();
+      
+      console.log('✅ Restaurant data refreshed in store');
+
       setMessage({
         type: 'success',
         text: 'Settings saved successfully!',
       });
-
-      // Refresh restaurant data in store
-      // You might want to add a method in authStore to reload restaurant data
     } catch (error: any) {
       console.error('❌ Error saving settings:', error);
       console.error('Error details:', {
@@ -160,8 +232,8 @@ export default function SettingsPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Restaurant Settings</h1>
-        <p className="mt-2 text-gray-600">
+        <h1 className="text-3xl font-bold text-white-900">Restaurant Settings</h1>
+        <p className="mt-2 text-white-600">
           Update your restaurant information and complete your profile.
         </p>
       </div>
@@ -172,7 +244,7 @@ export default function SettingsPage() {
           <div className="flex">
             <Info className="h-5 w-5 text-yellow-400 flex-shrink-0" />
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-yellow-800">
+              <h3 className="text-sm font-medium text-white-800">
                 Complete Your Profile
               </h3>
               <p className="mt-2 text-sm text-yellow-700">
@@ -241,21 +313,6 @@ export default function SettingsPage() {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Restaurant Contact Email
-                </label>
-                <input
-                  type="email"
-                  value={settings.email}
-                  onChange={(e) => setSettings({ ...settings, email: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-black"
-                  placeholder="Optional - for customer inquiries"
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  Public contact email for customers (different from your login email)
-                </p>
-              </div>
             </div>
 
             <div>
