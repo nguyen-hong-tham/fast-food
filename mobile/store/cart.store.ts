@@ -46,14 +46,16 @@ export const useCartStore = create<CartStore>((set, get) => ({
         const existing = get().items.find(
             (i) =>
                 i.id === item.id &&
-                areCustomizationsEqual(i.customizations ?? [], customizations)
+                areCustomizationsEqual(i.customizations ?? [], customizations) &&
+                (i.notes ?? '') === (item.notes ?? '')
         );
 
         if (existing) {
             set({
                 items: get().items.map((i) =>
                     i.id === item.id &&
-                    areCustomizationsEqual(i.customizations ?? [], customizations)
+                    areCustomizationsEqual(i.customizations ?? [], customizations) &&
+                    (i.notes ?? '') === (item.notes ?? '')
                         ? { ...i, quantity: i.quantity + 1 }
                         : i
                 ),
@@ -66,35 +68,38 @@ export const useCartStore = create<CartStore>((set, get) => ({
         }
     },
 
-    removeItem: (id, customizations = []) => {
+    removeItem: (id, customizations = [], notes = '') => {
         set({
             items: get().items.filter(
                 (i) =>
                     !(
                         i.id === id &&
-                        areCustomizationsEqual(i.customizations ?? [], customizations)
+                        areCustomizationsEqual(i.customizations ?? [], customizations) &&
+                        (i.notes ?? '') === notes
                     )
             ),
         });
     },
 
-    increaseQty: (id, customizations = []) => {
+    increaseQty: (id, customizations = [], notes = '') => {
         set({
             items: get().items.map((i) =>
                 i.id === id &&
-                areCustomizationsEqual(i.customizations ?? [], customizations)
+                areCustomizationsEqual(i.customizations ?? [], customizations) &&
+                (i.notes ?? '') === notes
                     ? { ...i, quantity: i.quantity + 1 }
                     : i
             ),
         });
     },
 
-    decreaseQty: (id, customizations = []) => {
+    decreaseQty: (id, customizations = [], notes = '') => {
         set({
             items: get()
                 .items.map((i) =>
                     i.id === id &&
-                    areCustomizationsEqual(i.customizations ?? [], customizations)
+                    areCustomizationsEqual(i.customizations ?? [], customizations) &&
+                    (i.notes ?? '') === notes
                         ? { ...i, quantity: i.quantity - 1 }
                         : i
                 )

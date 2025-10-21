@@ -100,15 +100,16 @@ export interface CartItemType {
   image_url: string;
   quantity: number;
   customizations?: CartCustomization[];
+  notes?: string; // Special instructions from customer
 }
 
 export interface CartStore {
   items: CartItemType[];
   restaurantId: string | null; // Track which restaurant items are from
   addItem: (item: Omit<CartItemType, "quantity">, restaurantId: string) => void;
-  removeItem: (id: string, customizations: CartCustomization[]) => void;
-  increaseQty: (id: string, customizations: CartCustomization[]) => void;
-  decreaseQty: (id: string, customizations: CartCustomization[]) => void;
+  removeItem: (id: string, customizations: CartCustomization[], notes?: string) => void;
+  increaseQty: (id: string, customizations: CartCustomization[], notes?: string) => void;
+  decreaseQty: (id: string, customizations: CartCustomization[], notes?: string) => void;
   clearCart: () => void;
   getTotalItems: () => number;
   getTotalPrice: () => number;

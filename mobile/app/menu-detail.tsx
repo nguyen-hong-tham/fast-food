@@ -5,7 +5,7 @@ import { useCartStore } from "@/store/cart.store";
 import { MenuItem } from "@/type";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, Image, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const MenuDetail = () => {
@@ -13,6 +13,7 @@ const MenuDetail = () => {
     const [menuItem, setMenuItem] = useState<MenuItem | null>(null);
     const [loading, setLoading] = useState(true);
     const [quantity, setQuantity] = useState(1);
+    const [notes, setNotes] = useState<string>('');
     const { addItem } = useCartStore();
 
     useEffect(() => {
@@ -48,7 +49,8 @@ const MenuDetail = () => {
                 name: menuItem.name,
                 price: menuItem.price,
                 image_url: menuItem.image_url,
-                customizations: []
+                customizations: [],
+                notes: notes.trim() || undefined
             },
             restaurantId
         );
@@ -143,6 +145,22 @@ const MenuDetail = () => {
                             <Text className="text-sm text-gray-500">Stock</Text>
                             <Text className="text-lg font-semibold text-gray-900">{menuItem.stock ?? 'Unlimited'}</Text>
                         </View>
+                    </View>
+
+                    {/* Special Notes */}
+                    <View className="mb-6">
+                        <Text className="text-lg font-semibold text-gray-900 mb-3">Special Notes</Text>
+                        <TextInput
+                            className="bg-gray-50 rounded-lg p-4 text-gray-900 min-h-[80px]"
+                            placeholder="Add special instructions for this item (e.g., extra spicy, no onions, etc.)"
+                            placeholderTextColor="#9CA3AF"
+                            value={notes}
+                            onChangeText={setNotes}
+                            multiline
+                            textAlignVertical="top"
+                            maxLength={500}
+                        />
+                        <Text className="text-sm text-gray-400 mt-2">{notes.length}/500 characters</Text>
                     </View>
 
                     {/* Quantity Selector */}

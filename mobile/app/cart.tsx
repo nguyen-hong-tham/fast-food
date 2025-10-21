@@ -26,15 +26,15 @@ const CartScreen = () => {
   const total = getTotalPrice();
   const itemCount = getTotalItems();
 
-  const handleQuantityIncrease = (itemId: string, customizations: any[]) => {
-    increaseQty(itemId, customizations || []);
+  const handleQuantityIncrease = (itemId: string, customizations: any[], notes?: string) => {
+    increaseQty(itemId, customizations || [], notes);
   };
 
-  const handleQuantityDecrease = (itemId: string, customizations: any[]) => {
-    decreaseQty(itemId, customizations || []);
+  const handleQuantityDecrease = (itemId: string, customizations: any[], notes?: string) => {
+    decreaseQty(itemId, customizations || [], notes);
   };
 
-  const handleRemoveItem = (itemId: string, customizations: any[]) => {
+  const handleRemoveItem = (itemId: string, customizations: any[], notes?: string) => {
     Alert.alert(
       'Remove Item',
       'Are you sure you want to remove this item from your cart?',
@@ -43,7 +43,7 @@ const CartScreen = () => {
         { 
           text: 'Remove', 
           style: 'destructive',
-          onPress: () => removeItem(itemId, customizations || [])
+          onPress: () => removeItem(itemId, customizations || [], notes)
         }
       ]
     );
@@ -221,7 +221,7 @@ const CartScreen = () => {
                     {/* Remove Button */}
                     <TouchableOpacity
                       className="ml-2 p-2"
-                      onPress={() => handleRemoveItem(item.id, item.customizations || [])}
+                      onPress={() => handleRemoveItem(item.id, item.customizations || [], item.notes)}
                     >
                       <Text className="text-red-500 text-lg">🗑️</Text>
                     </TouchableOpacity>
