@@ -9,6 +9,8 @@ const nextConfig = {
       'imgur.com',
       'res.cloudinary.com',
       'lh3.googleusercontent.com',
+      'i.pinimg.com',
+      'jollibee.com'
     ],
     remotePatterns: [
       {
