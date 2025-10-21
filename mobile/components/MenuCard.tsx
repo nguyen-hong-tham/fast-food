@@ -3,19 +3,32 @@ import { MenuItem } from "@/type";
 import { router } from "expo-router";
 import { Image, Platform, Text, TouchableOpacity } from 'react-native';
 
-const MenuCard = ({ item: { $id, image_url, name, price }}: { item: MenuItem}) => {
+interface MenuCardProps {
+    item: MenuItem;
+    restaurantId?: string;
+}
+
+const MenuCard = ({ item: { $id, image_url, name, price }, restaurantId }: MenuCardProps) => {
     const { addItem } = useCartStore();
 
     const handleViewDetails = () => {
-        router.push({
-            pathname: '/menu-detail',
-            params: { menuId: $id }
-        });
+        // Temporarily disabled to avoid API errors
+        // router.push({
+        //     pathname: '/menu-detail',
+        //     params: { menuId: $id }
+        // });
+        
+        // Show alert instead
+        alert('Menu details coming soon! Use "Add to Cart" for now.');
     };
 
     const handleQuickAdd = (e: any) => {
         e.stopPropagation();
-        addItem({ id: $id, name, price, image_url, customizations: []});
+        if (restaurantId) {
+            addItem({ id: $id, name, price, image_url, customizations: [] }, restaurantId);
+        } else {
+            alert('Restaurant ID not available');
+        }
     };
 
     return (

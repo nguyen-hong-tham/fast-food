@@ -278,7 +278,7 @@ const RestaurantDetailScreen = () => {
                         }
                       })}
                     >
-                      <MenuCard item={item} />
+                      <MenuCard item={item} restaurantId={restaurant.$id} />
                     </TouchableOpacity>
                   ))}
                 </View>
