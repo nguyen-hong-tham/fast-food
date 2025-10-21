@@ -1,6 +1,7 @@
 import { View, Text, FlatList, ActivityIndicator, TouchableOpacity, ScrollView, RefreshControl, Platform, TextInput, Image } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as Location from 'expo-location';
 import { getRestaurants, getAvailableCuisines } from '@/lib/appwrite';
 import { RestaurantWithDistance, RestaurantFilters } from '@/type';
 import RestaurantCard from '@/components/RestaurantCard';
@@ -23,10 +24,35 @@ const RestaurantsScreen = () => {
   const [sortBy, setSortBy] = useState<'rating' | 'distance' | 'name' | 'newest'>('rating');
   const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'active'>('active');
 
-  // Get user location (mock for Ho Chi Minh City)
+  // Get user location (real geolocation)
   useEffect(() => {
-    // Mock location for Ho Chi Minh City
-    setUserLocation({ latitude: 10.8231, longitude: 106.6297 });
+    const getCurrentLocation = async () => {
+      try {
+        // Request permission and get location
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          console.log('Permission to access location was denied');
+          // Fallback to Ho Chi Minh City
+          setUserLocation({ latitude: 10.8231, longitude: 106.6297 });
+          return;
+        }
+
+        const location = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+        
+        setUserLocation({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        });
+      } catch (error) {
+        console.error('Error getting location:', error);
+        // Fallback to Ho Chi Minh City if error
+        setUserLocation({ latitude: 10.8231, longitude: 106.6297 });
+      }
+    };
+
+    getCurrentLocation();
   }, []);
 
   // Fetch cuisines

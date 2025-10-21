@@ -2,7 +2,7 @@ import { View, Text, ScrollView, ActivityIndicator, FlatList, Image, TouchableOp
 import React, { useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
-import { getRestaurantById } from '@/lib/appwrite';
+import { getRestaurantById, getRestaurantMenu, getCategories, getRestaurantReviews } from '@/lib/appwrite';
 import { Restaurant, MenuItem, Review } from '@/type';
 import RestaurantHeader from '@/components/RestaurantHeader';
 import MenuCard from '@/components/MenuCard';
@@ -15,106 +15,8 @@ const RestaurantDetailScreen = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'menu' | 'reviews'>('menu');
   
-  // Mock data for testing since collections don't exist yet
-  const mockCategories = [
-    { $id: '1', name: 'Appetizers', icon: '🥗' },
-    { $id: '2', name: 'Main Course', icon: '🍽️' },
-    { $id: '3', name: 'Desserts', icon: '🍰' },
-    { $id: '4', name: 'Drinks', icon: '🥤' }
-  ];
-  
-  const mockMenuItems: MenuItem[] = [
-    {
-      $id: '1',
-      name: restaurant?.name === 'cơm sườn' ? 'Cơm sườn nướng' : 'Bún riêu cua',
-      description: restaurant?.name === 'cơm sườn' ? 'Cơm sườn nướng thơm ngon' : 'Bún riêu cua đậm đà',
-      price: restaurant?.name === 'cơm sườn' ? 45000 : 35000,
-      image_url: 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400',
-      calories: 450,
-      protein: 25,
-      rating: 4.5,
-      type: 'main',
-      restaurantId: id!,
-      isAvailable: true,
-      stock: 50,
-      $sequence: 1,
-      $createdAt: new Date().toISOString(),
-      $updatedAt: new Date().toISOString(),
-      $permissions: [],
-      $databaseId: '',
-      $collectionId: ''
-    },
-    {
-      $id: '2',
-      name: restaurant?.name === 'cơm sườn' ? 'Cơm sườn đặc biệt' : 'Bún riêu đặc biệt',
-      description: restaurant?.name === 'cơm sườn' ? 'Combo cơm sườn với trứng ốp la' : 'Bún riêu với chả cua',
-      price: restaurant?.name === 'cơm sườn' ? 55000 : 45000,
-      image_url: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400',
-      calories: 550,
-      protein: 30,
-      rating: 4.7,
-      type: 'main',
-      restaurantId: id!,
-      isAvailable: true,
-      stock: 30,
-      $sequence: 2,
-      $createdAt: new Date().toISOString(),
-      $updatedAt: new Date().toISOString(),
-      $permissions: [],
-      $databaseId: '',
-      $collectionId: ''
-    }
-  ];
-
-  const mockReviews: Review[] = [
-    {
-      $id: '1',
-      userId: 'user1',
-      restaurantId: id!,
-      orderId: 'order1',
-      overallRating: 5,
-      foodQuality: 5,
-      deliverySpeed: 4,
-      service: 5,
-      comment: 'Món ăn rất ngon, giao hàng nhanh!',
-      images: [],
-      isVisible: true,
-      restaurantResponse: '',
-      createdAt: new Date(Date.now() - 86400000).toISOString(),
-      updatedAt: new Date(Date.now() - 86400000).toISOString(),
-      $sequence: 1,
-      $createdAt: new Date(Date.now() - 86400000).toISOString(),
-      $updatedAt: new Date(Date.now() - 86400000).toISOString(),
-      $permissions: [],
-      $databaseId: '',
-      $collectionId: ''
-    },
-    {
-      $id: '2',
-      userId: 'user2',
-      restaurantId: id!,
-      orderId: 'order2',
-      overallRating: 4,
-      foodQuality: 4,
-      deliverySpeed: 4,
-      service: 4,
-      comment: 'Chất lượng tốt, sẽ quay lại lần sau.',
-      images: [],
-      isVisible: true,
-      restaurantResponse: 'Cảm ơn quý khách đã ủng hộ!',
-      createdAt: new Date(Date.now() - 172800000).toISOString(),
-      updatedAt: new Date(Date.now() - 172800000).toISOString(),
-      $sequence: 2,
-      $createdAt: new Date(Date.now() - 172800000).toISOString(),
-      $updatedAt: new Date(Date.now() - 172800000).toISOString(),
-      $permissions: [],
-      $databaseId: '',
-      $collectionId: ''
-    }
-  ];
-  
-  // Menu state
-  const [categories] = useState(mockCategories);
+  // Real data state
+  const [categories, setCategories] = useState<any[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [filteredMenuItems, setFilteredMenuItems] = useState<MenuItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -131,11 +33,6 @@ const RestaurantDetailScreen = () => {
         setLoading(true);
         const data = await getRestaurantById(id);
         setRestaurant(data as any as Restaurant);
-        
-        // Set mock data after restaurant is loaded
-        setMenuItems(mockMenuItems);
-        setFilteredMenuItems(mockMenuItems);
-        setReviews(mockReviews);
       } catch (error) {
         console.error('Error fetching restaurant:', error);
       } finally {
@@ -144,38 +41,59 @@ const RestaurantDetailScreen = () => {
     })();
   }, [id]);
 
-  // Use mock data instead of API calls for now
-  // This prevents the collection not found errors
-  
-  // Fetch menu items - Commented out to avoid collection errors
-  // useEffect(() => {
-  //   if (!id) return;
-  //   (async () => {
-  //     try {
-  //       const data = await getRestaurantMenu(id);
-  //       setMenuItems(data as any as MenuItem[]);
-  //       setFilteredMenuItems(data as any as MenuItem[]);
-  //     } catch (error) {
-  //       console.error('Error fetching menu:', error);
-  //       setMenuItems(mockMenuItems);
-  //       setFilteredMenuItems(mockMenuItems);
-  //     }
-  //   })();
-  // }, [id]);
+  // Fetch categories
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await getCategories();
+        setCategories(data as any[]);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        // Set fallback categories if API fails
+        setCategories([
+          { $id: 'all', name: 'All', icon: '🍽️' },
+          { $id: '1', name: 'Main Course', icon: '🍽️' },
+          { $id: '2', name: 'Appetizers', icon: '🥗' },
+          { $id: '3', name: 'Desserts', icon: '🍰' },
+          { $id: '4', name: 'Drinks', icon: '🥤' }
+        ]);
+      }
+    })();
+  }, []);
 
-  // Fetch reviews - Commented out to avoid collection errors  
-  // useEffect(() => {
-  //   if (!id) return;
-  //   (async () => {
-  //     try {
-  //       const data = await getRestaurantReviews(id);
-  //       setReviews(data as any as Review[]);
-  //     } catch (error) {
-  //       console.error('Error fetching reviews:', error);
-  //       setReviews(mockReviews);
-  //     }
-  //   })();
-  // }, [id]);
+  // Fetch menu items
+  useEffect(() => {
+    if (!id) return;
+    
+    (async () => {
+      try {
+        const data = await getRestaurantMenu(id);
+        setMenuItems(data as any as MenuItem[]);
+        setFilteredMenuItems(data as any as MenuItem[]);
+      } catch (error) {
+        console.error('Error fetching menu:', error);
+        // Set empty array if no menu items found
+        setMenuItems([]);
+        setFilteredMenuItems([]);
+      }
+    })();
+  }, [id]);
+
+  // Fetch reviews
+  useEffect(() => {
+    if (!id) return;
+    
+    (async () => {
+      try {
+        const data = await getRestaurantReviews(id);
+        setReviews(data as any as Review[]);
+      } catch (error) {
+        console.error('Error fetching reviews:', error);
+        // Set empty array if no reviews found
+        setReviews([]);
+      }
+    })();
+  }, [id]);
 
   // Filter menu by category
   useEffect(() => {
