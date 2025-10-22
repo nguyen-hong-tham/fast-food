@@ -260,8 +260,8 @@ export const createOrder = async (orderData: any) => {
             ID.unique(),
             {
                 ...orderData,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
+                $createdAt: new Date().toISOString(),
+                $updatedAt: new Date().toISOString(),
             }
         );
 
@@ -359,9 +359,7 @@ export const createOrderWithPayment = async (orderData: {
         // ✅ Tạo từng dòng order item
         const orderItems = await Promise.all(
             orderData.items.map(async (item) => {
-                const subtotal =
-                    item.price * item.quantity 
-
+                const subtotal = item.price * item.quantity;
 
                 return await databases.createDocument(
                     appwriteConfig.databaseId,
@@ -373,10 +371,10 @@ export const createOrderWithPayment = async (orderData: {
                         name: item.name,
                         price: item.price,
                         quantity: item.quantity,
-                        image_url: item.image_url,
+                        imageUrl: item.image_url, // ✅ camelCase để khớp schema
                         subtotal: subtotal,
-                        createdAt: new Date().toISOString(),
-                        updatedAt: new Date().toISOString(),
+                        $createdAt: new Date().toISOString(),
+                        $updatedAt: new Date().toISOString(),
                     }
                 );
             })
