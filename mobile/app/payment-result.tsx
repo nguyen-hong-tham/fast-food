@@ -38,7 +38,7 @@ const PaymentResultScreen = () => {
   };
 
   const handleGoHome = () => {
-    router.replace('/(tabs)/home' as any);
+    router.replace('/(tabs)/restaurants' as any);
   };
 
   return (
