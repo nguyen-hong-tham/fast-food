@@ -85,13 +85,15 @@ const CheckoutScreen = () => {
           }
         });
       } else {
-        // For VNPay, navigate to payment selection
+        // For VNPay, treat same as COD - just create order and go to success
+        clearCart();
         router.replace({
-          pathname: '/payment-selection' as any,
+          pathname: '/payment-result' as any,
           params: {
+            success: 'true',
             orderId: order.$id,
             amount: totalAmount,
-            restaurantId
+            method: 'vnpay'
           }
         });
       }

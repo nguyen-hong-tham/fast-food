@@ -824,7 +824,7 @@ export const generateVNPayUrl = async (params: VNPayPaymentRequest): Promise<str
 /**
  * Create VNPay payment intent
  */
-export const createVNPayPayment = async (params: VNPayPaymentRequest): Promise<VNPayPaymentResponse> => {
+export const createVNPayPayment = async (params: VNPayPaymentRequest & { userId?: string }): Promise<VNPayPaymentResponse> => {
     try {
         // Generate payment URL
         const paymentUrl = await generateVNPayUrl(params);
@@ -838,6 +838,8 @@ export const createVNPayPayment = async (params: VNPayPaymentRequest): Promise<V
             appwriteConfig.paymentsCollectionId,
             ID.unique(),
             {
+                orderId: params.orderId,
+                userId: params.userId || 'anonymous', // Required field for database
                 secret,
                 provider: 'vnpay',
                 status: 'pending',
