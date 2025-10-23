@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { databases, storage, ID } from '@/lib/appwrite';
 import { config } from '@/config';
-import { Loader2, Save, Upload, Info } from 'lucide-react';
+import { Loader2, Save, Info } from 'lucide-react';
 
 interface RestaurantSettings {
   // Basic Info (from database)
@@ -12,12 +12,18 @@ interface RestaurantSettings {
   description: string;
   phone: string;
   address: string;
+  latitude: number;
+  longitude: number;
   
   // Business Info (optional fields)
   businessLicense: string;  // camelCase - matches database
   taxCode: string;
   bankAccount: string;
   bankName: string;
+  
+  // Images
+  logo: string;
+  coverImage: string;
 }
 
 export default function SettingsPage() {
@@ -31,10 +37,14 @@ export default function SettingsPage() {
     description: '',
     phone: '',
     address: '',
+    latitude: 10.762622,
+    longitude: 106.660172,
     businessLicense: '',
     taxCode: '',
     bankAccount: '',
     bankName: '',
+    logo: '',
+    coverImage: '',
   });
 
   useEffect(() => {
@@ -42,6 +52,18 @@ export default function SettingsPage() {
       loadRestaurantData();
     }
   }, [restaurant]);
+
+  // Helper function to safely convert values to strings
+  const safeString = (value: any): string => {
+    if (typeof value === 'string') return value;
+    if (value === null || value === undefined) return '';
+    // If it's object/array (relationship), ignore it
+    if (typeof value === 'object') {
+      console.warn('⚠️ Field is object/array, converting to empty:', value);
+      return '';
+    }
+    return String(value);
+  };
 
   const loadRestaurantData = () => {
     if (!restaurant) return;
@@ -62,30 +84,21 @@ export default function SettingsPage() {
       console.warn('⚠️ orders found in restaurant:', (restaurant as any).orders);
     }
 
-    // ✅ Safely extract ONLY primitive string values
-    // If a field is object/array (relationship), convert to empty string
-    const safeString = (value: any): string => {
-      if (typeof value === 'string') return value;
-      if (value === null || value === undefined) return '';
-      // If it's object/array (relationship), ignore it
-      if (typeof value === 'object') {
-        console.warn('⚠️ Field is object/array, converting to empty:', value);
-        return '';
-      }
-      return String(value);
-    };
-
     setSettings({
       name: restaurant.name || '',
       description: restaurant.description || '',
       phone: restaurant.phone || '',
       address: restaurant.address || '',
+      latitude: restaurant.latitude || 10.762622,
+      longitude: restaurant.longitude || 106.660172,
       // Skip email - might be relationship in Appwrite
       // email: safeString(restaurant.email),
       businessLicense: safeString(restaurant.businessLicense),
       taxCode: safeString(restaurant.taxCode),
       bankAccount: safeString(restaurant.bankAccount),
       bankName: safeString(restaurant.bankName),
+      logo: safeString(restaurant.logo),
+      coverImage: safeString(restaurant.coverImage),
     });
   };
 
@@ -101,11 +114,13 @@ export default function SettingsPage() {
       // DO NOT send relationship fields (menuItems, orders, ownerId)
       // DO NOT send computed fields (rating, totalRevenue, etc)
       
-      const updateData: Record<string, string> = {
+      const updateData: Record<string, string | number> = {
         name: settings.name.trim(),
         description: settings.description.trim(),
         phone: settings.phone.trim(),
         address: settings.address.trim(),
+        latitude: settings.latitude,
+        longitude: settings.longitude,
       };
 
       // ⚠️ DO NOT send ownerId if it's an array or object!
@@ -161,6 +176,14 @@ export default function SettingsPage() {
       }
       if (settings.bankName?.trim()) {
         updateData.bankName = settings.bankName.trim();
+      }
+      
+      // Add image URLs
+      if (settings.logo?.trim()) {
+        updateData.logo = settings.logo.trim();
+      }
+      if (settings.coverImage?.trim()) {
+        updateData.coverImage = settings.coverImage.trim();
       }
       
       console.log('📤 Final update data with optional fields:', updateData);
@@ -328,6 +351,120 @@ export default function SettingsPage() {
               />
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Restaurant Location
+              </label>
+              <p className="text-sm text-gray-600 mb-3">
+                Update your coordinates for accurate distance calculations on the mobile app.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Latitude *
+                  </label>
+                  <input
+                    type="number"
+                    step="any"
+                    required
+                    value={settings.latitude}
+                    onChange={(e) => setSettings({ ...settings, latitude: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-black"
+                    placeholder="e.g., 10.762622"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Longitude *
+                  </label>
+                  <input
+                    type="number"
+                    step="any"
+                    required
+                    value={settings.longitude}
+                    onChange={(e) => setSettings({ ...settings, longitude: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-black"
+                    placeholder="e.g., 106.660172"
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                💡 Get coordinates from Google Maps: right-click on your location → copy coordinates
+              </p>
+            </div>
+
+          </div>
+        </div>
+
+        {/* Restaurant Images */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-xl font-semibold mb-4">Restaurant Images</h2>
+          <p className="text-sm text-gray-600 mb-6">
+            Add image URLs to make your restaurant more appealing to customers on the mobile app.
+          </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Logo URL Input */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Restaurant Logo / Avatar URL
+              </label>
+              <div className="space-y-3">
+                {settings.logo && (
+                  <div className="relative w-32 h-32 rounded-lg overflow-hidden border-2 border-gray-200">
+                    <img
+                      src={settings.logo}
+                      alt="Restaurant logo"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://via.placeholder.com/128?text=No+Image';
+                      }}
+                    />
+                  </div>
+                )}
+                <input
+                  type="url"
+                  value={settings.logo}
+                  onChange={(e) => setSettings({ ...settings, logo: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-black"
+                  placeholder="https://example.com/logo.jpg"
+                />
+                <p className="text-xs text-gray-500">
+                  Recommended: Square image URL (e.g., from Imgur, Cloudinary)
+                </p>
+              </div>
+            </div>
+
+            {/* Cover Image URL Input */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Cover Image URL
+              </label>
+              <div className="space-y-3">
+                {settings.coverImage && (
+                  <div className="relative w-full h-32 rounded-lg overflow-hidden border-2 border-gray-200">
+                    <img
+                      src={settings.coverImage}
+                      alt="Restaurant cover"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x225?text=No+Image';
+                      }}
+                    />
+                  </div>
+                )}
+                <input
+                  type="url"
+                  value={settings.coverImage}
+                  onChange={(e) => setSettings({ ...settings, coverImage: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-black"
+                  placeholder="https://example.com/cover.jpg"
+                />
+                <p className="text-xs text-gray-500">
+                  Recommended: 16:9 aspect ratio URL (e.g., 1280x720)
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 

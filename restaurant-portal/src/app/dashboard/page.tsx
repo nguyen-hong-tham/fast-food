@@ -10,20 +10,20 @@ import { BarChart3, TrendingUp, ShoppingBag, Clock } from 'lucide-react';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, restaurant } = useAuthStore();
+  const { user, restaurant, isLoading: authLoading } = useAuthStore();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Redirect to setup if no restaurant
   useEffect(() => {
-    if (!isLoading && !restaurant) {
+    if (!authLoading && user?.role === 'restaurant' && !restaurant) {
       router.push('/setup');
     }
-  }, [restaurant, isLoading, router]);
+  }, [restaurant, authLoading, user, router]);
 
   useEffect(() => {
     const loadStats = async () => {
-      if (restaurant?.$id) {
+      if (!authLoading && restaurant?.$id) {
         await fetchDashboardStats();
       } else {
         // No restaurant yet, stop loading
@@ -32,7 +32,7 @@ export default function DashboardPage() {
     };
     loadStats();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [restaurant]);
+  }, [restaurant, authLoading]);
 
   const fetchDashboardStats = async () => {
     try {

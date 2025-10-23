@@ -235,7 +235,61 @@ export default function SetupPage() {
                   placeholder="0901234567"
                 />
               </div>
+            </div>
 
+            {/* Location Section */}
+            <div className="border-t pt-6 mt-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Restaurant Location</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Enter your restaurant&apos;s coordinates for distance calculations on the mobile app.
+                You can find these using Google Maps (right-click on your location → copy coordinates).
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Latitude *
+                  </label>
+                  <input
+                    type="number"
+                    step="any"
+                    required
+                    value={setupData.latitude}
+                    onChange={(e) => setSetupData({ ...setupData, latitude: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-black"
+                    placeholder="e.g., 10.762622"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">Range: -90 to 90</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Longitude *
+                  </label>
+                  <input
+                    type="number"
+                    step="any"
+                    required
+                    value={setupData.longitude}
+                    onChange={(e) => setSetupData({ ...setupData, longitude: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-black"
+                    placeholder="e.g., 106.660172"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">Range: -180 to 180</p>
+                </div>
+              </div>
+
+              <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  <strong>💡 Tip:</strong> To get your coordinates from Google Maps:
+                </p>
+                <ol className="text-sm text-blue-700 mt-2 ml-4 list-decimal space-y-1">
+                  <li>Open Google Maps and find your restaurant</li>
+                  <li>Right-click on the exact location</li>
+                  <li>Click on the coordinates to copy them</li>
+                  <li>Paste here (first number is latitude, second is longitude)</li>
+                </ol>
+              </div>
             </div>
 
             <div className="flex justify-end">
@@ -272,6 +326,10 @@ export default function SetupPage() {
                 <div className="md:col-span-2">
                   <p className="text-sm text-gray-600">Address</p>
                   <p className="font-medium text-gray-900">{setupData.address}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Location (Latitude, Longitude)</p>
+                  <p className="font-medium text-gray-900">{setupData.latitude}, {setupData.longitude}</p>
                 </div>
               </div>
             </div>
