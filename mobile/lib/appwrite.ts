@@ -382,6 +382,28 @@ export const createOrderWithPayment = async (orderData: {
 
         console.log("✅ Order created successfully:", order.$id);
 
+        // ✅ Update restaurant totalOrders count
+        try {
+            const restaurant = await databases.getDocument(
+                appwriteConfig.databaseId,
+                appwriteConfig.restaurantsCollectionId,
+                orderData.restaurantId
+            );
+
+            await databases.updateDocument(
+                appwriteConfig.databaseId,
+                appwriteConfig.restaurantsCollectionId,
+                orderData.restaurantId,
+                {
+                    totalOrders: (restaurant.totalOrders || 0) + 1
+                }
+            );
+            console.log("✅ Restaurant totalOrders updated");
+        } catch (error) {
+            console.error("⚠️ Failed to update restaurant totalOrders:", error);
+            // Don't throw error - order is still created successfully
+        }
+
         return { order, orderItems };
     } catch (e: any) {
         console.error("❌ Error creating order:", e.message || e);
@@ -679,8 +701,8 @@ export const getRestaurants = async (filters?: RestaurantFilters, userLat?: numb
                 estimatedTime: restaurant.estimatedDeliveryTime || 30,
                 status: restaurant.status || 'active', // Default to active if null
                 isActive: restaurant.isActive !== false, // Default to true if null
-                rating: restaurant.rating || 4.5, // Default rating if 0 or null
-                totalOrders: restaurant.totalOrders || Math.floor(Math.random() * 100) + 50, // Random orders for display
+                rating: restaurant.rating || 0, // Use 0 if no rating yet
+                totalOrders: restaurant.totalOrders || 0, // ✅ Use real order count from database, 0 if none
                 cuisine: restaurant.cuisine || 'Vietnamese', // Default cuisine
                 // Add missing fields for better display
                 deliveryFee: 0, // Free delivery

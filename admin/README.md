@@ -51,7 +51,7 @@ VITE_APPWRITE_MENU_CUSTOMIZATIONS_COLLECTION_ID=menu_customizations
 npm run dev
 ```
 
-Ứng dụng sẽ chạy tại: **http://localhost:3001**
+Ứng dụng sẽ chạy tại: **http://localhost:3002**
 
 ---
 
@@ -267,7 +267,7 @@ theme: {
 
 **Giải pháp**:
 - Vào Appwrite Console → Settings → Platforms
-- Thêm web platform với hostname: `http://localhost:3001`
+- Thêm web platform với hostname: `http://localhost:3002`
 - Thêm production hostname khi deploy
 
 ---

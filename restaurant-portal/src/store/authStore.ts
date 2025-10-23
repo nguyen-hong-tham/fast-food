@@ -63,6 +63,14 @@ export const useAuthStore = create<AuthState>()(
           }
 
           const userDoc = usersResponse.documents[0];
+          
+          // ✅ CRITICAL: Only allow restaurant role to access this portal
+          if (userDoc.role !== 'restaurant') {
+            console.error('❌ Access denied: User is not a restaurant owner');
+            await account.deleteSession('current');
+            throw new Error('Access denied. This portal is only for restaurant owners.');
+          }
+          
           const user: User = {
             $id: userDoc.$id,
             accountId: session.$id, // Store account ID for future use
@@ -102,6 +110,8 @@ export const useAuthStore = create<AuthState>()(
                 isActive: restaurantDoc.isActive,
                 openingHours: restaurantDoc.openingHours,
                 imageUrl: restaurantDoc.imageUrl,
+                logo: restaurantDoc.logo,
+                coverImage: restaurantDoc.coverImage,
                 rating: restaurantDoc.rating,
                 totalReviews: restaurantDoc.totalReviews,
                 // ✅ Business fields from database
@@ -161,6 +171,8 @@ export const useAuthStore = create<AuthState>()(
             isActive: restaurantDoc.isActive,
             openingHours: restaurantDoc.openingHours,
             imageUrl: restaurantDoc.imageUrl,
+            logo: restaurantDoc.logo,
+            coverImage: restaurantDoc.coverImage,
             rating: restaurantDoc.rating,
             totalReviews: restaurantDoc.totalReviews,
             businessLicense: restaurantDoc.businessLicense,

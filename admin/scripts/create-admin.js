@@ -109,7 +109,7 @@ async function createAdminUser() {
     console.log('   4. Add label: "admin"');
     console.log('   5. Click "Update"\n');
 
-    console.log('🎯 You can now login at: http://localhost:3001\n');
+    console.log('🎯 You can now login at: http://localhost:3002\n');
 
   } catch (error) {
     console.error('\n❌ Error:', error.message);
