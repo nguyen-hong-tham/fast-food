@@ -210,21 +210,8 @@ export default function AnalyticsPage() {
                   <p className="text-lg font-medium text-gray-900">{restaurant.name}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Status</p>
-                  <p className={`text-lg font-medium ${
-                    restaurant.status === 'active' ? 'text-green-600' : 
-                    restaurant.status === 'pending' ? 'text-yellow-600' : 'text-gray-600'
-                  }`}>
-                    {restaurant.status.toUpperCase()}
-                  </p>
-                </div>
-                <div>
                   <p className="text-sm text-gray-600 mb-1">Phone</p>
                   <p className="text-lg font-medium text-gray-900">{restaurant.phone}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Email</p>
-                  <p className="text-lg font-medium text-gray-900">{restaurant.email}</p>
                 </div>
                 <div className="md:col-span-2">
                   <p className="text-sm text-gray-600 mb-1">Address</p>

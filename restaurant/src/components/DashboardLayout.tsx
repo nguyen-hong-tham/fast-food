@@ -27,11 +27,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Menu', href: '/menu', icon: UtensilsCrossed },
-    { name: 'Orders', href: '/orders', icon: ShoppingBag },
-    { name: 'Analytics', href: '/analytics', icon: BarChart3 },
+    { name: 'Menu',     href: '/dashboard/menu', icon: UtensilsCrossed },
+    { name: 'Orders',   href: '/dashboard/orders', icon: ShoppingBag },
+    { name: 'Analytics',href: '/dashboard/analytics', icon: BarChart3 },
     { name: 'Settings', href: '/settings', icon: Settings },
   ];
+
 
   return (
     <div className="min-h-screen bg-gray-50">
