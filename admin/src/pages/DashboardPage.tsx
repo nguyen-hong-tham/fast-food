@@ -53,7 +53,7 @@ export default function DashboardPage() {
         />
         <StatCard
           title="Total Revenue"
-          value={`$${(stats?.totalRevenue || 0).toFixed(2)}`}
+          value={`${(stats?.totalRevenue || 0).toLocaleString('vi-VN')}₫`}
           icon={<DollarSign className="w-6 h-6" />}
           color="bg-green-500"
         />

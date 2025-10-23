@@ -174,7 +174,7 @@ export default function ProductsPage() {
                 {/* Price & Actions */}
                 <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                   <p className="text-2xl font-bold text-primary">
-                    ${product.price?.toFixed(2)}
+                    {product.price?.toLocaleString('vi-VN')}₫
                   </p>
                   <div className="flex gap-2">
                     <button
