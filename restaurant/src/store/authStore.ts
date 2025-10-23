@@ -27,7 +27,7 @@ export const useAuthStore = create<AuthState>()(
 
       login: async (email: string, password: string) => {
         try {
-          await account.createEmailSession(email, password);
+          await account.createEmailPasswordSession(email, password);
           await get().checkAuth();
         } catch (error) {
           console.error('Login error:', error);
@@ -84,43 +84,63 @@ export const useAuthStore = create<AuthState>()(
           // Fetch restaurant details if user is restaurant owner
           let restaurant: Restaurant | null = null;
           if (userDoc.role === 'restaurant') {
-            const restaurantsResponse = await databases.listDocuments(
-              config.appwrite.databaseId,
-              config.appwrite.restaurantsCollectionId,
-              [Query.equal('ownerId', session.$id)]
-            );
+            console.log('🔍 Looking for restaurant');
+            console.log('📝 Session ID (accountId):', session.$id);
+            console.log('📝 User Document ID:', userDoc.$id);
+            
+            try {
+              // If ownerId is relationship, query by user document ID
+              // If ownerId is string, query by accountId
+              const restaurantsResponse = await databases.listDocuments(
+                config.appwrite.databaseId,
+                config.appwrite.restaurantsCollectionId,
+                [Query.equal('ownerId', userDoc.$id)] // Use user document ID for relationship
+              );
 
-            if (restaurantsResponse.documents.length > 0) {
-              const restaurantDoc = restaurantsResponse.documents[0];
+              console.log('📊 Found restaurants (query):', restaurantsResponse.documents.length);
+
+              if (restaurantsResponse.documents.length > 0) {
+                const restaurantDoc = restaurantsResponse.documents[0];
+                restaurant = mapRestaurantDocument(restaurantDoc);
+              }
+            } catch (queryError: any) {
+              console.warn('⚠️ Query by ownerId failed, trying to fetch all:', queryError.message);
               
-              restaurant = {
-                $id: restaurantDoc.$id,
-                name: restaurantDoc.name,
-                ownerId: restaurantDoc.ownerId,
-                description: restaurantDoc.description,
-                address: restaurantDoc.address,
-                phone: restaurantDoc.phone,
-                email: restaurantDoc.email,
-                status: restaurantDoc.status,
-                latitude: restaurantDoc.latitude,
-                longitude: restaurantDoc.longitude,
-                deliveryRadius: restaurantDoc.deliveryRadius,
-                isActive: restaurantDoc.isActive,
-                openingHours: restaurantDoc.openingHours,
-                imageUrl: restaurantDoc.imageUrl,
-                logo: restaurantDoc.logo,
-                coverImage: restaurantDoc.coverImage,
-                rating: restaurantDoc.rating,
-                totalReviews: restaurantDoc.totalReviews,
-                businessLicense: restaurantDoc.businessLicense,
-                taxCode: restaurantDoc.taxCode,
-                bankAccount: restaurantDoc.bankAccount,
-                bankName: restaurantDoc.bankName,
-                $createdAt: restaurantDoc.$createdAt,
-                $updatedAt: restaurantDoc.$updatedAt,
-              } as Restaurant;
-              
-              console.log('✅ Restaurant loaded:', restaurant);
+              // If query fails (relationship issue), fetch all and filter client-side
+              try {
+                const allRestaurants = await databases.listDocuments(
+                  config.appwrite.databaseId,
+                  config.appwrite.restaurantsCollectionId,
+                  [Query.limit(100)]
+                );
+
+                console.log('📊 Total restaurants:', allRestaurants.documents.length);
+
+                // Filter by ownerId (handle both string and relationship object)
+                const restaurantDoc = allRestaurants.documents.find((doc: any) => {
+                  const docOwnerId = typeof doc.ownerId === 'object' 
+                    ? doc.ownerId.$id || doc.ownerId 
+                    : doc.ownerId;
+                  console.log('🔍 Comparing ownerId:', docOwnerId);
+                  console.log('🔍 With user doc ID:', userDoc.$id);
+                  console.log('🔍 With session ID:', session.$id);
+                  // Try matching with both user document ID and session ID
+                  return docOwnerId === userDoc.$id || docOwnerId === session.$id;
+                });
+
+                if (restaurantDoc) {
+                  console.log('✅ Found restaurant by filtering:', restaurantDoc.$id);
+                  restaurant = mapRestaurantDocument(restaurantDoc);
+                } else {
+                  console.log('❌ No restaurant found for this user');
+                }
+              } catch (fetchError) {
+                console.error('❌ Error fetching all restaurants:', fetchError);
+              }
+            }
+
+            if (restaurant) {
+              console.log('✅ Restaurant loaded:', restaurant.name);
             }
           }
 
@@ -151,33 +171,7 @@ export const useAuthStore = create<AuthState>()(
             state.restaurant.$id
           );
 
-          const restaurant: Restaurant = {
-            $id: restaurantDoc.$id,
-            name: restaurantDoc.name,
-            ownerId: restaurantDoc.ownerId,
-            description: restaurantDoc.description,
-            address: restaurantDoc.address,
-            phone: restaurantDoc.phone,
-            email: restaurantDoc.email,
-            status: restaurantDoc.status,
-            latitude: restaurantDoc.latitude,
-            longitude: restaurantDoc.longitude,
-            deliveryRadius: restaurantDoc.deliveryRadius,
-            isActive: restaurantDoc.isActive,
-            openingHours: restaurantDoc.openingHours,
-            imageUrl: restaurantDoc.imageUrl,
-            logo: restaurantDoc.logo,
-            coverImage: restaurantDoc.coverImage,
-            rating: restaurantDoc.rating,
-            totalReviews: restaurantDoc.totalReviews,
-            businessLicense: restaurantDoc.businessLicense,
-            taxCode: restaurantDoc.taxCode,
-            bankAccount: restaurantDoc.bankAccount,
-            bankName: restaurantDoc.bankName,
-            $createdAt: restaurantDoc.$createdAt,
-            $updatedAt: restaurantDoc.$updatedAt,
-          } as Restaurant;
-
+          const restaurant = mapRestaurantDocument(restaurantDoc);
           set({ restaurant });
           console.log('✅ Restaurant data refreshed:', restaurant);
         } catch (error) {
@@ -194,3 +188,35 @@ export const useAuthStore = create<AuthState>()(
     }
   )
 );
+
+// Helper function to map restaurant document
+function mapRestaurantDocument(restaurantDoc: any): Restaurant {
+  return {
+    $id: restaurantDoc.$id,
+    name: restaurantDoc.name,
+    ownerId: typeof restaurantDoc.ownerId === 'object' 
+      ? restaurantDoc.ownerId.$id || restaurantDoc.ownerId 
+      : restaurantDoc.ownerId,
+    description: restaurantDoc.description,
+    address: restaurantDoc.address,
+    phone: restaurantDoc.phone,
+    email: restaurantDoc.email,
+    status: restaurantDoc.status,
+    latitude: restaurantDoc.latitude,
+    longitude: restaurantDoc.longitude,
+    deliveryRadius: restaurantDoc.deliveryRadius,
+    isActive: restaurantDoc.isActive,
+    openingHours: restaurantDoc.openingHours,
+    imageUrl: restaurantDoc.imageUrl,
+    logo: restaurantDoc.logo,
+    coverImage: restaurantDoc.coverImage,
+    rating: restaurantDoc.rating,
+    totalReviews: restaurantDoc.totalReviews,
+    businessLicense: restaurantDoc.businessLicense,
+    taxCode: restaurantDoc.taxCode,
+    bankAccount: restaurantDoc.bankAccount,
+    bankName: restaurantDoc.bankName,
+    $createdAt: restaurantDoc.$createdAt,
+    $updatedAt: restaurantDoc.$updatedAt,
+  } as Restaurant;
+}
