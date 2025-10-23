@@ -67,10 +67,10 @@ export default function RegisterPage() {
         accountData.ownerName
       );
 
-      // Step 2: Create user document in database
-      // Note: We create a session first to have permission
-      await account.createEmailSession(accountData.email, accountData.password);
+      // Step 2: Create session
+      await account.createEmailPasswordSession(accountData.email, accountData.password);
 
+      // Step 3: Create user document in database
       await databases.createDocument(
         config.appwrite.databaseId,
         config.appwrite.usersCollectionId,
@@ -83,12 +83,9 @@ export default function RegisterPage() {
         }
       );
 
-      // Logout temporary session
-      await account.deleteSession('current');
-
-      // Success - redirect to login
-      alert('Registration successful! Please login to continue and setup your restaurant.');
-      navigate('/login');
+      // Success - redirect to setup restaurant (session is kept)
+      alert('Registration successful! Please setup your restaurant information.');
+      navigate('/setup-restaurant');
     } catch (err: any) {
       console.error('Registration error:', err);
       setError(err.message || 'Failed to register. Please try again.');
@@ -126,7 +123,7 @@ export default function RegisterPage() {
                 required
                 value={accountData.ownerName}
                 onChange={(e) => setAccountData({ ...accountData, ownerName: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-black"
+                className="bg-white w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-black"
                 placeholder="Nguyễn Văn A"
               />
             </div>
@@ -140,7 +137,7 @@ export default function RegisterPage() {
                 required
                 value={accountData.email}
                 onChange={(e) => setAccountData({ ...accountData, email: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-black"
+                className="bg-white w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-black"
                 placeholder="owner@restaurant.com"
               />
             </div>
@@ -154,7 +151,7 @@ export default function RegisterPage() {
                 required
                 value={accountData.password}
                 onChange={(e) => setAccountData({ ...accountData, password: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-black"
+                className="bg-white w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-black"
                 placeholder="••••••••"
               />
               <p className="mt-1 text-xs text-gray-500">Minimum 8 characters</p>
@@ -169,7 +166,7 @@ export default function RegisterPage() {
                 required
                 value={accountData.confirmPassword}
                 onChange={(e) => setAccountData({ ...accountData, confirmPassword: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-black"
+                className="bg-white w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-black"
                 placeholder="••••••••"
               />
             </div>

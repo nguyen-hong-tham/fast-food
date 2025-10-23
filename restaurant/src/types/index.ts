@@ -24,15 +24,12 @@ export interface Restaurant {
   coverImage?: string;
   status: 'pending' | 'approved' | 'rejected' | 'active' | 'inactive';
   rating?: number;
-  totalOrders?: number;
-  totalRevenue?: number;
   businessLicense?: string;
   taxCode?: string;
   bankAccount?: string;
   bankName?: string;
   approvedAt?: string;
   approvedBy?: string;
-  rejectionReason?: string;
   isActive: boolean;
   deliveryRadius?: number;
   openingHours?: string;

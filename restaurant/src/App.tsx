@@ -5,7 +5,7 @@ import { useEffect } from 'react'
 // Pages
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
-import SetupPage from './pages/SetupPage'
+import SetupRestaurantPage from './pages/SetupRestaurantPage'
 import DashboardPage from './pages/DashboardPage'
 import MenuPage from './pages/MenuPage'
 import OrdersPage from './pages/OrdersPage'
@@ -14,7 +14,7 @@ import SettingsPage from './pages/SettingsPage'
 
 // Protected Route Component
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuthStore()
+  const { isAuthenticated, isLoading, restaurant, user } = useAuthStore()
 
   if (isLoading) {
     return (
@@ -27,7 +27,14 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     )
   }
 
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />
+  if (!isAuthenticated) return <Navigate to="/login" replace />
+  
+  // If user is a restaurant owner but doesn't have a restaurant yet, redirect to setup
+  if (user?.role === 'restaurant' && !restaurant) {
+    return <Navigate to="/setup-restaurant" replace />
+  }
+
+  return <>{children}</>
 }
 
 // Setup Route (only for restaurant owners without restaurant)
@@ -62,12 +69,12 @@ function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 
-      {/* Setup Route */}
+      {/* Setup Restaurant Route - for first time setup */}
       <Route
-        path="/setup"
+        path="/setup-restaurant"
         element={
           <SetupRoute>
-            <SetupPage />
+            <SetupRestaurantPage />
           </SetupRoute>
         }
       />
