@@ -27,21 +27,48 @@ export const useAuthStore = create<AuthState>()(
 
       login: async (email: string, password: string) => {
         try {
+          console.log('🔐 Attempting login for:', email);
+          
+          // Try to delete any existing sessions (best effort, don't fail if error)
+          try {
+            await account.deleteSessions();
+            console.log('✅ Cleared existing sessions');
+          } catch (cleanupError) {
+            // Ignore error - might not have any sessions to delete
+            console.log('ℹ️ No existing sessions to clear');
+          }
+
+          // Create new session
+          console.log('🔑 Creating new session...');
           await account.createEmailPasswordSession(email, password);
+          console.log('✅ Session created successfully');
+
+          // Fetch user data and restaurant
+          console.log('👤 Fetching user data...');
           await get().checkAuth();
-        } catch (error) {
-          console.error('Login error:', error);
-          throw error;
+          console.log('✅ Login complete!');
+        } catch (error: any) {
+          console.error('❌ Login error:', error);
+          
+          // Provide more user-friendly error messages
+          if (error.code === 401) {
+            throw new Error('Invalid email or password');
+          } else if (error.message) {
+            throw new Error(error.message);
+          } else {
+            throw new Error('Failed to login. Please try again.');
+          }
         }
       },
 
       logout: async () => {
         try {
-          await account.deleteSession('current');
+          // ✅ Xóa tất cả session thay vì chỉ session hiện tại
+          await account.deleteSessions();
         } catch (error) {
           console.error('Logout error:', error);
         } finally {
-          // Always clear state even if API call fails
+          // Dọn sạch state
           set({ user: null, restaurant: null, isAuthenticated: false });
         }
       },
@@ -49,24 +76,54 @@ export const useAuthStore = create<AuthState>()(
       checkAuth: async () => {
         try {
           set({ isLoading: true });
-          const session = await account.get();
+          
+          // Try to get current session
+          let session;
+          try {
+            session = await account.get();
+            console.log('✅ Active session found:', session.$id);
+            console.log('📧 Session email:', session.email);
+          } catch (sessionError: any) {
+            // If session doesn't exist or expired, clear state and return
+            console.log('ℹ️ No active session found');
+            set({ user: null, restaurant: null, isAuthenticated: false, isLoading: false });
+            return;
+          }
           
           // Fetch user details from users collection
+          console.log('🔍 Looking for user with accountId:', session.$id);
           const usersResponse = await databases.listDocuments(
             config.appwrite.databaseId,
-            config.appwrite.usersCollectionId,
+            config.appwrite.usersCollectionId,  
             [Query.equal('accountId', session.$id)]
           );
 
+          console.log('📊 Users found:', usersResponse.documents.length);
+
           if (usersResponse.documents.length === 0) {
-            throw new Error('User document not found');
+            console.error('❌ No user document found for accountId:', session.$id);
+            console.log('💡 Trying to find by email:', session.email);
+            
+            // Fallback: try to find by email
+            const emailResponse = await databases.listDocuments(
+              config.appwrite.databaseId,
+              config.appwrite.usersCollectionId,
+              [Query.equal('email', session.email)]
+            );
+            
+            if (emailResponse.documents.length === 0) {
+              throw new Error('User document not found. Please contact support.');
+            }
+            
+            usersResponse.documents = emailResponse.documents;
           }
 
           const userDoc = usersResponse.documents[0];
+          console.log('✅ User document found:', userDoc.name, '- Role:', userDoc.role);
           
           // ✅ CRITICAL: Only allow restaurant role to access this portal
           if (userDoc.role !== 'restaurant') {
-            console.error('❌ Access denied: User is not a restaurant owner');
+            console.error('❌ Access denied: User role is', userDoc.role, '(expected: restaurant)');
             await account.deleteSession('current');
             throw new Error('Access denied. This portal is only for restaurant owners.');
           }
@@ -145,9 +202,14 @@ export const useAuthStore = create<AuthState>()(
           }
 
           set({ user, restaurant, isAuthenticated: true, isLoading: false });
-        } catch (error) {
+        } catch (error: any) {
           console.error('CheckAuth error:', error);
           set({ user: null, restaurant: null, isAuthenticated: false, isLoading: false });
+          
+          // If this is called from login and there's an actual error (not just no session), throw it
+          if (error.message && error.message !== 'No active session found') {
+            throw error;
+          }
         }
       },
 

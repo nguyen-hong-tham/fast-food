@@ -20,7 +20,7 @@ export default function DashboardPage() {
           <div className="bg-white p-6 rounded-lg shadow">
             <p className="text-sm text-gray-600">Rating</p>
             <p className="text-2xl font-bold text-gray-900">
-              {restaurant?.rating?.toFixed(1) || '0.0'} ⭐
+              {restaurant?.rating?.toFixed(1) || '5.0'} ⭐
             </p>
           </div>
           
