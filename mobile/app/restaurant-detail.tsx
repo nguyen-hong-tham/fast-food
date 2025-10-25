@@ -124,32 +124,32 @@ const RestaurantDetailScreen = () => {
         <RestaurantHeader restaurant={restaurant} />
 
         {/* Tabs */}
-        <View className="flex-row bg-white border-b border-gray-200 px-4">
+        <View className="flex-row bg-white shadow-sm px-4">
           <TouchableOpacity
             className={cn(
-              'flex-1 py-4 items-center border-b-2',
+              'flex-1 py-4 items-center border-b-3',
               activeTab === 'menu' ? 'border-amber-500' : 'border-transparent'
             )}
             onPress={() => setActiveTab('menu')}
           >
             <Text className={cn(
-              'font-semibold',
-              activeTab === 'menu' ? 'text-amber-500' : 'text-gray-500'
+              'font-bold text-base',
+              activeTab === 'menu' ? 'text-amber-500' : 'text-gray-400'
             )}>
-              Menu
+              Our Menu
             </Text>
           </TouchableOpacity>
           
           <TouchableOpacity
             className={cn(
-              'flex-1 py-4 items-center border-b-2',
+              'flex-1 py-4 items-center border-b-3',
               activeTab === 'reviews' ? 'border-amber-500' : 'border-transparent'
             )}
             onPress={() => setActiveTab('reviews')}
           >
             <Text className={cn(
-              'font-semibold',
-              activeTab === 'reviews' ? 'text-amber-500' : 'text-gray-500'
+              'font-bold text-base',
+              activeTab === 'reviews' ? 'text-amber-500' : 'text-gray-400'
             )}>
               Reviews ({reviews.length})
             </Text>
@@ -157,43 +157,49 @@ const RestaurantDetailScreen = () => {
         </View>
 
         {/* Content */}
-        <View className="px-4 py-4">
+        <View className="flex-1 bg-gray-50">
           {activeTab === 'menu' ? (
-            <>
+            <View className="px-4 pt-6">
               {/* Category Filter */}
               {categories && categories.length > 0 && (
-                <View className="mb-4">
+                <View className="mb-6">
                   <Filter categories={categories as any} />
+                </View>
+              )}
+
+              {/* Menu Items Header */}
+              {filteredMenuItems.length > 0 && (
+                <View className="mb-4">
+                  <Text className="text-xl font-bold text-gray-900 mb-1">
+                    Popular Dishes
+                  </Text>
+                  <Text className="text-sm text-gray-500">
+                    {filteredMenuItems.length} items available
+                  </Text>
                 </View>
               )}
 
               {/* Menu Items */}
               {filteredMenuItems.length > 0 ? (
-                <View className="gap-4">
+                <View className="flex-row flex-wrap justify-between">
                   {filteredMenuItems.map((item) => (
-                    <TouchableOpacity
-                      key={item.$id}
-                      onPress={() => router.push({
-                        pathname: '/menu-detail',
-                        params: { 
-                          id: item.$id,
-                          restaurantId: restaurant.$id 
-                        }
-                      })}
-                    >
+                    <View key={item.$id} className="w-[48%] mb-4">
                       <MenuCard item={item} restaurantId={restaurant.$id} />
-                    </TouchableOpacity>
+                    </View>
                   ))}
                 </View>
               ) : (
-                <View className="items-center justify-center py-12">
-                  <Text className="text-4xl mb-4"></Text>
-                  <Text className="text-gray-600 text-center">
-                    No menu items available
+                <View className="items-center justify-center py-16 bg-white rounded-2xl mx-2">
+                  <Text className="text-6xl mb-4">🍽️</Text>
+                  <Text className="text-lg font-semibold text-gray-700 mb-2">
+                    No Menu Items
+                  </Text>
+                  <Text className="text-sm text-gray-500 text-center px-8">
+                    This restaurant hasn't added any menu items yet. Check back later!
                   </Text>
                 </View>
               )}
-            </>
+            </View>
           ) : (
             /* Reviews Section */
             reviews.length > 0 ? (
@@ -276,21 +282,24 @@ const RestaurantDetailScreen = () => {
                 ))}
               </View>
             ) : (
-              <View className="items-center justify-center py-12">
-                <Text className="text-4xl mb-4"></Text>
-                <Text className="text-gray-600 text-center">
-                  No reviews yet
+              <View className="items-center justify-center py-16 bg-white rounded-2xl mx-6 mt-6">
+                <Text className="text-6xl mb-4">⭐</Text>
+                <Text className="text-lg font-semibold text-gray-700 mb-2">
+                  No Reviews Yet
                 </Text>
-                <Text className="text-gray-500 text-sm text-center mt-2">
-                  Be the first to review this restaurant
+                <Text className="text-sm text-gray-500 text-center px-8">
+                  Be the first to share your experience about this restaurant!
                 </Text>
+                <TouchableOpacity className="mt-4 bg-amber-100 px-6 py-2 rounded-full">
+                  <Text className="text-amber-600 font-semibold">Write a Review</Text>
+                </TouchableOpacity>
               </View>
             )
           )}
         </View>
 
         {/* Bottom Spacing */}
-        <View className="h-24" />
+        <View className="h-32" />
       </ScrollView>
     </SafeAreaView>
   );

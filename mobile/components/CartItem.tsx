@@ -20,7 +20,7 @@ const CartItem = ({ item }: { item: CartItemType }) => {
                 <View>
                     <Text className="base-bold text-dark-100">{item.name}</Text>
                     <Text className="paragraph-bold text-primary mt-1">
-                        ${item.price}
+                        {(item.price * 1000).toLocaleString('vi-VN')}₫
                     </Text>
                     {item.notes && (
                         <Text className="text-sm text-gray-600 mt-1 italic">

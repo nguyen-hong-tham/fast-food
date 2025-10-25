@@ -9,19 +9,21 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 const STATUS_COLORS = {
     pending: '#FE8C00',
+    confirmed: '#FE8C00',
     preparing: '#FE8C00',
     ready: '#2F9B65',
     delivering: '#1E90FF',
-    completed: '#2F9B65',
+    delivered: '#2F9B65',
     cancelled: '#F14141',
 };
 
 const STATUS_LABELS = {
     pending: 'Pending',
+    confirmed: 'Confirmed',
     preparing: 'Preparing',
     ready: 'Ready',
     delivering: 'Delivering',
-    completed: 'Completed',
+    delivered: 'Delivered',
     cancelled: 'Cancelled',
 };
 
@@ -157,17 +159,17 @@ const OrderDetail = () => {
                                         {item.name}
                                     </Text>
                                     <Text className="paragraph-bold text-primary">
-                                        ${(item.price * item.quantity).toFixed(2)}
+                                        {((item.price * item.quantity) * 1000).toLocaleString('vi-VN')}₫
                                     </Text>
                                 </View>
                                 <Text className="body-regular text-gray-500 mt-1">
-                                    ${item.price.toFixed(2)} × {item.quantity}
+                                    {(item.price * 1000).toLocaleString('vi-VN')}₫ × {item.quantity}
                                 </Text>
                                 {item.customizations && item.customizations.length > 0 && (
                                     <View className="mt-2">
                                         {item.customizations.map((custom, idx) => (
                                             <Text key={idx} className="body-small text-gray-500">
-                                                • {custom.name} ({custom.type}) +${custom.price.toFixed(2)}
+                                                • {custom.name} ({custom.type}) +{(custom.price * 1000).toLocaleString('vi-VN')}₫
                                             </Text>
                                         ))}
                                     </View>
@@ -268,7 +270,7 @@ const OrderDetail = () => {
                 </View>
 
                 {/* Help Section */}
-                {order.status !== 'completed' && order.status !== 'cancelled' && (
+                {order.status !== 'delivered' && order.status !== 'cancelled' && (
                     <View className="px-6 py-4 mx-6 bg-orange-50 rounded-xl">
                         <Text className="paragraph-semibold text-dark-100 mb-2">
                             Need Help?
