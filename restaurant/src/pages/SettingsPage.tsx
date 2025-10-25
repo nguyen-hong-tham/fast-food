@@ -3,7 +3,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { useAuthStore } from '@/store/authStore';
 import { databases } from '@/lib/appwrite';
 import { config } from '@/config';
-import { Save, Loader2, Info } from 'lucide-react';
+import { Save, Loader2, Info, CheckCircle, XCircle, X } from 'lucide-react';
 
 interface RestaurantSettings {
   name: string;
@@ -180,15 +180,29 @@ export default function SettingsPage() {
           </div>
         )}
 
+        {/* Toast Notification */}
         {message && (
-          <div
-            className={`p-4 rounded-lg ${
-              message.type === 'success'
-                ? 'bg-green-50 text-green-800 border border-green-200'
-                : 'bg-red-50 text-red-800 border border-red-200'
-            }`}
-          >
-            {message.text}
+          <div className="fixed top-4 right-4 z-50 animate-in slide-in-from-top-2 duration-300">
+            <div
+              className={`flex items-center gap-3 px-6 py-4 rounded-lg shadow-lg ${
+                message.type === 'success'
+                  ? 'bg-green-600 text-white'
+                  : 'bg-red-600 text-white'
+              }`}
+            >
+              {message.type === 'success' ? (
+                <CheckCircle className="w-5 h-5 flex-shrink-0" />
+              ) : (
+                <XCircle className="w-5 h-5 flex-shrink-0" />
+              )}
+              <span className="font-medium">{message.text}</span>
+              <button
+                onClick={() => setMessage(null)}
+                className="ml-2 hover:opacity-80 transition-opacity"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         )}
 
