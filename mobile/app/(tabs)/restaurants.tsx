@@ -17,10 +17,9 @@ const RestaurantsScreen = () => {
   
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedRating, setSelectedRating] = useState<number | null>(null);
   const [selectedDistance, setSelectedDistance] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState<'rating' | 'distance' | 'name' | 'newest'>('rating');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'active'>('active');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'active'>('all');
 
   // Get user location (mock for Ho Chi Minh City)
   useEffect(() => {
@@ -63,9 +62,7 @@ const RestaurantsScreen = () => {
         sortBy
       };
 
-      if (selectedRating) {
-        filters.rating = selectedRating;
-      }
+
 
       if (selectedDistance) {
         filters.distance = selectedDistance;
@@ -103,7 +100,7 @@ const RestaurantsScreen = () => {
 
   useEffect(() => {
     fetchRestaurants();
-  }, [selectedRating, selectedDistance, sortBy, statusFilter, userLocation]);
+  }, [selectedDistance, sortBy, statusFilter, userLocation]);
 
   // Search filter
   useEffect(() => {
@@ -150,103 +147,41 @@ const RestaurantsScreen = () => {
         )}
       </View>
 
-      {/* Quick Filters */}
-      <View className="mb-4">
-        <Text className="text-sm font-semibold text-gray-700 mb-2">Quick Filters</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View className="flex-row gap-2">
-            {[
-              { id: 'all', label: 'All'},
-              { id: 'active', label: 'Active'},
-              { id: 'open', label: 'Open Now' }
-            ].map((filter) => (
-              <TouchableOpacity
-                key={filter.id}
-                className={cn(
-                  'flex-row items-center px-4 py-2 rounded-full border',
-                  statusFilter === filter.id 
-                    ? 'bg-amber-500 border-amber-500' 
-                    : 'bg-white border-gray-300'
-                )}
-                style={Platform.OS === 'android' ? { elevation: 2 } : {}}
-                onPress={() => setStatusFilter(filter.id as any)}
-              >
-                <Text className={cn(
-                  'text-sm font-medium',
-                  statusFilter === filter.id ? 'text-white' : 'text-gray-700'
-                )}>
-                  {filter.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </ScrollView>
-      </View>
 
-      {/* Advanced Filters */}
+
+      {/* Filters & Sort */}
       <View className="mb-4">
         <Text className="text-sm font-semibold text-gray-700 mb-2">Filters & Sort</Text>
         
-        {/* Rating & Distance Row */}
-        <View className="flex-row gap-2 mb-2">
-          {/* Rating */}
-          <View className="flex-1">
-            <Text className="text-xs text-gray-600 mb-1">Minimum Rating</Text>
+        {/* Distance Row */}
+        {userLocation && (
+          <View className="mb-2">
+            <Text className="text-xs text-gray-600 mb-1">Max Distance</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View className="flex-row gap-2">
-                {[4.0, 4.2, 4.5, 4.8].map((rating) => (
+                {[2, 5, 10, 20].map((distance) => (
                   <TouchableOpacity
-                    key={rating}
+                    key={distance}
                     className={cn(
                       'px-3 py-1.5 rounded-lg border',
-                      selectedRating === rating 
-                        ? 'bg-yellow-100 border-yellow-400' 
+                      selectedDistance === distance 
+                        ? 'bg-blue-100 border-blue-400' 
                         : 'bg-white border-gray-300'
                     )}
-                    onPress={() => setSelectedRating(selectedRating === rating ? null : rating)}
+                    onPress={() => setSelectedDistance(selectedDistance === distance ? null : distance)}
                   >
                     <Text className={cn(
                       'text-xs font-medium',
-                      selectedRating === rating ? 'text-yellow-700' : 'text-gray-700'
+                      selectedDistance === distance ? 'text-blue-700' : 'text-gray-700'
                     )}>
-                      {rating}+ ★
+                      {distance} km
                     </Text>
                   </TouchableOpacity>
                 ))}
               </View>
             </ScrollView>
           </View>
-
-          {/* Distance */}
-          {userLocation && (
-            <View className="flex-1">
-              <Text className="text-xs text-gray-600 mb-1">Max Distance</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <View className="flex-row gap-2">
-                  {[2, 5, 10, 20].map((distance) => (
-                    <TouchableOpacity
-                      key={distance}
-                      className={cn(
-                        'px-3 py-1.5 rounded-lg border',
-                        selectedDistance === distance 
-                          ? 'bg-blue-100 border-blue-400' 
-                          : 'bg-white border-gray-300'
-                      )}
-                      onPress={() => setSelectedDistance(selectedDistance === distance ? null : distance)}
-                    >
-                      <Text className={cn(
-                        'text-xs font-medium',
-                        selectedDistance === distance ? 'text-blue-700' : 'text-gray-700'
-                      )}>
-                        {distance} km
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </ScrollView>
-            </View>
-          )}
-        </View>
+        )}
 
         {/* Sort Options */}
         <View>
@@ -294,12 +229,11 @@ const RestaurantsScreen = () => {
         </Text>
         
         {/* Clear Filters */}
-        {(selectedRating || selectedDistance || statusFilter !== 'active') && (
+        {(selectedDistance || statusFilter !== 'all') && (
           <TouchableOpacity
             onPress={() => {
-              setSelectedRating(null);
               setSelectedDistance(null);
-              setStatusFilter('active');
+              setStatusFilter('all');
               setSearchQuery('');
             }}
             className="px-3 py-1 bg-gray-100 rounded-lg"
@@ -358,9 +292,8 @@ const RestaurantsScreen = () => {
             </Text>
             <TouchableOpacity
               onPress={() => {
-                setSelectedRating(null);
                 setSelectedDistance(null);
-                setStatusFilter('active');
+                setStatusFilter('all');
                 setSearchQuery('');
               }}
               className="bg-amber-500 px-4 py-2 rounded-lg"

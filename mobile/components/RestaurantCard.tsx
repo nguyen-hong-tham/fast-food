@@ -16,21 +16,7 @@ const RestaurantCard = ({ restaurant }: RestaurantCardProps) => {
     });
   };
 
-  // Check if restaurant is currently open
-  const isCurrentlyOpen = () => {
-    if (!restaurant.operatingHours) return false;
-    
-    const now = new Date();
-    const currentDay = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][now.getDay()];
-    const todayHours = restaurant.operatingHours[currentDay];
-    
-    if (!todayHours) return false;
-    
-    const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-    return currentTime >= todayHours.open && currentTime <= todayHours.close;
-  };
 
-  const isOpen = restaurant.isActive && isCurrentlyOpen();
 
   return (
     <TouchableOpacity
@@ -63,17 +49,7 @@ const RestaurantCard = ({ restaurant }: RestaurantCardProps) => {
         {/* Gradient Overlay */}
         <View className="absolute inset-0 bg-black/20" />
         
-        {/* Status Badge */}
-        <View className="absolute top-3 right-3">
-          <View className={cn(
-            'px-3 py-1.5 rounded-full',
-            isOpen ? 'bg-green-500' : 'bg-red-500'
-          )}>
-            <Text className="text-white text-xs font-semibold">
-              {isOpen ? 'Open' : 'Closed'}
-            </Text>
-          </View>
-        </View>
+
 
         {/* Delivery Info Badge */}
         {restaurant.deliveryFee !== undefined && (
@@ -169,7 +145,7 @@ const RestaurantCard = ({ restaurant }: RestaurantCardProps) => {
           {/* Status Indicator */}
           <View className={cn(
             'w-2 h-2 rounded-full',
-            restaurant.status === 'active' && isOpen ? 'bg-green-500' : 'bg-gray-400'
+            restaurant.status === 'active' ? 'bg-green-500' : 'bg-gray-400'
           )} />
         </View>
 
@@ -198,13 +174,7 @@ const RestaurantCard = ({ restaurant }: RestaurantCardProps) => {
           </View>
         )}
 
-        {!isOpen && restaurant.status === 'active' && (
-          <View className="mt-3 bg-orange-50 border border-orange-200 rounded-lg p-2">
-            <Text className="text-orange-600 text-sm text-center font-medium">
-              🌙 Closed - Opens tomorrow
-            </Text>
-          </View>
-        )}
+
       </View>
     </TouchableOpacity>
   );
