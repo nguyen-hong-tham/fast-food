@@ -159,11 +159,11 @@ const OrderDetail = () => {
                                         {item.name}
                                     </Text>
                                     <Text className="paragraph-bold text-primary">
-                                        {((item.price * item.quantity) * 1000).toLocaleString('vi-VN')}₫
+                                        {((item.price * item.quantity)).toLocaleString('vi-VN')}₫
                                     </Text>
                                 </View>
                                 <Text className="body-regular text-gray-500 mt-1">
-                                    {(item.price * 1000).toLocaleString('vi-VN')}₫ × {item.quantity}
+                                    {(item.price).toLocaleString('vi-VN')}₫ × {item.quantity}
                                 </Text>
                                 {item.customizations && item.customizations.length > 0 && (
                                     <View className="mt-2">
