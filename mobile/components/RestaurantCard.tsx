@@ -131,11 +131,11 @@ const RestaurantCard = ({ restaurant }: RestaurantCardProps) => {
             <View className="flex-row items-center bg-yellow-50 px-2 py-1 rounded-lg">
               <Text className="text-yellow-500 text-sm mr-1">★</Text>
               <Text className="text-sm font-semibold text-gray-800">
-                {restaurant.rating.toFixed(1)}
+                {restaurant.rating > 0 ? restaurant.rating.toFixed(1) : 'New'}
               </Text>
             </View>
             <Text className="text-xs text-gray-400 mt-1">
-              {restaurant.totalOrders}+ orders
+              {restaurant.totalOrders > 0 ? `${restaurant.totalOrders}+ orders` : 'New restaurant'}
             </Text>
           </View>
         </View>

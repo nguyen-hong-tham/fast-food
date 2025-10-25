@@ -167,7 +167,7 @@ export default function OrdersPage() {
                       {order.phone || 'N/A'}
                     </td>
                     <td className="px-6 py-4 text-sm font-semibold text-gray-800">
-                      ${order.total?.toFixed(2) || '0.00'}
+                      {order.total?.toLocaleString('vi-VN') || '0'}₫
                     </td>
                     <td className="px-6 py-4">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium capitalize ${

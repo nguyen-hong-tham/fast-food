@@ -247,13 +247,13 @@ const OrderDetail = () => {
                         <View className="flex-row items-center justify-between mb-2">
                             <Text className="body-regular text-gray-600">Subtotal</Text>
                             <Text className="paragraph-regular text-dark-100">
-                                ${order.total.toFixed(2)}
+                                {order.total.toLocaleString('vi-VN')}₫
                             </Text>
                         </View>
                         
                         <View className="flex-row items-center justify-between mb-2">
                             <Text className="body-regular text-gray-600">Delivery Fee</Text>
-                            <Text className="paragraph-regular text-dark-100">$0.00</Text>
+                            <Text className="paragraph-regular text-dark-100">0₫</Text>
                         </View>
 
                         <View className="h-px bg-gray-200 my-3" />
@@ -261,7 +261,7 @@ const OrderDetail = () => {
                         <View className="flex-row items-center justify-between">
                             <Text className="h4-bold text-dark-100">Total</Text>
                             <Text className="h3-bold text-primary">
-                                ${order.total.toFixed(2)}
+                                {order.total.toLocaleString('vi-VN')}₫
                             </Text>
                         </View>
                     </View>
