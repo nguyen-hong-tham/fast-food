@@ -14,6 +14,7 @@ export default function AuthLayout() {
                     className="w-full relative" 
                     style={{ height: Dimensions.get('screen').height / 2.25, borderBottomLeftRadius: 40, borderBottomRightRadius: 40, overflow: 'hidden' }}>
                     <ImageBackground source={images.loginbg} className="size-full rounded-b-lg " resizeMode="stretch" />
+                    <Image source={images.logo} className="self-center w-36 h-36 absolute bottom-10 z-10" />
                 </View>
                 <Slot />
             </ScrollView>
