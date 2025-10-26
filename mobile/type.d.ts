@@ -107,7 +107,7 @@ export interface CartItemType {
 export interface CartStore {
   items: CartItemType[];
   restaurantId: string | null; // Track which restaurant items are from
-  addItem: (item: Omit<CartItemType, "quantity">, restaurantId: string) => void;
+  addItem: (item: Omit<CartItemType, "quantity">, restaurantId: string, quantity?: number) => void;
   removeItem: (id: string, customizations: CartCustomization[], notes?: string) => void;
   increaseQty: (id: string, customizations: CartCustomization[], notes?: string) => void;
   decreaseQty: (id: string, customizations: CartCustomization[], notes?: string) => void;

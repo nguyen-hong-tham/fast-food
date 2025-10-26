@@ -84,7 +84,8 @@ const MenuDetail = () => {
                 customizations: [],
                 notes: notes.trim() || undefined
             },
-            restaurantId
+            restaurantId,
+            quantity
         );
 
         // 🎯 Show success popup với choices
@@ -96,7 +97,8 @@ const MenuDetail = () => {
                     text: 'Continue Shopping', 
                     style: 'default',
                     onPress: () => {
-                        console.log('User chọn mua tiếp');
+                        // Simply go back to the previous screen (restaurant-detail)
+                        router.back();
                     }
                 },
                 { 

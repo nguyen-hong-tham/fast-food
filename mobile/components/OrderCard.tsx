@@ -111,6 +111,16 @@ const OrderCard = ({ order }: OrderCardProps) => {
                 <Text className="body-regular text-gray-500">
                     {itemCount} {itemCount === 1 ? 'item' : 'items'}
                 </Text>
+                
+                {/* Payment Method */}
+                {order.paymentMethod && (
+                    <>
+                        <Text className="body-regular text-gray-400 mx-2">•</Text>
+                        <Text className="body-regular text-gray-500">
+                            {order.paymentMethod === 'vnpay' ? 'VNPay' : 'Cash on Delivery'}
+                        </Text>
+                    </>
+                )}
             </View>
 
             {/* Delivery Address */}
