@@ -97,7 +97,11 @@ const MenuDetail = () => {
                     text: 'Continue Shopping', 
                     style: 'default',
                     onPress: () => {
-                        console.log('User chọn mua tiếp');
+                        // Navigate back to restaurant menu
+                        router.push({
+                            pathname: '/restaurant-detail' as any,
+                            params: { id: restaurantId }
+                        });
                     }
                 },
                 { 
