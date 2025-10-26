@@ -1,5 +1,5 @@
-import type { Category, MenuItem, Order, User } from '@/types';
-import { Query } from 'appwrite';
+import type { Category, Drone, MenuItem, Order, User } from '@/types';
+import { ID, Query } from 'appwrite';
 import { account, appwriteConfig, databases } from './appwrite';
 
 // ===================== AUTH =====================
@@ -252,6 +252,98 @@ export const getAllCategories = async (): Promise<Category[]> => {
     return response.documents as Category[];
   } catch (error: any) {
     throw new Error(error.message || 'Failed to fetch categories');
+  }
+};
+
+// ===================== DRONES =====================
+
+/**
+ * Get all drones
+ */
+export const getAllDrones = async (limit: number = 100): Promise<Drone[]> => {
+  try {
+    const response = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      appwriteConfig.dronesCollectionId,
+      [Query.orderDesc('$createdAt'), Query.limit(limit)]
+    );
+    
+    return response.documents as Drone[];
+  } catch (error: any) {
+    throw new Error(error.message || 'Failed to fetch drones');
+  }
+};
+
+/**
+ * Create new drone
+ */
+export const createDrone = async (data: {
+  code: string;
+  name: string;
+  model?: string;
+  status?: string;
+  batteryLevel?: number;
+  maxPayload?: number;
+  maxSpeed?: number;
+  maxRange?: number;
+}): Promise<Drone> => {
+  try {
+    const drone = await databases.createDocument(
+      appwriteConfig.databaseId,
+      appwriteConfig.dronesCollectionId,
+      ID.unique(),
+      {
+        code: data.code,
+        name: data.name,
+        model: data.model || '',
+        status: data.status || 'available',
+        batteryLevel: data.batteryLevel || 100,
+        totalFlights: 0,
+        currentPayload: 0,
+        maxPayload: data.maxPayload || 5,
+        maxSpeed: data.maxSpeed || 50,
+        maxRange: data.maxRange || 10,
+        totalDistance: 0,
+        isActive: true,
+      }
+    );
+    
+    return drone as Drone;
+  } catch (error: any) {
+    throw new Error(error.message || 'Failed to create drone');
+  }
+};
+
+/**
+ * Update drone
+ */
+export const updateDrone = async (droneId: string, data: Partial<Drone>): Promise<Drone> => {
+  try {
+    const updatedDrone = await databases.updateDocument(
+      appwriteConfig.databaseId,
+      appwriteConfig.dronesCollectionId,
+      droneId,
+      data
+    );
+    
+    return updatedDrone as Drone;
+  } catch (error: any) {
+    throw new Error(error.message || 'Failed to update drone');
+  }
+};
+
+/**
+ * Delete drone
+ */
+export const deleteDrone = async (droneId: string): Promise<void> => {
+  try {
+    await databases.deleteDocument(
+      appwriteConfig.databaseId,
+      appwriteConfig.dronesCollectionId,
+      droneId
+    );
+  } catch (error: any) {
+    throw new Error(error.message || 'Failed to delete drone');
   }
 };
 

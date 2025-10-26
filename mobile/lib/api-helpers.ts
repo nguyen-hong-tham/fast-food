@@ -300,6 +300,36 @@ export const markNotificationAsRead = async (notificationId: string): Promise<vo
 
 // ===================== DRONES =====================
 
+export const createDrone = async (data: {
+    name: string;
+    model?: string;
+    serialNumber?: string;
+}): Promise<Drone> => {
+    const droneData = {
+        name: data.name,
+        model: data.model || 'DJI Phantom 4',
+        serialNumber: data.serialNumber || `SN-${Date.now()}`,
+        status: 'idle',
+        isActive: true,
+        batteryLevel: 100,
+        currentLatitude: 10.762622, // Default HCM location
+        currentLongitude: 106.660172,
+        maxSpeed: 40,
+        maxPayload: 2000,
+        baseLatitude: 10.762622,
+        baseLongitude: 106.660172,
+    };
+
+    const response = await databases.createDocument(
+        databaseId,
+        appwriteConfig.dronesCollectionId,
+        ID.unique(),
+        droneData
+    );
+
+    return response as unknown as Drone;
+};
+
 export const getAvailableDrone = async (): Promise<Drone | null> => {
     const response = await databases.listDocuments(
         databaseId,
@@ -312,11 +342,37 @@ export const getAvailableDrone = async (): Promise<Drone | null> => {
         ]
     );
     
-    return response.documents.length > 0 ? response.documents[0] as unknown as Drone : null;
+    // If no drone available, try to create one automatically
+    if (response.documents.length === 0) {
+        console.log('⚠️ No drones available. Creating a new drone...');
+        try {
+            const newDrone = await createDrone({
+                name: `Drone-${Date.now()}`,
+                model: 'DJI Phantom 4 Pro',
+            });
+            console.log('✅ Created new drone:', newDrone.$id);
+            return newDrone;
+        } catch (error) {
+            console.error('❌ Failed to create drone:', error);
+            return null;
+        }
+    }
+    
+    return response.documents[0] as unknown as Drone;
 };
 
-export const assignDroneToOrder = async (droneId: string, orderId: string): Promise<void> => {
-    await databases.updateDocument(
+export const getDroneById = async (droneId: string): Promise<Drone> => {
+    const response = await databases.getDocument(
+        databaseId,
+        appwriteConfig.dronesCollectionId,
+        droneId
+    );
+    
+    return response as unknown as Drone;
+};
+
+export const assignDroneToOrder = async (droneId: string, orderId: string): Promise<Drone> => {
+    const updated = await databases.updateDocument(
         databaseId,
         appwriteConfig.dronesCollectionId,
         droneId,
@@ -327,7 +383,6 @@ export const assignDroneToOrder = async (droneId: string, orderId: string): Prom
         }
     );
     
-    // Create takeoff event
     await databases.createDocument(
         databaseId,
         appwriteConfig.droneEventsCollectionId,
@@ -336,44 +391,92 @@ export const assignDroneToOrder = async (droneId: string, orderId: string): Prom
             droneId,
             orderId,
             eventType: 'takeoff',
+            batteryLevel: updated.batteryLevel,
             timestamp: new Date().toISOString(),
         }
     );
+
+    return updated as unknown as Drone;
+};
+
+export const logDroneEvent = async (event: {
+    droneId: string;
+    orderId?: string;
+    eventType: DroneEvent['eventType'];
+    latitude?: number;
+    longitude?: number;
+    altitude?: number;
+    speed?: number;
+    batteryLevel?: number;
+    description?: string;
+    payload?: Record<string, any> | null;
+}): Promise<DroneEvent> => {
+    const payloadString = event.payload ? JSON.stringify(event.payload) : undefined;
+
+    const response = await databases.createDocument(
+        databaseId,
+        appwriteConfig.droneEventsCollectionId,
+        ID.unique(),
+        {
+            ...event,
+            payload: payloadString,
+            timestamp: new Date().toISOString(),
+        }
+    );
+
+    return response as unknown as DroneEvent;
+};
+
+export const listDroneEvents = async (droneId: string, limit: number = 50): Promise<DroneEvent[]> => {
+    const response = await databases.listDocuments(
+        databaseId,
+        appwriteConfig.droneEventsCollectionId,
+        [
+            Query.equal('droneId', droneId),
+            Query.orderDesc('$createdAt'),
+            Query.limit(limit)
+        ]
+    );
+
+    return response.documents as unknown as DroneEvent[];
 };
 
 export const updateDroneLocation = async (
     droneId: string,
     latitude: number,
     longitude: number,
-    altitude?: number,
-    speed?: number,
-    batteryLevel?: number
+    options: {
+        altitude?: number;
+        speed?: number;
+        batteryLevel?: number;
+        orderId?: string;
+    } = {}
 ): Promise<void> => {
-    // Update drone position
     await databases.updateDocument(
         databaseId,
         appwriteConfig.dronesCollectionId,
         droneId,
         {
-            currentLat: latitude,
-            currentLng: longitude,
-            batteryLevel: batteryLevel || undefined,
+            currentLatitude: latitude,
+            currentLongitude: longitude,
+            batteryLevel: options.batteryLevel ?? undefined,
+            updatedAt: new Date().toISOString(),
         }
     );
-    
-    // Create position update event
+
     await databases.createDocument(
         databaseId,
         appwriteConfig.droneEventsCollectionId,
         ID.unique(),
         {
             droneId,
+            orderId: options.orderId,
             eventType: 'position_update',
             latitude,
             longitude,
-            altitude,
-            speed,
-            batteryLevel,
+            altitude: options.altitude,
+            speed: options.speed,
+            batteryLevel: options.batteryLevel,
             timestamp: new Date().toISOString(),
         }
     );
@@ -621,10 +724,14 @@ export default {
     markNotificationAsRead,
     
     // Drones
+    createDrone,
     getAvailableDrone,
     assignDroneToOrder,
+    getDroneById,
     updateDroneLocation,
     completeDroneDelivery,
+    logDroneEvent,
+    listDroneEvents,
     
     // Promotions
     validatePromoCode,

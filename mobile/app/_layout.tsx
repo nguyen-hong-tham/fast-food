@@ -1,5 +1,6 @@
 // app/_layout.tsx
 import useAuthStore from '@/store/auth.store';
+import useNotificationSetup from '@/hooks/useNotificationSetup';
 import * as Sentry from '@sentry/react-native';
 import { useFonts } from 'expo-font';
 import { SplashScreen, Stack } from 'expo-router';
@@ -22,6 +23,7 @@ Sentry.init({
 
 function RootInner() {
   const { isLoading } = useAuthStore();
+  useNotificationSetup();
 
   const [fontsLoaded, error] = useFonts({
     'QuickSand-Bold': require('../assets/fonts/Quicksand-Bold.ttf'),

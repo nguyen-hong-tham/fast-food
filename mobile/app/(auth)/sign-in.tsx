@@ -33,8 +33,21 @@ const SignIn = () => {
             router.replace('/');
             
         } catch(error: any) {
-            console.error('❌ Login failed:', error.message);
-            Alert.alert('Login Failed', error.message || 'Invalid email or password. Please try again.');
+            console.error('❌ Login failed:', error);
+            
+            // Handle rate limit error
+            if (error.code === 429 || error.message?.includes('Rate limit')) {
+                Alert.alert(
+                    'Too Many Requests', 
+                    'Please wait a moment and try again. The server is limiting requests to prevent abuse.'
+                );
+            } else {
+                Alert.alert(
+                    'Login Failed', 
+                    error.message || 'Invalid email or password. Please try again.'
+                );
+            }
+            
             Sentry.captureException(error);
         } finally {
             setIsSubmitting(false);

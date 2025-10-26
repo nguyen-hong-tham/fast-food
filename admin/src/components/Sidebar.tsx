@@ -1,6 +1,7 @@
 import {
     LayoutDashboard,
     Package,
+    Plane,
     ShoppingBag,
     Users
 } from 'lucide-react';
@@ -11,6 +12,7 @@ const navItems = [
   { to: '/orders', icon: ShoppingBag, label: 'Orders' },
   { to: '/customers', icon: Users, label: 'Customers' },
   { to: '/products', icon: Package, label: 'Products' },
+  { to: '/drones', icon: Plane, label: 'Drones' },
 ];
 
 export default function Sidebar() {
