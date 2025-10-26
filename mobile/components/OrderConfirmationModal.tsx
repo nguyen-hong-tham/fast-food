@@ -117,20 +117,20 @@ const OrderConfirmationModal: React.FC<OrderConfirmationModalProps> = ({
               </View>
               <View className="flex-row justify-between mb-2">
                 <Text className="paragraph-regular text-gray-600">Subtotal</Text>
-                <Text className="paragraph-medium text-dark-100">${totalPrice.toFixed(2)}</Text>
+                <Text className="paragraph-medium text-dark-100">{(totalPrice * 1000).toLocaleString('vi-VN')}₫</Text>
               </View>
               <View className="flex-row justify-between mb-2">
                 <Text className="paragraph-regular text-gray-600">Delivery Fee</Text>
-                <Text className="paragraph-medium text-dark-100">${deliveryFee.toFixed(2)}</Text>
+                <Text className="paragraph-medium text-dark-100">{(deliveryFee * 1000).toLocaleString('vi-VN')}₫</Text>
               </View>
               <View className="flex-row justify-between mb-3">
                 <Text className="paragraph-regular text-gray-600">Discount</Text>
-                <Text className="paragraph-medium text-success">-${discount.toFixed(2)}</Text>
+                <Text className="paragraph-medium text-success">-{(discount * 1000).toLocaleString('vi-VN')}₫</Text>
               </View>
               <View className="border-t border-gray-300 pt-3">
                 <View className="flex-row justify-between">
                   <Text className="base-bold text-dark-100">Total</Text>
-                  <Text className="h4-bold text-primary-100">${finalTotal.toFixed(2)}</Text>
+                  <Text className="h4-bold text-primary-100">{(finalTotal * 1000).toLocaleString('vi-VN')}₫</Text>
                 </View>
               </View>
             </View>

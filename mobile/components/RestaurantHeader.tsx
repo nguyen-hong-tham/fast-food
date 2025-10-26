@@ -2,7 +2,6 @@ import { View, Text, Image, TouchableOpacity, Platform } from 'react-native';
 import React from 'react';
 import { Restaurant } from '@/type';
 import { router } from 'expo-router';
-import cn from 'clsx';
 
 interface RestaurantHeaderProps {
   restaurant: Restaurant;
@@ -10,23 +9,7 @@ interface RestaurantHeaderProps {
 }
 
 const RestaurantHeader = ({ restaurant, showBackButton = true }: RestaurantHeaderProps) => {
-  const isOpen = React.useMemo(() => {
-    if (!restaurant.operatingHours) return true;
 
-    const now = new Date();
-    const day = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][now.getDay()];
-    const currentTime = now.getHours() * 60 + now.getMinutes();
-
-    const todayHours = restaurant.operatingHours[day];
-    if (!todayHours) return false;
-
-    const [openHour, openMin] = todayHours.open.split(':').map(Number);
-    const [closeHour, closeMin] = todayHours.close.split(':').map(Number);
-    const openTime = openHour * 60 + openMin;
-    const closeTime = closeHour * 60 + closeMin;
-
-    return currentTime >= openTime && currentTime <= closeTime;
-  }, [restaurant.operatingHours]);
 
   return (
     <View className="bg-white">
@@ -49,15 +32,7 @@ const RestaurantHeader = ({ restaurant, showBackButton = true }: RestaurantHeade
           </TouchableOpacity>
         )}
 
-        {/* Status Badge */}
-        <View className={cn(
-          'absolute top-12 right-4 px-3 py-1 rounded-full',
-          isOpen ? 'bg-green-500' : 'bg-red-500'
-        )}>
-          <Text className="text-white text-xs font-semibold">
-            {isOpen ? 'Open Now' : 'Closed'}
-          </Text>
-        </View>
+
 
         {/* Logo */}
         {restaurant.logo && (

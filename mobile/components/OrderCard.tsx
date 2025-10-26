@@ -119,7 +119,7 @@ const OrderCard = ({ order }: OrderCardProps) => {
             {/* Footer */}
             <View className="flex-row items-center justify-between pt-3 border-t border-gray-100">
                 <Text className="h3-bold text-primary">
-                    ${order.total.toFixed(2)}
+                    {order.total.toLocaleString('vi-VN')}₫
                 </Text>
                 
                 <View className="flex-row items-center">
