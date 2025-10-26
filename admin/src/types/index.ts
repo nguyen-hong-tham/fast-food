@@ -71,6 +71,30 @@ export interface Customization extends Models.Document {
   type: string;
 }
 
+// ===================== DRONE =====================
+
+export type DroneStatus = 'available' | 'busy' | 'maintenance' | 'offline';
+
+export interface Drone extends Models.Document {
+  code: string;
+  name: string;
+  model?: string;
+  assignedOrderId?: string;
+  status: DroneStatus;
+  batteryLevel: number;
+  totalFlights: number;
+  currentLatitude?: number;
+  currentLongitude?: number;
+  maxPayload: number;
+  currentPayload: number;
+  maxSpeed: number;
+  maxRange: number;
+  totalDistance: number;
+  isActive: boolean;
+  lastMaintenanceAt?: string;
+  nextMaintenanceAt?: string;
+}
+
 // ===================== STATS =====================
 
 export interface DashboardStats {

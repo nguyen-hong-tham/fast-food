@@ -1,0 +1,16 @@
+{
+  "name": "send-notification",
+  "version": "1.0.0",
+  "description": "Appwrite Function to send push notifications via Expo",
+  "main": "src/main.js",
+  "type": "module",
+  "scripts": {
+    "test": "node src/main.js"
+  },
+  "dependencies": {
+    "node-appwrite": "^13.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

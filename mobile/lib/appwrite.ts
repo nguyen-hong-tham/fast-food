@@ -1,7 +1,7 @@
 import Constants from "expo-constants";
 import { Platform } from "react-native";
 import { Account, Avatars, Client, Databases, ID, Query, Storage } from "react-native-appwrite";
-import { CreateUserParams, GetMenuParams, RestaurantFilters, SignInParams, VNPayPaymentRequest, VNPayPaymentResponse, VNPayCallbackParams, PaymentResult, PaymentMethod } from "../type";
+import { CreateUserParams, GetMenuParams, RestaurantFilters, SignInParams, VNPayPaymentRequest, VNPayPaymentResponse, VNPayCallbackParams, PaymentResult, PaymentMethod, Order, DroneEvent, Drone } from "../type";
 
 export const appwriteConfig = {
   endpoint: process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT || "https://cloud.appwrite.io/v1",
@@ -122,18 +122,24 @@ export const createUser = async ({ email, password, name }: CreateUserParams) =>
 
 export const signIn = async ({ email, password }: SignInParams) => {
     try {
-        // Kiểm tra và xóa session hiện tại nếu có
-        try {
-            await account.deleteSession('current');
-        } catch (e) {
-            // Session không tồn tại hoặc đã hết hạn, bỏ qua lỗi này
-            console.log('No active session to delete');
-        }
-        
+        // Thử tạo session mới trực tiếp
+        // Appwrite sẽ tự động xử lý session cũ nếu cần
         const session = await account.createEmailPasswordSession(email, password);
         return session;
-    } catch (e) {
-        throw new Error(e as string);
+    } catch (e: any) {
+        // Nếu lỗi do đã có session, thử delete và tạo lại
+        if (e.code === 401 || e.message?.includes('session')) {
+            try {
+                await account.deleteSession('current');
+                // Thêm delay nhỏ để tránh rate limit
+                await new Promise(resolve => setTimeout(resolve, 500));
+                const session = await account.createEmailPasswordSession(email, password);
+                return session;
+            } catch (retryError) {
+                throw retryError;
+            }
+        }
+        throw e;
     }
 }
 
@@ -231,6 +237,24 @@ export const updateUser = async ({ userId, ...updates }: { userId: string; [key:
         throw new Error(e as string);
     }
 }
+
+export const saveUserPushToken = async (userId: string, pushToken: string) => {
+    try {
+        await databases.updateDocument(
+            appwriteConfig.databaseId,
+            appwriteConfig.userCollectionId,
+            userId,
+            {
+                fcmToken: pushToken,
+                updatedAt: new Date().toISOString()
+            }
+        );
+        console.log('✅ Push token saved successfully');
+    } catch (e) {
+        console.error('Failed to save push token', e);
+        throw e;
+    }
+};
 
 export const uploadAvatar = async (file: any) => {
     try {
@@ -505,6 +529,93 @@ export const updateOrderStatus = async (orderId: string, status: string) => {
         throw new Error(e as string);
     }
 }
+
+const parseDroneEventPayload = (payload: any): DroneEvent => {
+    let parsedPayload;
+    if (typeof payload?.payload === 'string') {
+        try {
+            parsedPayload = JSON.parse(payload.payload);
+        } catch (err) {
+            parsedPayload = payload.payload;
+        }
+    }
+
+    return {
+        ...payload,
+        payload: parsedPayload,
+        timestamp: payload?.timestamp || payload?.$createdAt || new Date().toISOString(),
+    } as DroneEvent;
+};
+
+export const subscribeToOrder = (orderId: string, callback: (order: Order) => void) => {
+    const channel = `databases.${appwriteConfig.databaseId}.collections.${appwriteConfig.ordersCollectionId}.documents.${orderId}`;
+
+    const unsubscribe = client.subscribe(channel, event => {
+        if (!event?.payload) return;
+        callback(event.payload as unknown as Order);
+    });
+
+    return () => unsubscribe();
+};
+
+export const subscribeToDroneEvents = (orderId: string, callback: (event: DroneEvent) => void) => {
+    const channel = `databases.${appwriteConfig.databaseId}.collections.${appwriteConfig.droneEventsCollectionId}.documents`;
+
+    const unsubscribe = client.subscribe(channel, event => {
+        const payload = event?.payload as any;
+        if (!payload) return;
+
+        if (orderId && payload.orderId !== orderId) return;
+
+        callback(parseDroneEventPayload(payload));
+    });
+
+    return () => unsubscribe();
+};
+
+export const getDroneLocation = async (droneId: string) => {
+    try {
+        const droneDoc = await databases.getDocument(
+            appwriteConfig.databaseId,
+            appwriteConfig.dronesCollectionId,
+            droneId
+        );
+
+        const drone = droneDoc as unknown as Drone;
+
+        if (typeof drone.currentLatitude === 'number' && typeof drone.currentLongitude === 'number') {
+            return {
+                latitude: drone.currentLatitude,
+                longitude: drone.currentLongitude,
+                batteryLevel: drone.batteryLevel,
+            };
+        }
+
+        const latestEvent = await databases.listDocuments(
+            appwriteConfig.databaseId,
+            appwriteConfig.droneEventsCollectionId,
+            [
+                Query.equal('droneId', droneId),
+                Query.orderDesc('$createdAt'),
+                Query.limit(1)
+            ]
+        );
+
+        if (latestEvent.documents.length > 0) {
+            const event = latestEvent.documents[0];
+            return {
+                latitude: event.latitude,
+                longitude: event.longitude,
+                batteryLevel: event.batteryLevel,
+            };
+        }
+
+        return null;
+    } catch (error) {
+        console.error('Failed to fetch drone location', error);
+        return null;
+    }
+};
 
 /**
  * Get all users (admin only)

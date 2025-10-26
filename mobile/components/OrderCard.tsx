@@ -10,18 +10,24 @@ interface OrderCardProps {
 
 const STATUS_COLORS = {
     pending: '#FE8C00',
+    confirmed: '#FE8C00',
     preparing: '#FE8C00',
     ready: '#2F9B65',
+    picked_up: '#1E90FF',
     delivering: '#1E90FF',
+    delivered: '#2F9B65',
     completed: '#2F9B65',
     cancelled: '#F14141',
 };
 
 const STATUS_LABELS = {
     pending: 'Pending',
+    confirmed: 'Confirmed',
     preparing: 'Preparing',
     ready: 'Ready',
+    picked_up: 'Picked Up',
     delivering: 'Delivering',
+    delivered: 'Delivered',
     completed: 'Completed',
     cancelled: 'Cancelled',
 };
@@ -47,10 +53,21 @@ const OrderCard = ({ order }: OrderCardProps) => {
     });
 
     const handlePress = () => {
-        router.push({
-            pathname: '/order-detail',
-            params: { orderId: order.$id }
-        });
+        // Navigate to tracking screen for active orders, order-detail for completed/cancelled
+        const activeStatuses = ['pending', 'confirmed', 'preparing', 'ready', 'picked_up', 'delivering'];
+        const shouldShowTracking = activeStatuses.includes(order.status);
+        
+        if (shouldShowTracking) {
+            router.push({
+                pathname: '/order-tracking',
+                params: { orderId: order.$id }
+            });
+        } else {
+            router.push({
+                pathname: '/order-detail',
+                params: { orderId: order.$id }
+            });
+        }
     };
 
     return (

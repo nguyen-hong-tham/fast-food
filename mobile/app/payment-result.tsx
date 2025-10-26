@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, Image, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, Platform } from 'react-native';
 import React from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -28,8 +28,8 @@ const PaymentResultScreen = () => {
     if (isSuccess) {
       // Navigate to order tracking
       router.replace({
-        pathname: '/order-detail' as any,
-        params: { id: orderId }
+        pathname: '/order-tracking' as any,
+        params: { orderId }
       });
     } else {
       // Go back to try again

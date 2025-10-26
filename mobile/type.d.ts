@@ -80,6 +80,7 @@ export interface User extends Models.Document {
   address_home?: string;
   address_home_label?: string;
   role?: UserRole;
+  fcmToken?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -142,6 +143,7 @@ export interface Order extends Models.Document {
     | "confirmed" 
     | "preparing"
     | "ready"
+    | "picked_up" // NEW: Drone picked up from restaurant
     | "delivering"
     | "delivered"
     | "cancelled"; // Updated to match ACTUAL database enum from error message
@@ -150,11 +152,20 @@ export interface Order extends Models.Document {
   droneId?: string; // NEW: Phase 0
   deliveryAddress: string;
   deliveryAddressLabel?: string;
+  deliveryLatitude?: number;
+  deliveryLongitude?: number;
   phone: string;
   notes?: string;
   createdAt: string;
   updatedAt?: string;
   estimatedDelivery?: string;
+  estimatedDeliveryTime?: string;
+  confirmedAt?: string;
+  preparingAt?: string;
+  readyAt?: string;
+  deliveredAt?: string;
+  cancelledAt?: string;
+  assignedAt?: string;
 }
 
 // ===================== ORDER ITEMS =====================
@@ -274,12 +285,16 @@ export interface Drone extends Models.Document {
   model: string;
   status: 'idle' | 'delivering' | 'maintenance' | 'charging' | 'offline';
   batteryLevel: number; // 0-100
-  currentLat?: number;
-  currentLng?: number;
+  currentLatitude?: number;
+  currentLongitude?: number;
   maxPayload: number; // kg
+  currentPayload?: number; // kg
   maxRange: number; // km
+  maxSpeed?: number; // km/h
+  totalDistance?: number; // km
   assignedOrderId?: string;
   lastMaintenanceAt?: string;
+  nextMaintenanceAt?: string;
   totalFlights: number;
   isActive: boolean;
   createdAt: string;
@@ -299,6 +314,7 @@ export interface DroneEvent extends Models.Document {
   batteryLevel?: number;
   message?: string;
   timestamp: string;
+  createdAt?: string;
 }
 
 // ===================== PROMOTION =====================

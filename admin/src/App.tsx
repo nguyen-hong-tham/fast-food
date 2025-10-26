@@ -6,6 +6,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import CustomersPage from '@/pages/CustomersPage';
 import DashboardPage from '@/pages/DashboardPage';
+import DronesPage from '@/pages/DronesPage';
 import LoginPage from '@/pages/LoginPage';
 import OrdersPage from '@/pages/OrdersPage';
 import ProductsPage from '@/pages/ProductsPage';
@@ -52,6 +53,7 @@ function App() {
           <Route path="orders" element={<OrdersPage />} />
           <Route path="customers" element={<CustomersPage />} />
           <Route path="products" element={<ProductsPage />} />
+          <Route path="drones" element={<DronesPage />} />
         </Route>
         
         <Route path="*" element={<Navigate to="/" replace />} />
