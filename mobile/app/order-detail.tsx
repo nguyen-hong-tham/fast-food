@@ -241,6 +241,39 @@ const OrderDetail = () => {
                     )}
                 </View>
 
+                {/* Payment Information */}
+                <View className="px-6 py-4 border-b border-gray-100">
+                    <Text className="h4-bold text-dark-100 mb-4">Payment Information</Text>
+                    
+                    <View className="flex-row items-center">
+                        <Image
+                            source={icons.dollar}
+                            className="size-5 mr-3"
+                            resizeMode="contain"
+                            tintColor="#FE8C00"
+                        />
+                        <View className="flex-1">
+                            <Text className="paragraph-semibold text-dark-100 mb-1">
+                                Payment Method
+                            </Text>
+                            <Text className="body-regular text-gray-600">
+                                {order.paymentMethod === 'vnpay' ? 'VNPay Online Payment' : 'Cash on Delivery (COD)'}
+                            </Text>
+                        </View>
+                        <View 
+                            className="px-3 py-1.5 rounded-full"
+                            style={{ backgroundColor: order.paymentMethod === 'vnpay' ? '#1E90FF20' : '#2F9B6520' }}
+                        >
+                            <Text 
+                                className="body-medium font-quicksand-semibold"
+                                style={{ color: order.paymentMethod === 'vnpay' ? '#1E90FF' : '#2F9B65' }}
+                            >
+                                {order.paymentMethod === 'vnpay' ? 'VNPay' : 'COD'}
+                            </Text>
+                        </View>
+                    </View>
+                </View>
+
                 {/* Order Summary */}
                 <View className="px-6 py-4">
                     <Text className="h4-bold text-dark-100 mb-4">Order Summary</Text>
