@@ -97,11 +97,8 @@ const MenuDetail = () => {
                     text: 'Continue Shopping', 
                     style: 'default',
                     onPress: () => {
-                        // Navigate back to restaurant menu
-                        router.push({
-                            pathname: '/restaurant-detail' as any,
-                            params: { id: restaurantId }
-                        });
+                        // Simply go back to the previous screen (restaurant-detail)
+                        router.back();
                     }
                 },
                 { 
