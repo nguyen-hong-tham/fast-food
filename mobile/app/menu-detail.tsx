@@ -84,7 +84,8 @@ const MenuDetail = () => {
                 customizations: [],
                 notes: notes.trim() || undefined
             },
-            restaurantId
+            restaurantId,
+            quantity
         );
 
         // 🎯 Show success popup với choices
