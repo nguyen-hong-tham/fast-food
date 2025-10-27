@@ -69,13 +69,6 @@ export default function TabLayout() {
                     tabBarIcon: ({ focused }) => <TabBarIcon title="Profile" icon={icons.person} focused={focused} />
                 }}
             />
-            {/* Hidden tabs */}
-            <Tabs.Screen
-                name='search'
-                options={{
-                    href: null, // Hide from tab bar
-                }}
-            />
         </Tabs>
     );
 }

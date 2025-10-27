@@ -19,11 +19,7 @@ const SignUp = () => {
         setIsSubmitting(true)
 
         try {
-            console.log('🚀 Starting user registration...');
-            
             await createUser({ email,  password,  name });
-            
-            console.log('🎉 Registration successful! Fetching user data...');
             
             // Cập nhật lại auth state sau khi tạo tài khoản thành công
             await fetchAuthenticatedUser();

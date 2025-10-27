@@ -37,10 +37,6 @@ const CheckoutScreen = () => {
       return;
     }
 
-    console.log('Debug - User:', user);
-    console.log('Debug - RestaurantId:', restaurantId);
-    console.log('Debug - Items:', items);
-
     if (!user || !restaurantId) {
       Alert.alert('Error', 'Missing user or restaurant information.');
       return;
@@ -59,7 +55,8 @@ const CheckoutScreen = () => {
           price: item.price,
           quantity: item.quantity,
           image_url: item.image_url,
-          customizations: item.customizations
+          customizations: item.customizations,
+          notes: item.notes
         })),
         total,
         deliveryAddress: deliveryAddress.trim(),

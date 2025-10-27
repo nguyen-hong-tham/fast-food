@@ -47,17 +47,12 @@ export const createUser = async ({ email, password, name }: CreateUserParams) =>
     let newAccount: any = null;
     
     try {
-        console.log('🔵 [STEP 1/3] Creating account in Auth for:', email);
-        
         // Bước 1: Tạo account trong Auth
         newAccount = await account.create(ID.unique(), email, password, name);
         if (!newAccount) throw new Error('Failed to create account');
-        
-        console.log('✅ [STEP 1/3] Account created successfully. ID:', newAccount.$id);
 
         // Bước 2: Tạo avatar URL
         const avatarUrl = avatars.getInitials(name);
-        console.log('🔵 [STEP 2/3] Creating user document in database...');
 
         // Bước 3: Tạo document trong user collection
         // Note: Only include attributes that exist in Appwrite user collection
@@ -76,14 +71,8 @@ export const createUser = async ({ email, password, name }: CreateUserParams) =>
             }
         );
         
-        console.log('✅ [STEP 2/3] User document created successfully. Doc ID:', userDoc.$id);
-        console.log('🔵 [STEP 3/3] Logging in user...');
-
         // Bước 4: Login sau khi tất cả thành công
         await signIn({ email, password });
-        
-        console.log('✅ [STEP 3/3] User logged in successfully');
-        console.log('🎉 Registration completed successfully for:', email);
 
         return userDoc;
         
@@ -307,6 +296,7 @@ export const createOrderWithPayment = async (orderData: {
         price: number;
         quantity: number;
         image_url: string;
+        notes?: string;
     }>;
     total: number;
     deliveryAddress: string;
@@ -333,12 +323,14 @@ export const createOrderWithPayment = async (orderData: {
         });
 
         // ✅ Tạo đơn hàng chính
-        // Chỉ lưu thông tin cần thiết trong items (không bao gồm image_url)
+        // Chỉ lưu thông tin cần thiết trong items (bao gồm notes cho tracking)
         const itemsForOrder = orderData.items.map(item => ({
             menuItemId: item.menuItemId,
             name: item.name,
             price: item.price,
             quantity: item.quantity,
+            notes: item.notes,
+            image_url: item.image_url // Giữ lại image_url để hiển thị trong tracking
         }));
 
         const orderPayload: any = {
@@ -370,8 +362,6 @@ export const createOrderWithPayment = async (orderData: {
         orderPayload.status = initialStatus;
         orderPayload.paymentMethod = paymentMethod;
         orderPayload.paymentStatus = "pending";
-
-        console.log("📤 SENDING PAYLOAD:", JSON.stringify(orderPayload, null, 2));
 
         const order = await databases.createDocument(
             appwriteConfig.databaseId,
