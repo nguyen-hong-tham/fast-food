@@ -52,15 +52,7 @@ const RestaurantCard = ({ restaurant }: RestaurantCardProps) => {
 
 
         {/* Delivery Info Badge */}
-        {restaurant.deliveryFee !== undefined && (
-          <View className="absolute top-3 left-3">
-            <View className="bg-black/60 px-2 py-1 rounded-lg">
-              <Text className="text-white text-xs font-medium">
-                {restaurant.deliveryFee === 0 ? 'Free Delivery' : `${restaurant.deliveryFee.toLocaleString('vi-VN')}₫`}
-              </Text>
-            </View>
-          </View>
-        )}
+
 
         {/* Logo */}
         {restaurant.logo && (

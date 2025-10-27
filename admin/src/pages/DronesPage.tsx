@@ -140,8 +140,11 @@ export default function DronesPage() {
         setDrones(drones.map(d => d.$id === updated.$id ? updated : d));
         alert('Drone updated successfully');
       } else {
-        // Create new drone
-        const newDrone = await createDrone(formData);
+        // Create new drone - always set status to 'available'
+        const newDrone = await createDrone({
+          ...formData,
+          status: 'available'
+        });
         setDrones([newDrone, ...drones]);
         alert('Drone created successfully');
       }
@@ -425,22 +428,24 @@ export default function DronesPage() {
                   />
                 </div>
                 
-                {/* Status */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Status
-                  </label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value as DroneStatus })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                  >
-                    <option value="available">Available</option>
-                    <option value="busy">Busy</option>
-                    <option value="maintenance">Maintenance</option>
-                    <option value="offline">Offline</option>
-                  </select>
-                </div>
+                {/* Status - Only show when editing */}
+                {editingDrone && (
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Status
+                    </label>
+                    <select
+                      value={formData.status}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value as DroneStatus })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                    >
+                      <option value="available">Available</option>
+                      <option value="busy">Busy</option>
+                      <option value="maintenance">Maintenance</option>
+                      <option value="offline">Offline</option>
+                    </select>
+                  </div>
+                )}
                 
                 {/* Battery Level */}
                 <div>

@@ -444,7 +444,8 @@ export const updateDroneLocation = async (
         orderId?: string;
     } = {}
 ): Promise<void> => {
-    // Update drone position (remove updatedAt as it's not in schema)
+    // Update drone position only - don't create event for every position update
+    // (position updates happen too frequently and would create too many events)
     await databases.updateDocument(
         databaseId,
         appwriteConfig.dronesCollectionId,
@@ -455,24 +456,9 @@ export const updateDroneLocation = async (
             batteryLevel: options.batteryLevel ?? undefined,
         }
     );
-
-    // Create position update event
-    await databases.createDocument(
-        databaseId,
-        appwriteConfig.droneEventsCollectionId,
-        ID.unique(),
-        {
-            droneId,
-            orderId: options.orderId,
-            eventType: 'position_update',
-            latitude,
-            longitude,
-            altitude: options.altitude,
-            speed: options.speed,
-            batteryLevel: options.batteryLevel,
-            // timestamp removed - use $createdAt instead
-        }
-    );
+    
+    // Note: We removed event creation here because 'position_update' is not in the enum.
+    // Only create events for significant milestones: takeoff, landing, delivery_start, etc.
 };
 
 export const completeDroneDelivery = async (droneId: string): Promise<void> => {
