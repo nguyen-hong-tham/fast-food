@@ -24,7 +24,7 @@ export default function OrdersPage() {
   const { restaurant } = useAuthStore();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'pending' | 'preparing' | 'delivering' | 'delivered'>('all');
+  const [filter, setFilter] = useState<'all' | 'pending' | 'preparing' | 'ready' | 'delivering' | 'delivered'>('all');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [isLoadingItems, setIsLoadingItems] = useState(false);
@@ -219,6 +219,9 @@ export default function OrdersPage() {
       case 'confirmed':
       case 'preparing':
         return <Package className="w-5 h-5 text-blue-500" />;
+      case 'ready':
+      case 'picked_up':
+        return <Truck className="w-5 h-5 text-indigo-500" />;
       case 'delivering':
         return <Truck className="w-5 h-5 text-purple-500" />;
       case 'delivered':
@@ -237,6 +240,9 @@ export default function OrdersPage() {
       case 'confirmed':
       case 'preparing':
         return 'bg-blue-100 text-blue-800';
+      case 'ready':
+      case 'picked_up':
+        return 'bg-indigo-100 text-indigo-800';
       case 'delivering':
         return 'bg-purple-100 text-purple-800';
       case 'delivered':
@@ -274,7 +280,7 @@ export default function OrdersPage() {
         {/* Filter Tabs */}
         <div className="bg-white rounded-lg shadow">
           <div className="flex overflow-x-auto">
-            {['all', 'pending', 'preparing', 'delivering', 'delivered'].map((tab) => (
+            {['all', 'pending', 'preparing', 'ready', 'delivering', 'delivered'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setFilter(tab as any)}
@@ -386,11 +392,11 @@ export default function OrdersPage() {
                     )}
                     {order.status === 'preparing' && (
                       <button 
-                        onClick={() => updateOrderStatus(order.$id, 'delivering')}
+                        onClick={() => updateOrderStatus(order.$id, 'ready')}
                         disabled={isUpdating}
                         className="px-4 py-2 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors text-sm font-medium disabled:opacity-50"
                       >
-                        Start Delivery
+                        Mark Ready (Start Delivery)
                       </button>
                     )}
                     {order.status === 'delivering' && (
@@ -400,6 +406,14 @@ export default function OrdersPage() {
                         className="px-4 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors text-sm font-medium disabled:opacity-50"
                       >
                         Mark as Delivered
+                      </button>
+                    )}
+                    {(order.status === 'ready' || order.status === 'picked_up') && (
+                      <button 
+                        disabled={true}
+                        className="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg transition-colors text-sm font-medium opacity-50 cursor-not-allowed"
+                      >
+                        🚁 Drone in Transit...
                       </button>
                     )}
                   </div>
@@ -553,13 +567,13 @@ export default function OrdersPage() {
                   {selectedOrder.status === 'preparing' && (
                     <button
                       onClick={() => {
-                        updateOrderStatus(selectedOrder.$id, 'delivering');
+                        updateOrderStatus(selectedOrder.$id, 'ready');
                         closeModal();
                       }}
                       disabled={isUpdating}
                       className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium disabled:opacity-50"
                     >
-                      Start Delivery
+                      Mark Ready (Start Delivery)
                     </button>
                   )}
                   {selectedOrder.status === 'delivering' && (
@@ -573,6 +587,11 @@ export default function OrdersPage() {
                     >
                       Mark as Delivered
                     </button>
+                  )}
+                  {(selectedOrder.status === 'ready' || selectedOrder.status === 'picked_up') && (
+                    <div className="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg font-medium">
+                      🚁 Drone is delivering your order...
+                    </div>
                   )}
                   <button
                     onClick={closeModal}

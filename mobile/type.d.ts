@@ -280,25 +280,24 @@ export interface Notification extends Models.Document {
 // ===================== DRONE =====================
 
 export interface Drone extends Models.Document {
-  code: string; // Unique identifier
-  name: string;
-  model: string;
-  status: 'idle' | 'delivering' | 'maintenance' | 'charging' | 'offline';
+  code: string; // Unique identifier (required)
+  name: string; // Required
+  model?: string;
+  assignedOrderId?: string;
+  status: 'available' | 'busy' | 'maintenance' | 'offline'; // Match Appwrite enum
   batteryLevel: number; // 0-100
+  totalFlights: number;
   currentLatitude?: number;
   currentLongitude?: number;
   maxPayload: number; // kg
-  currentPayload?: number; // kg
+  currentPayload: number; // kg
+  maxSpeed: number; // km/h
   maxRange: number; // km
-  maxSpeed?: number; // km/h
-  totalDistance?: number; // km
-  assignedOrderId?: string;
+  totalDistance: number; // km
+  isActive: boolean;
   lastMaintenanceAt?: string;
   nextMaintenanceAt?: string;
-  totalFlights: number;
-  isActive: boolean;
   createdAt: string;
-  updatedAt?: string;
 }
 
 // ===================== DRONE EVENT =====================
@@ -306,13 +305,14 @@ export interface Drone extends Models.Document {
 export interface DroneEvent extends Models.Document {
   droneId: string;
   orderId?: string;
-  eventType: 'takeoff' | 'landing' | 'position_update' | 'battery_low' | 'error' | 'maintenance';
+  eventType: 'takeoff' | 'landing' | 'delivery_start' | 'delivery_complete' | 'battery_low' | 'maintenance' | 'error' | 'position_update'; // Match Appwrite enum
   latitude?: number;
   longitude?: number;
   altitude?: number;
   speed?: number;
   batteryLevel?: number;
-  message?: string;
+  payload?: string; // JSON string in Appwrite
+  description?: string;
   timestamp: string;
   createdAt?: string;
 }

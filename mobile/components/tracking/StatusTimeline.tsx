@@ -4,7 +4,6 @@ import { Order } from '@/type';
 
 const STATUS_SEQUENCE: Order['status'][] = [
   'pending',
-  'confirmed',
   'preparing',
   'ready',
   'picked_up',
@@ -14,7 +13,7 @@ const STATUS_SEQUENCE: Order['status'][] = [
 
 const STATUS_LABELS: Record<Order['status'], string> = {
   pending: 'Pending',
-  confirmed: 'Confirmed',
+  confirmed: 'Confirmed', // Keep for backwards compatibility
   preparing: 'Preparing',
   ready: 'Ready for Pickup',
   picked_up: 'Picked Up',

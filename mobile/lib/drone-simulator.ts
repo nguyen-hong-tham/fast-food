@@ -12,11 +12,12 @@ interface SimulationOptions {
   restaurantCoords: Coordinate;
   customerCoords: Coordinate;
   droneId?: string;
-  duration?: number; // Total duration for full journey (restaurant → customer)
+  duration?: number;
+  phase?: 'to_restaurant' | 'to_customer' | 'full'; // Which phase to simulate
   onProgress?: (payload: {
     coordinate: Coordinate;
     progress: number;
-    phase: 'to_restaurant' | 'to_customer'; // Which phase of delivery
+    phase: 'to_restaurant' | 'to_customer';
   }) => void;
 }
 
@@ -67,15 +68,16 @@ export const simulateDroneFlight = async ({
   customerCoords,
   droneId,
   duration = 60000, // Total 60 seconds for complete delivery
+  phase = 'full',
   onProgress,
 }: SimulationOptions) => {
   const drone = await ensureDrone(orderId, droneId);
   
-  // Phase 1: Drone flies to restaurant (30% of total time)
-  const phase1Duration = duration * 0.3;
+  // Phase 1: Drone flies to restaurant (20% of total time)
+  const phase1Duration = duration * 0.2;
   const phase1Steps = Math.max(8, Math.floor(phase1Duration / 2500));
   
-  // Assume drone starts from base location (nearby restaurant for simplicity)
+  // Drone starts from base location (nearby restaurant)
   const droneBaseCoords: Coordinate = {
     latitude: restaurantCoords.latitude + 0.005, // ~500m away
     longitude: restaurantCoords.longitude + 0.005,
@@ -83,15 +85,14 @@ export const simulateDroneFlight = async ({
   
   const waypointsToRestaurant = calculateWaypoints(droneBaseCoords, restaurantCoords, phase1Steps);
   
-  console.log('🚁 Phase 1: Drone flying to restaurant...');
+  console.log('🚁 Phase 1: Drone flying to restaurant to pick up order...');
   
-  // Update order status to show drone is on the way to pick up
+  // Just assign drone, don't change order status
   await databases.updateDocument(
     appwriteConfig.databaseId,
     appwriteConfig.ordersCollectionId,
     orderId,
     {
-      status: 'ready', // Restaurant marked ready, drone coming
       droneId: drone.$id,
       assignedAt: new Date().toISOString(),
     }
@@ -101,26 +102,40 @@ export const simulateDroneFlight = async ({
   for (let i = 0; i < waypointsToRestaurant.length; i += 1) {
     const point = waypointsToRestaurant[i];
     const progress = (i + 1) / waypointsToRestaurant.length;
-    const speed = 30; // Moderate speed to restaurant
+    const speed = 40; // Fast speed to restaurant
 
     await updateDroneLocation(drone.$id, point.latitude, point.longitude, {
       orderId,
       speed,
-      batteryLevel: Math.max(10, drone.batteryLevel - 0.5 * (i + 1)),
+      batteryLevel: Math.max(10, Math.floor(drone.batteryLevel - 0.5 * (i + 1))),
       altitude: 50,
     });
 
     onProgress?.({ 
       coordinate: point, 
-      progress: progress * 0.3, // 0-30% of total progress
+      progress: progress * 0.2, // 0-20% of total progress
       phase: 'to_restaurant' 
     });
 
     await sleep(phase1Duration / phase1Steps);
   }
 
-  // Drone arrived at restaurant - update to picked_up
-  console.log('✅ Drone arrived at restaurant, picking up order...');
+  // Drone arrived at restaurant - auto update to 'ready' and then 'picked_up'
+  console.log('✅ Drone arrived at restaurant!');
+  await databases.updateDocument(
+    appwriteConfig.databaseId,
+    appwriteConfig.ordersCollectionId,
+    orderId,
+    {
+      status: 'ready',
+      readyAt: new Date().toISOString(),
+    }
+  );
+  
+  // Small delay for restaurant to hand over package
+  await sleep(2000);
+  
+  console.log('📦 Drone picking up package...');
   await databases.updateDocument(
     appwriteConfig.databaseId,
     appwriteConfig.ordersCollectionId,
@@ -131,15 +146,15 @@ export const simulateDroneFlight = async ({
     }
   );
 
-  // Small delay to simulate package loading
+  // Small delay to secure package
   await sleep(3000);
 
-  // Phase 2: Drone flies to customer (70% of remaining time)
-  const phase2Duration = duration * 0.7;
-  const phase2Steps = Math.max(16, Math.floor(phase2Duration / 2500));
+  // Phase 2: Drone flies to customer (80% of remaining time)
+  const phase2Duration = duration * 0.8;
+  const phase2Steps = Math.max(20, Math.floor(phase2Duration / 2500));
   const waypointsToCustomer = calculateWaypoints(restaurantCoords, customerCoords, phase2Steps);
 
-  console.log('🚁 Phase 2: Drone flying to customer...');
+  console.log('🚁 Phase 2: Drone delivering to customer...');
   
   await databases.updateDocument(
     appwriteConfig.databaseId,
@@ -162,7 +177,7 @@ export const simulateDroneFlight = async ({
     await updateDroneLocation(drone.$id, point.latitude, point.longitude, {
       orderId,
       speed,
-      batteryLevel: Math.max(5, drone.batteryLevel - batteryDrain * (i + 1)),
+      batteryLevel: Math.max(5, Math.floor(drone.batteryLevel - batteryDrain * (i + 1))),
       altitude: 80 - progress * 50,
     });
 
