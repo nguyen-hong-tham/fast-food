@@ -97,7 +97,7 @@ const MenuDetail = () => {
                     text: 'Continue Shopping', 
                     style: 'default',
                     onPress: () => {
-                        // Simply go back to the previous screen (restaurant-detail)
+                        // Go back to the previous screen (restaurant-detail) without creating new entry
                         router.back();
                     }
                 },
