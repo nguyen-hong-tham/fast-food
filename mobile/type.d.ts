@@ -131,6 +131,7 @@ export interface OrderItem {
   quantity: number;
   image_url: string;
   customizations?: CartCustomization[];
+  notes?: string;
 }
 
 export interface Order extends Models.Document {

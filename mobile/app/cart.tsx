@@ -43,7 +43,7 @@ const CartScreen = () => {
         { 
           text: 'Remove', 
           style: 'destructive',
-          onPress: () => removeItem(itemId, customizations || [], notes)
+          onPress: () => removeItem(itemId, customizations || [], notes || '')
         }
       ]
     );
@@ -103,7 +103,8 @@ const CartScreen = () => {
           price: item.price,
           quantity: item.quantity,
           image_url: item.image_url,
-          customizations: item.customizations || []
+          customizations: item.customizations || [],
+          notes: item.notes
         })),
         total,
         deliveryAddress: user.address_home || 'Quick Order',
@@ -197,7 +198,7 @@ const CartScreen = () => {
             style={Platform.OS === 'android' ? { elevation: 2 } : {}}
           >
             {items.map((item, index) => (
-              <View key={`${item.id}-${JSON.stringify(item.customizations)}`}>
+              <View key={`${item.id}-${JSON.stringify(item.customizations)}-${item.notes || 'no-notes'}`}>
                 <View className="p-4">
                   <View className="flex-row">
                     {/* Item Image */}

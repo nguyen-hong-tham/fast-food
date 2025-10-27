@@ -81,7 +81,7 @@ const Cart = () => {
             <FlatList
                 data={items}
                 renderItem={({ item }) => <CartItem item={item} />}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(item) => `${item.id}-${JSON.stringify(item.customizations)}-${item.notes || 'no-notes'}`}
                 contentContainerClassName="pb-28 px-5 pt-5"
                 ListHeaderComponent={() => (
                     <CustomHeader 

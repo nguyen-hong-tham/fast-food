@@ -29,7 +29,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
             (i) =>
                 i.id === item.id &&
                 areCustomizationsEqual(i.customizations ?? [], customizations) &&
-                (i.notes ?? '') === (item.notes ?? '')
+                (i.notes || '') === (item.notes || '')
         );
 
         if (existing) {
@@ -37,7 +37,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
                 items: get().items.map((i) =>
                     i.id === item.id &&
                     areCustomizationsEqual(i.customizations ?? [], customizations) &&
-                    (i.notes ?? '') === (item.notes ?? '')
+                    (i.notes || '') === (item.notes || '')
                         ? { ...i, quantity: i.quantity + quantity }
                         : i
                 ),
@@ -57,7 +57,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
                     !(
                         i.id === id &&
                         areCustomizationsEqual(i.customizations ?? [], customizations) &&
-                        (i.notes ?? '') === notes
+                        (i.notes || '') === notes
                     )
             ),
         });
@@ -68,7 +68,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
             items: get().items.map((i) =>
                 i.id === id &&
                 areCustomizationsEqual(i.customizations ?? [], customizations) &&
-                (i.notes ?? '') === notes
+                (i.notes || '') === notes
                     ? { ...i, quantity: i.quantity + 1 }
                     : i
             ),
@@ -81,7 +81,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
                 .items.map((i) =>
                     i.id === id &&
                     areCustomizationsEqual(i.customizations ?? [], customizations) &&
-                    (i.notes ?? '') === notes
+                    (i.notes || '') === notes
                         ? { ...i, quantity: i.quantity - 1 }
                         : i
                 )

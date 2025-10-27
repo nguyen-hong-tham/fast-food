@@ -20,11 +20,7 @@ const SignIn = () => {
         setIsSubmitting(true)
 
         try {
-            console.log('🚀 Starting user login...');
-            
             await signIn({ email, password });
-            
-            console.log('🎉 Login successful! Fetching user data...');
             
             // Cập nhật lại auth state sau khi đăng nhập thành công
             await fetchAuthenticatedUser();

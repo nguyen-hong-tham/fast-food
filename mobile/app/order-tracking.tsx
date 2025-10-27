@@ -1,12 +1,17 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Image, Linking, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, Linking, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import * as Location from 'expo-location';
-import { LatLng } from 'react-native-maps';
 
 import CustomHeader from '@/components/CustomHeader';
-import DeliveryMap from '@/components/tracking/DeliveryMap';
+import DeliveryMap from '@/components/tracking';
+
+// Define LatLng type locally to avoid web import issues
+interface LatLng {
+  latitude: number;
+  longitude: number;
+}
 import StatusTimeline from '@/components/tracking/StatusTimeline';
 import CountdownTimer from '@/components/tracking/CountdownTimer';
 import { getOrderById, subscribeToDroneEvents, subscribeToOrder } from '@/lib/appwrite';
@@ -329,6 +334,11 @@ const OrderTrackingScreen = () => {
                 <View className="ml-4 flex-1">
                   <Text className="text-base font-quicksand-semibold text-dark-100">{item.name}</Text>
                   <Text className="mt-1 text-sm text-gray-500">Quantity: {item.quantity}</Text>
+                  {item.notes && (
+                    <Text className="mt-1 text-sm text-gray-600 italic">
+                      📝 {item.notes}
+                    </Text>
+                  )}
                   <Text className="mt-1 text-sm font-quicksand-semibold text-primary">
                     {(item.price * item.quantity).toLocaleString('vi-VN')}₫
                   </Text>
