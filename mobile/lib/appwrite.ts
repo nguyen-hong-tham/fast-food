@@ -540,27 +540,59 @@ const parseDroneEventPayload = (payload: any): DroneEvent => {
 export const subscribeToOrder = (orderId: string, callback: (order: Order) => void) => {
     const channel = `databases.${appwriteConfig.databaseId}.collections.${appwriteConfig.ordersCollectionId}.documents.${orderId}`;
 
-    const unsubscribe = client.subscribe(channel, event => {
-        if (!event?.payload) return;
-        callback(event.payload as unknown as Order);
-    });
+    let unsubscribe: (() => void) | null = null;
 
-    return () => unsubscribe();
+    try {
+        unsubscribe = client.subscribe(channel, event => {
+            try {
+                if (!event?.payload) return;
+                callback(event.payload as unknown as Order);
+            } catch (error) {
+                console.error('❌ Error in subscribeToOrder callback:', error);
+            }
+        });
+    } catch (error) {
+        console.error('❌ Error subscribing to order:', error);
+    }
+
+    return () => {
+        try {
+            if (unsubscribe) unsubscribe();
+        } catch (error) {
+            console.error('❌ Error unsubscribing from order:', error);
+        }
+    };
 };
 
 export const subscribeToDroneEvents = (orderId: string, callback: (event: DroneEvent) => void) => {
     const channel = `databases.${appwriteConfig.databaseId}.collections.${appwriteConfig.droneEventsCollectionId}.documents`;
 
-    const unsubscribe = client.subscribe(channel, event => {
-        const payload = event?.payload as any;
-        if (!payload) return;
+    let unsubscribe: (() => void) | null = null;
 
-        if (orderId && payload.orderId !== orderId) return;
+    try {
+        unsubscribe = client.subscribe(channel, event => {
+            try {
+                const payload = event?.payload as any;
+                if (!payload) return;
 
-        callback(parseDroneEventPayload(payload));
-    });
+                if (orderId && payload.orderId !== orderId) return;
 
-    return () => unsubscribe();
+                callback(parseDroneEventPayload(payload));
+            } catch (error) {
+                console.error('❌ Error in subscribeToDroneEvents callback:', error);
+            }
+        });
+    } catch (error) {
+        console.error('❌ Error subscribing to drone events:', error);
+    }
+
+    return () => {
+        try {
+            if (unsubscribe) unsubscribe();
+        } catch (error) {
+            console.error('❌ Error unsubscribing from drone events:', error);
+        }
+    };
 };
 
 export const getDroneLocation = async (droneId: string) => {

@@ -5,6 +5,7 @@ import * as Location from 'expo-location';
 import { getRestaurants } from '@/lib/appwrite';
 import { RestaurantWithDistance, RestaurantFilters } from '@/type';
 import RestaurantCard from '@/components/RestaurantCard';
+import { RestaurantListSkeleton } from '@/components/LoadingSkeleton';
 import cn from 'clsx';
 import { icons } from '@/constants';
 
@@ -248,10 +249,14 @@ const RestaurantsScreen = () => {
   if (loading && !refreshing) {
     return (
       <SafeAreaView className="flex-1 bg-gray-50">
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#f59e0b" />
-          <Text className="mt-4 text-gray-600">Discovering restaurants...</Text>
+        {/* Header */}
+        <View className="px-4 pt-4 pb-2 bg-white border-b border-gray-200">
+          <Text className="text-2xl font-bold text-gray-800">Restaurants</Text>
+          <Text className="text-sm text-gray-600 mt-1">
+            Discovering amazing food...
+          </Text>
         </View>
+        <RestaurantListSkeleton count={6} />
       </SafeAreaView>
     );
   }

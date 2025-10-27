@@ -6,18 +6,17 @@ const STATUS_SEQUENCE: Order['status'][] = [
   'pending',
   'preparing',
   'ready',
-  'picked_up',
   'delivering',
   'delivered',
 ];
 
 const STATUS_LABELS: Record<Order['status'], string> = {
-  pending: 'Pending',
+  pending: 'Order Placed',
   confirmed: 'Confirmed', // Keep for backwards compatibility
-  preparing: 'Preparing',
+  preparing: 'Restaurant Preparing',
   ready: 'Ready for Pickup',
-  picked_up: 'Picked Up',
-  delivering: 'On the Way',
+  picked_up: 'Picked Up', // Keep for backwards compatibility
+  delivering: 'Drone Delivering',
   delivered: 'Delivered',
   cancelled: 'Cancelled',
 };
