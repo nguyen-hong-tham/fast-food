@@ -13,7 +13,6 @@ interface LatLng {
   longitude: number;
 }
 import StatusTimeline from '@/components/tracking/StatusTimeline';
-import CountdownTimer from '@/components/tracking/CountdownTimer';
 import { getOrderById, subscribeToDroneEvents, subscribeToOrder } from '@/lib/appwrite';
 import { getRestaurantById } from '@/lib/api-helpers';
 import { simulateDroneFlight } from '@/lib/drone-simulator';
@@ -178,17 +177,30 @@ const OrderTrackingScreen = () => {
     if (simulationState !== 'idle') return;
     if (hasRealtimeProgress) return;
     
-    // Trigger simulation when order is ready for pickup (restaurant confirmed ready)
-    const shouldStartSimulation = order.status === 'ready' || order.status === 'picked_up' || order.status === 'delivering';
+    // ✅ Trigger simulation when restaurant accepts order (status = preparing)
+    const shouldStartSimulation = 
+      order.status === 'preparing' || 
+      order.status === 'ready' || 
+      order.status === 'picked_up' || 
+      order.status === 'delivering';
     if (!shouldStartSimulation) return;
 
     console.log('🚁 Starting drone simulation for order:', order.$id, 'status:', order.status);
 
     setSimulationState('running');
     setCountdownActive(true);
-    setDronePath([restaurantCoords]);
-    setDroneCoords(restaurantCoords);
-    setEtaMinutes(SIMULATION_DURATION / 60000);
+    
+    // Set initial drone position at base (near restaurant)
+    const droneBaseCoords = {
+      latitude: restaurantCoords.latitude + 0.005,
+      longitude: restaurantCoords.longitude + 0.005,
+    };
+    setDronePath([droneBaseCoords]);
+    setDroneCoords(droneBaseCoords);
+    
+    // Set initial ETA
+    const initialETA = SIMULATION_DURATION / 60000;
+    setEtaMinutes(initialETA);
 
     let isMounted = true;
 
@@ -202,7 +214,10 @@ const OrderTrackingScreen = () => {
         if (!isMounted) return;
         setDroneCoords(coordinate);
         setDronePath((prev) => [...prev, coordinate]);
-        setEtaMinutes(Math.max(0, (1 - progress) * (SIMULATION_DURATION / 60000)));
+        
+        // Update ETA based on progress
+        const remainingTime = Math.max(0, (1 - progress) * (SIMULATION_DURATION / 60000));
+        setEtaMinutes(remainingTime);
         
         // Log phase changes
         if (phase === 'to_restaurant' && progress < 0.1) {
@@ -224,7 +239,14 @@ const OrderTrackingScreen = () => {
         if (!isMounted) return;
         setSimulationState('idle');
         setCountdownActive(false);
-        setEtaMinutes(undefined);
+        
+        // Show error message but keep estimated time if available
+        if (order.estimatedDeliveryTime) {
+          const etaMs = new Date(order.estimatedDeliveryTime).getTime() - Date.now();
+          setEtaMinutes(Math.max(0, etaMs / 60000));
+        } else {
+          setEtaMinutes(undefined);
+        }
       });
 
     return () => {
@@ -279,7 +301,14 @@ const OrderTrackingScreen = () => {
               <Text className="text-xs uppercase tracking-wide text-gray-500">Order</Text>
               <Text className="text-2xl font-quicksand-semibold text-dark-100">#{order.$id.slice(-6).toUpperCase()}</Text>
             </View>
-            <CountdownTimer duration={SIMULATION_DURATION} isActive={countdownActive} onComplete={() => setCountdownActive(false)} />
+            {etaMinutes !== undefined && etaMinutes !== null && etaMinutes > 0 && (
+              <View className="bg-dark-100/90 rounded-2xl px-4 py-3 items-center justify-center">
+                <Text className="text-xs font-quicksand-medium text-white/70">Drone Arrival Countdown</Text>
+                <Text className="text-2xl font-quicksand-semibold text-white mt-1">
+                  {String(Math.floor(etaMinutes)).padStart(2, '0')}:{String(Math.floor((etaMinutes % 1) * 60)).padStart(2, '0')}
+                </Text>
+              </View>
+            )}
           </View>
 
           <DeliveryMap

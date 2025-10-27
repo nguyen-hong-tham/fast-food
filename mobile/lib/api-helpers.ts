@@ -303,21 +303,25 @@ export const markNotificationAsRead = async (notificationId: string): Promise<vo
 export const createDrone = async (data: {
     name: string;
     model?: string;
-    serialNumber?: string;
 }): Promise<Drone> => {
+    // Generate unique code for drone
+    const droneCode = `DR-${Date.now().toString().slice(-6)}`;
+    
     const droneData = {
+        code: droneCode, // Required attribute in Appwrite schema
         name: data.name,
         model: data.model || 'DJI Phantom 4',
-        serialNumber: data.serialNumber || `SN-${Date.now()}`,
-        status: 'idle',
+        status: 'available', // Match enum value in Appwrite (available, busy, maintenance, offline)
         isActive: true,
         batteryLevel: 100,
         currentLatitude: 10.762622, // Default HCM location
         currentLongitude: 106.660172,
-        maxSpeed: 40,
-        maxPayload: 2000,
-        baseLatitude: 10.762622,
-        baseLongitude: 106.660172,
+        maxSpeed: 50,
+        maxPayload: 5,
+        currentPayload: 0,
+        maxRange: 10,
+        totalFlights: 0,
+        totalDistance: 0,
     };
 
     const response = await databases.createDocument(
@@ -335,27 +339,18 @@ export const getAvailableDrone = async (): Promise<Drone | null> => {
         databaseId,
         appwriteConfig.dronesCollectionId,
         [
-            Query.equal('status', 'idle'),
+            Query.equal('status', 'available'), // Match enum in Appwrite
             Query.equal('isActive', true),
             Query.greaterThan('batteryLevel', 30),
             Query.limit(1)
         ]
     );
     
-    // If no drone available, try to create one automatically
+    // ❌ REMOVED: Auto-create drone logic
+    // Admin should manually add drones via Admin Panel
     if (response.documents.length === 0) {
-        console.log('⚠️ No drones available. Creating a new drone...');
-        try {
-            const newDrone = await createDrone({
-                name: `Drone-${Date.now()}`,
-                model: 'DJI Phantom 4 Pro',
-            });
-            console.log('✅ Created new drone:', newDrone.$id);
-            return newDrone;
-        } catch (error) {
-            console.error('❌ Failed to create drone:', error);
-            return null;
-        }
+        console.log('⚠️ No drones available for delivery');
+        return null;
     }
     
     return response.documents[0] as unknown as Drone;
@@ -377,9 +372,8 @@ export const assignDroneToOrder = async (droneId: string, orderId: string): Prom
         appwriteConfig.dronesCollectionId,
         droneId,
         {
-            status: 'delivering',
+            status: 'busy', // Match enum in Appwrite (available, busy, maintenance, offline)
             assignedOrderId: orderId,
-            updatedAt: new Date().toISOString(),
         }
     );
     
@@ -392,7 +386,6 @@ export const assignDroneToOrder = async (droneId: string, orderId: string): Prom
             orderId,
             eventType: 'takeoff',
             batteryLevel: updated.batteryLevel,
-            timestamp: new Date().toISOString(),
         }
     );
 
@@ -420,7 +413,6 @@ export const logDroneEvent = async (event: {
         {
             ...event,
             payload: payloadString,
-            timestamp: new Date().toISOString(),
         }
     );
 
@@ -452,6 +444,7 @@ export const updateDroneLocation = async (
         orderId?: string;
     } = {}
 ): Promise<void> => {
+    // Update drone position (remove updatedAt as it's not in schema)
     await databases.updateDocument(
         databaseId,
         appwriteConfig.dronesCollectionId,
@@ -460,10 +453,10 @@ export const updateDroneLocation = async (
             currentLatitude: latitude,
             currentLongitude: longitude,
             batteryLevel: options.batteryLevel ?? undefined,
-            updatedAt: new Date().toISOString(),
         }
     );
 
+    // Create position update event
     await databases.createDocument(
         databaseId,
         appwriteConfig.droneEventsCollectionId,
@@ -477,7 +470,7 @@ export const updateDroneLocation = async (
             altitude: options.altitude,
             speed: options.speed,
             batteryLevel: options.batteryLevel,
-            timestamp: new Date().toISOString(),
+            // timestamp removed - use $createdAt instead
         }
     );
 };
@@ -489,15 +482,15 @@ export const completeDroneDelivery = async (droneId: string): Promise<void> => {
         droneId
     ) as unknown as Drone;
     
+    // Update drone status back to available (remove updatedAt)
     await databases.updateDocument(
         databaseId,
         appwriteConfig.dronesCollectionId,
         droneId,
         {
-            status: 'idle',
+            status: 'available', // Match enum in Appwrite
             assignedOrderId: null,
             totalFlights: drone.totalFlights + 1,
-            updatedAt: new Date().toISOString(),
         }
     );
     
@@ -510,7 +503,6 @@ export const completeDroneDelivery = async (droneId: string): Promise<void> => {
             droneId,
             orderId: drone.assignedOrderId,
             eventType: 'landing',
-            timestamp: new Date().toISOString(),
         }
     );
 };

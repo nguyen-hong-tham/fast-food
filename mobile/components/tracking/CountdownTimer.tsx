@@ -19,10 +19,14 @@ const formatTime = (milliseconds: number) => {
 const CountdownTimer: React.FC<CountdownTimerProps> = ({ duration, isActive = true, onComplete }) => {
   const [remaining, setRemaining] = useState(duration);
 
+  // Update remaining time when duration changes (from external source like simulation progress)
   useEffect(() => {
     if (!isActive) return;
-
-    setRemaining(duration);
+    
+    // Only update if duration is significantly different (avoid flicker from small updates)
+    if (Math.abs(remaining - duration) > 2000) {
+      setRemaining(duration);
+    }
   }, [duration, isActive]);
 
   useEffect(() => {
