@@ -30,7 +30,7 @@ const CartItem = ({ item }: { item: CartItemType }) => {
 
                     <View className="flex flex-row items-center gap-x-4 mt-2">
                         <TouchableOpacity
-                            onPress={() => decreaseQty(item.id, item.customizations!, item.notes)}
+                            onPress={() => decreaseQty(item.id, item.customizations!, item.notes || '')}
                             className="cart-item__actions"
                         >
                             <Image
@@ -44,7 +44,7 @@ const CartItem = ({ item }: { item: CartItemType }) => {
                         <Text className="base-bold text-dark-100">{item.quantity}</Text>
 
                         <TouchableOpacity
-                            onPress={() => increaseQty(item.id, item.customizations!, item.notes)}
+                            onPress={() => increaseQty(item.id, item.customizations!, item.notes || '')}
                             className="cart-item__actions"
                         >
                             <Image
@@ -59,7 +59,7 @@ const CartItem = ({ item }: { item: CartItemType }) => {
             </View>
 
             <TouchableOpacity
-                onPress={() => removeItem(item.id, item.customizations!, item.notes)}
+                onPress={() => removeItem(item.id, item.customizations!, item.notes || '')}
                 className="flex-center"
             >
                 <Image source={icons.trash} className="size-5" resizeMode="contain" />

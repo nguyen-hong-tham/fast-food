@@ -1,6 +1,12 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { View, Text } from 'react-native';
-import MapView, { LatLng, Marker, Polyline, PROVIDER_GOOGLE, Region } from 'react-native-maps';
+import MapView, { Marker, Polyline, PROVIDER_GOOGLE, Region } from 'react-native-maps';
+
+// Define LatLng type locally
+interface LatLng {
+  latitude: number;
+  longitude: number;
+}
 
 export interface DeliveryMapProps {
   restaurant?: LatLng | null;

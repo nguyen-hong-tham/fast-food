@@ -82,7 +82,7 @@ const MenuDetail = () => {
                 price: menuItem.price,
                 image_url: menuItem.image_url,
                 customizations: [],
-                notes: notes.trim() || undefined
+                notes: notes.trim() || ''
             },
             restaurantId,
             quantity
