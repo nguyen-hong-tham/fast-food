@@ -442,6 +442,19 @@ const OrderTrackingScreen = () => {
               </View>
             )}
             
+            {/* Payment Method */}
+            <View className="bg-gray-50 rounded-2xl p-4">
+              <Text className="text-sm font-quicksand-semibold text-gray-500 uppercase tracking-wide mb-1">Payment Method</Text>
+              <View className="flex-row items-center">
+                <Text className="text-lg mr-2">
+                  {order.paymentMethod === 'vnpay' ? '💳' : '💵'}
+                </Text>
+                <Text className="text-base font-quicksand-medium text-dark-100">
+                  {order.paymentMethod === 'vnpay' ? 'VNPay' : 'Cash on Delivery'}
+                </Text>
+              </View>
+            </View>
+
             {/* Delivery Calculation Info */}
             {deliveryCalc && (
               <View className="mt-4 pt-4 border-t border-gray-200">

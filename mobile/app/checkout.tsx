@@ -97,6 +97,11 @@ const CheckoutScreen = () => {
     try {
       setProcessing(true);
 
+      // Calculate estimated delivery time
+      const estimatedDeliveryTime = deliveryCalc 
+        ? new Date(Date.now() + deliveryCalc.estimatedTime * 60 * 1000).toISOString()
+        : new Date(Date.now() + 30 * 60 * 1000).toISOString(); // fallback: 30 phút
+
       // Create order with "pending" payment status
       const orderData = {
         userId: user.$id,
@@ -117,6 +122,7 @@ const CheckoutScreen = () => {
         notes: notes.trim(),
         paymentMethod: selectedPaymentMethod,
         status: "pending",
+        estimatedDeliveryTime,
       };
 
       const { order } = await createOrderWithPayment(orderData);
@@ -361,16 +367,27 @@ const CheckoutScreen = () => {
             </TouchableOpacity>
           </View>
 
-          {/* Delivery Time */}
+          {/* Estimated Delivery */}
           <View className="bg-white rounded-xl p-4 mb-4"
             style={Platform.OS === 'android' ? { elevation: 2 } : {}}
           >
             <Text className="text-lg font-bold text-gray-800 mb-3">Estimated Delivery</Text>
             <View className="flex-row items-center">
               <Text className="text-2xl mr-3">🚁</Text>
-              <View>
+              <View className="flex-1">
                 <Text className="font-semibold text-gray-800">Drone Delivery</Text>
-                <Text className="text-gray-600">30-45 minutes</Text>
+                {deliveryCalc ? (
+                  <View>
+                    <Text className="text-amber-600 font-semibold">{deliveryCalc.formattedTime}</Text>
+                    <Text className="text-xs text-gray-500 mt-1">
+                      Prep: 15 min + Delivery: {deliveryCalc.deliveryTime} min
+                    </Text>
+                  </View>
+                ) : isCalculating ? (
+                  <Text className="text-gray-500">Calculating...</Text>
+                ) : (
+                  <Text className="text-gray-600">30-45 minutes (estimated)</Text>
+                )}
               </View>
             </View>
           </View>
