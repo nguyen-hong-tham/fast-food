@@ -1,5 +1,6 @@
 import { MenuItem } from "@/type";
 import { router } from "expo-router";
+import React, { useCallback } from 'react';
 import { Image, Platform, Text, TouchableOpacity, View } from 'react-native';
 
 interface MenuCardProps {
@@ -7,10 +8,10 @@ interface MenuCardProps {
     restaurantId?: string;
 }
 
-const MenuCard = ({ item: { $id, image_url, name, price }, restaurantId }: MenuCardProps) => {
-    const handlePress = () => {
+const MenuCard = React.memo(({ item: { $id, image_url, name, price }, restaurantId }: MenuCardProps) => {
+    const handlePress = useCallback(() => {
         router.push(`/menu-detail?menuId=${$id}&restaurantId=${restaurantId}`);
-    };
+    }, [$id, restaurantId]);
 
     return (
         <TouchableOpacity 
@@ -34,5 +35,8 @@ const MenuCard = ({ item: { $id, image_url, name, price }, restaurantId }: MenuC
             </TouchableOpacity>
         </TouchableOpacity>
     )
-}
+});
+
+MenuCard.displayName = 'MenuCard';
+
 export default MenuCard

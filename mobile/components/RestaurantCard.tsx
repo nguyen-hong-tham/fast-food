@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity, Image, Platform } from 'react-native';
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Restaurant, RestaurantWithDistance } from '@/type';
 import { router } from 'expo-router';
 import cn from 'clsx';
@@ -8,13 +8,13 @@ interface RestaurantCardProps {
   restaurant: RestaurantWithDistance;
 }
 
-const RestaurantCard = ({ restaurant }: RestaurantCardProps) => {
-  const handlePress = () => {
+const RestaurantCard = React.memo(({ restaurant }: RestaurantCardProps) => {
+  const handlePress = useCallback(() => {
     router.push({
       pathname: '/restaurant-detail' as any,
       params: { id: restaurant.$id }
     });
-  };
+  }, [restaurant.$id]);
 
 
 
@@ -170,6 +170,8 @@ const RestaurantCard = ({ restaurant }: RestaurantCardProps) => {
       </View>
     </TouchableOpacity>
   );
-};
+});
+
+RestaurantCard.displayName = 'RestaurantCard';
 
 export default RestaurantCard;

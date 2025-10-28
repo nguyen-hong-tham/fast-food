@@ -1,11 +1,12 @@
-import { View, Text, ScrollView, TouchableOpacity, Image, Platform, Alert } from 'react-native';
-import React, { useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Image, Platform, Alert, FlatList } from 'react-native';
+import React, { useCallback, useMemo, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useCartStore } from '@/store/cart.store';
 import useAuthStore from '@/store/auth.store';
 import { createOrderWithPayment } from '@/lib/appwrite';
 import cn from 'clsx';
+import CartItem from '@/components/CartItem';
 
 const CartScreen = () => {
   const { 
@@ -23,18 +24,18 @@ const CartScreen = () => {
   const user = useAuthStore((state) => state.user);
   const [processing, setProcessing] = useState(false);
 
-  const total = getTotalPrice();
-  const itemCount = getTotalItems();
+  const total = useMemo(() => getTotalPrice(), [getTotalPrice]);
+  const itemCount = useMemo(() => getTotalItems(), [getTotalItems]);
 
-  const handleQuantityIncrease = (itemId: string, customizations: any[], notes?: string) => {
+  const handleQuantityIncrease = useCallback((itemId: string, customizations: any[], notes?: string) => {
     increaseQty(itemId, customizations || [], notes);
-  };
+  }, [increaseQty]);
 
-  const handleQuantityDecrease = (itemId: string, customizations: any[], notes?: string) => {
+  const handleQuantityDecrease = useCallback((itemId: string, customizations: any[], notes?: string) => {
     decreaseQty(itemId, customizations || [], notes);
-  };
+  }, [decreaseQty]);
 
-  const handleRemoveItem = (itemId: string, customizations: any[], notes?: string) => {
+  const handleRemoveItem = useCallback((itemId: string, customizations: any[], notes?: string) => {
     Alert.alert(
       'Remove Item',
       'Are you sure you want to remove this item from your cart?',
@@ -47,9 +48,9 @@ const CartScreen = () => {
         }
       ]
     );
-  };
+  }, [removeItem]);
 
-  const handleClearCart = () => {
+  const handleClearCart = useCallback(() => {
     Alert.alert(
       'Clear Cart',
       'Are you sure you want to remove all items from your cart?',
@@ -62,9 +63,9 @@ const CartScreen = () => {
         }
       ]
     );
-  };
+  }, [clearCart]);
 
-  const handleCheckout = async () => {
+  const handleCheckout = useCallback(async () => {
     if (!user) {
       Alert.alert(
         'Sign In Required',
@@ -133,15 +134,24 @@ const CartScreen = () => {
     } finally {
       setProcessing(false);
     }
-  };
+  }, [user, items, restaurantId, total, clearCart]);
 
-  const getItemSubtotal = (item: any) => {
+  const getItemSubtotal = useCallback((item: any) => {
     const basePrice = item.price * item.quantity;
     const customizationPrice = (item.customizations || []).reduce(
       (sum: number, c: any) => sum + c.price, 0
     ) * item.quantity;
     return basePrice + customizationPrice;
-  };
+  }, []);
+
+  // Memoize render callbacks
+  const renderCartItem = useCallback(({ item }: { item: any }) => (
+    <CartItem item={item} />
+  ), []);
+
+  const keyExtractor = useCallback((item: any) => 
+    `${item.id}-${JSON.stringify(item.customizations)}-${item.notes}`, 
+  []);
 
   if (items.length === 0) {
     return (

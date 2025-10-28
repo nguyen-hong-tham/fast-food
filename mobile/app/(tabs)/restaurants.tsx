@@ -1,5 +1,5 @@
 import { View, Text, FlatList, ActivityIndicator, TouchableOpacity, ScrollView, RefreshControl, Platform, TextInput, Image } from 'react-native';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 import { getRestaurants } from '@/lib/appwrite';
@@ -103,24 +103,46 @@ const RestaurantsScreen = () => {
     fetchRestaurants();
   }, [selectedDistance, sortBy, statusFilter, userLocation]);
 
-  // Search filter
-  useEffect(() => {
+  // Search filter - useMemo để tránh tính toán lại không cần thiết
+  const filteredResults = useMemo(() => {
     if (searchQuery.trim() === '') {
-      setFilteredRestaurants(restaurants);
-    } else {
-      const filtered = restaurants.filter((restaurant) =>
-        restaurant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        restaurant.address.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setFilteredRestaurants(filtered);
+      return restaurants;
     }
+    const query = searchQuery.toLowerCase();
+    return restaurants.filter((restaurant) =>
+      restaurant.name.toLowerCase().includes(query) ||
+      restaurant.address.toLowerCase().includes(query)
+    );
   }, [searchQuery, restaurants]);
 
-  const onRefresh = async () => {
+  useEffect(() => {
+    setFilteredRestaurants(filteredResults);
+  }, [filteredResults]);
+
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await fetchRestaurants();
     setRefreshing(false);
-  };
+  }, []);
+
+  // Memoize render callbacks
+  const renderRestaurantItem = useCallback(({ item }: { item: RestaurantWithDistance }) => (
+    <RestaurantCard restaurant={item} />
+  ), []);
+
+  const keyExtractor = useCallback((item: RestaurantWithDistance) => item.$id, []);
+
+  const handleClearSearch = useCallback(() => setSearchQuery(''), []);
+
+  const handleDistanceFilter = useCallback((distance: number) => {
+    setSelectedDistance(prev => prev === distance ? null : distance);
+  }, []);
+
+  const handleResetFilters = useCallback(() => {
+    setSelectedDistance(null);
+    setStatusFilter('all');
+    setSearchQuery('');
+  }, []);
 
   const renderHeader = () => (
     <View className="px-4 pb-2">
@@ -142,7 +164,7 @@ const RestaurantsScreen = () => {
           placeholderTextColor="#9CA3AF"
         />
         {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => setSearchQuery('')}>
+          <TouchableOpacity onPress={handleClearSearch}>
             <Text className="text-gray-400 text-lg">✕</Text>
           </TouchableOpacity>
         )}
@@ -169,7 +191,7 @@ const RestaurantsScreen = () => {
                         ? 'bg-blue-100 border-blue-400' 
                         : 'bg-white border-gray-300'
                     )}
-                    onPress={() => setSelectedDistance(selectedDistance === distance ? null : distance)}
+                    onPress={() => handleDistanceFilter(distance)}
                   >
                     <Text className={cn(
                       'text-xs font-medium',
@@ -273,11 +295,15 @@ const RestaurantsScreen = () => {
 
       <FlatList
         data={filteredRestaurants}
-        keyExtractor={(item) => item.$id}
+        keyExtractor={keyExtractor}
         ListHeaderComponent={renderHeader}
-        renderItem={({ item }) => <RestaurantCard restaurant={item} />}
+        renderItem={renderRestaurantItem}
         contentContainerClassName="px-4 pt-4"
         showsVerticalScrollIndicator={false}
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={10}
+        windowSize={10}
+        initialNumToRender={8}
         refreshControl={
           <RefreshControl 
             refreshing={refreshing} 
@@ -288,7 +314,7 @@ const RestaurantsScreen = () => {
         }
         ListEmptyComponent={
           <View className="items-center justify-center py-12">
-            <Text className="text-6xl mb-4"></Text>
+            <Text className="text-6xl mb-4">🔍</Text>
             <Text className="text-lg font-semibold text-gray-800 mb-2">
               No restaurants found
             </Text>
@@ -296,11 +322,7 @@ const RestaurantsScreen = () => {
               Try adjusting your filters or search terms
             </Text>
             <TouchableOpacity
-              onPress={() => {
-                setSelectedDistance(null);
-                setStatusFilter('all');
-                setSearchQuery('');
-              }}
+              onPress={handleResetFilters}
               className="bg-amber-500 px-4 py-2 rounded-lg"
             >
               <Text className="text-white font-semibold">Reset Filters</Text>

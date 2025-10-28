@@ -1,14 +1,14 @@
 import { icons } from "@/constants";
 import { useCartStore } from "@/store/cart.store";
 import { router } from "expo-router";
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Image, Text, TouchableOpacity, View } from 'react-native';
 
-const CartButton = () => {
+const CartButton = React.memo(() => {
     const { getTotalItems, getCartForCheckout } = useCartStore();
     const totalItems = getTotalItems();
 
-    const handleCartPress = () => {
+    const handleCartPress = useCallback(() => {
         if (totalItems === 0) {
             // Nếu cart rỗng, có thể show message hoặc không làm gì
             return;
@@ -24,7 +24,7 @@ const CartButton = () => {
                 itemCount: cartData.totalItems.toString()
             }
         });
-    };
+    }, [totalItems, getCartForCheckout]);
 
     return (
         <TouchableOpacity className="cart-btn" onPress={handleCartPress}>
@@ -37,5 +37,8 @@ const CartButton = () => {
             )}
         </TouchableOpacity>
     )
-}
+});
+
+CartButton.displayName = 'CartButton';
+
 export default CartButton

@@ -1,7 +1,7 @@
 import { icons } from '@/constants';
 import { Order } from '@/type';
 import { router } from 'expo-router';
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { Image, Text, TouchableOpacity, View } from 'react-native';
 
 interface OrderCardProps {
@@ -32,27 +32,36 @@ const STATUS_LABELS = {
     cancelled: 'Cancelled',
 };
 
-const OrderCard = ({ order }: OrderCardProps) => {
+const OrderCard = React.memo(({ order }: OrderCardProps) => {
     const statusColor = STATUS_COLORS[order.status];
     const statusLabel = STATUS_LABELS[order.status];
     
-    // Parse items from JSON string
-    const items = typeof order.items === 'string' 
-        ? JSON.parse(order.items) 
-        : order.items;
+    // Parse items from JSON string - use useMemo
+    const items = useMemo(() => 
+        typeof order.items === 'string' 
+            ? JSON.parse(order.items) 
+            : order.items,
+        [order.items]
+    );
     
-    const itemCount = items.reduce((sum: number, item: any) => sum + item.quantity, 0);
+    const itemCount = useMemo(() => 
+        items.reduce((sum: number, item: any) => sum + item.quantity, 0),
+        [items]
+    );
     
-    // Format date
-    const orderDate = new Date(order.createdAt).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-    });
+    // Format date - use useMemo
+    const orderDate = useMemo(() => 
+        new Date(order.createdAt).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+        }),
+        [order.createdAt]
+    );
 
-    const handlePress = () => {
+    const handlePress = useCallback(() => {
         // Navigate to tracking screen for active orders, order-detail for completed/cancelled
         const activeStatuses = ['pending', 'confirmed', 'preparing', 'ready', 'picked_up', 'delivering'];
         const shouldShowTracking = activeStatuses.includes(order.status);
@@ -68,7 +77,7 @@ const OrderCard = ({ order }: OrderCardProps) => {
                 params: { orderId: order.$id }
             });
         }
-    };
+    }, [order.status, order.$id]);
 
     return (
         <TouchableOpacity
@@ -163,6 +172,8 @@ const OrderCard = ({ order }: OrderCardProps) => {
             </View>
         </TouchableOpacity>
     );
-};
+});
+
+OrderCard.displayName = 'OrderCard';
 
 export default OrderCard;

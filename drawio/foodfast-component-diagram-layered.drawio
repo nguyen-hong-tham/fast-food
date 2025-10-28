@@ -1,0 +1,280 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36" version="28.2.8">
+  <diagram name="FoodFast Component Diagram - Layered" id="foodfast-layered">
+    <mxGraphModel dx="3744" dy="998" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2000" pageHeight="1400" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="layer-presentation" value="Lớp giao diện" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#D4E1F5;strokeColor=#6C8EBF;align=left;verticalAlign=top;fontSize=14;fontStyle=1;spacing=10;" parent="1" vertex="1">
+          <mxGeometry x="100" y="40" width="1800" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="mobile-auth" value="Authentication&#xa;(Sign-in, Sign-up)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF4C3;strokeColor=#D6B656;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="140" y="80" width="150" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="mobile-home" value="Home&#xa;(Menu Display)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF4C3;strokeColor=#D6B656;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="310" y="80" width="150" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="mobile-search" value="Search&#xa;(Menu Search)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF4C3;strokeColor=#D6B656;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="480" y="80" width="150" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="mobile-cart" value="Shopping Cart&#xa;(Order Management)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF4C3;strokeColor=#D6B656;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="650" y="80" width="150" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="mobile-tracking" value="Drone Tracking&#xa;(Real-time Map) NEW" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF4C3;strokeColor=#D6B656;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="820" y="80" width="170" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="mobile-order" value="Delivery Confirmation&#xa;(QR/PIN) NEW" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF4C3;strokeColor=#D6B656;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="1010" y="80" width="170" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="mobile-profile" value="User Profile&#xa;(Account Info)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF4C3;strokeColor=#D6B656;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="1200" y="80" width="150" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="restaurant-login" value="Restaurant Login&#xa;(Owner Auth)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF4C3;strokeColor=#D6B656;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="1370" y="80" width="150" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="restaurant-dashboard" value="Dashboard&#xa;(Orders Overview)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF4C3;strokeColor=#D6B656;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="1540" y="80" width="150" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="restaurant-menu" value="Menu Management&#xa;(CRUD Items)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF4C3;strokeColor=#D6B656;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="1710" y="80" width="150" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="layer-business" value="Lớp xử lý nghiệp vụ" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E2F0D9;strokeColor=#82B366;align=left;verticalAlign=top;fontSize=14;fontStyle=1;spacing=10;" parent="1" vertex="1">
+          <mxGeometry x="100" y="260" width="1800" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="component-ui" value="&lt;&lt;Component&gt;&gt;&#xa;UI Components&#xa;&#xa;CustomButton&#xa;CustomInput&#xa;MenuCard&#xa;CartItem" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E1BEE7;strokeColor=#9C27B0;fontSize=11;align=left;spacing=5;" parent="1" vertex="1">
+          <mxGeometry x="140" y="300" width="150" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="store-auth" value="&lt;&lt;Store&gt;&gt;&#xa;Auth Store&#xa;(Zustand)&#xa;&#xa;User State&#xa;Authentication" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E1BEE7;strokeColor=#9C27B0;fontSize=11;align=left;spacing=5;" parent="1" vertex="1">
+          <mxGeometry x="320" y="300" width="140" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="store-cart" value="&lt;&lt;Store&gt;&gt;&#xa;Cart Store&#xa;(Zustand)&#xa;&#xa;Cart Items&#xa;Customizations" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E1BEE7;strokeColor=#9C27B0;fontSize=11;align=left;spacing=5;" parent="1" vertex="1">
+          <mxGeometry x="490" y="300" width="140" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="store-drone" value="&lt;&lt;Store&gt;&gt;&#xa;Drone Store&#xa;(Zustand) NEW&#xa;&#xa;Trip Data&#xa;Location Updates" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E1BEE7;strokeColor=#9C27B0;fontSize=11;align=left;spacing=5;" parent="1" vertex="1">
+          <mxGeometry x="660" y="300" width="140" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="service-data" value="&lt;&lt;Services&gt;&gt;&#xa;Data Services&#xa;&#xa;Menu Data&#xa;User Data&#xa;Customizations" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E1BEE7;strokeColor=#9C27B0;fontSize=11;align=left;spacing=5;" parent="1" vertex="1">
+          <mxGeometry x="830" y="300" width="140" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="service-drone" value="&lt;&lt;Service&gt;&gt;&#xa;Drone Simulator&#xa;NEW&#xa;&#xa;Flight Controller&#xa;Path Calculator" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E1BEE7;strokeColor=#9C27B0;fontSize=11;align=left;spacing=5;" parent="1" vertex="1">
+          <mxGeometry x="1000" y="300" width="150" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="component-restaurant" value="&lt;&lt;Component&gt;&gt;&#xa;Restaurant UI&#xa;&#xa;OrderCard&#xa;MenuItemForm&#xa;RevenueChart&#xa;OrderTimeline" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E1BEE7;strokeColor=#9C27B0;fontSize=11;align=left;spacing=5;" parent="1" vertex="1">
+          <mxGeometry x="1180" y="300" width="150" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="store-restaurant" value="&lt;&lt;Store&gt;&gt;&#xa;Restaurant Store&#xa;&#xa;Menu Items&#xa;Orders&#xa;Analytics" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E1BEE7;strokeColor=#9C27B0;fontSize=11;align=left;spacing=5;" parent="1" vertex="1">
+          <mxGeometry x="1360" y="300" width="150" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="service-restaurant" value="&lt;&lt;Services&gt;&gt;&#xa;Restaurant API&#xa;&#xa;WebSocket Orders&#xa;Sound Notification&#xa;Auto-refresh" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E1BEE7;strokeColor=#9C27B0;fontSize=11;align=left;spacing=5;" parent="1" vertex="1">
+          <mxGeometry x="1540" y="300" width="150" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="component-admin" value="&lt;&lt;Component&gt;&gt;&#xa;Admin UI&#xa;&#xa;DroneCard&#xa;OrderTimeline&#xa;UserTable&#xa;ApprovalModal" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E1BEE7;strokeColor=#9C27B0;fontSize=11;align=left;spacing=5;" parent="1" vertex="1">
+          <mxGeometry x="1720" y="300" width="150" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="layer-data" value="Lớp truy xuất dữ liệu" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FCE4D6;strokeColor=#D79B00;align=left;verticalAlign=top;fontSize=14;fontStyle=1;spacing=10;" parent="1" vertex="1">
+          <mxGeometry x="100" y="480" width="1800" height="320" as="geometry" />
+        </mxCell>
+        <mxCell id="backend-appwrite" value="&lt;&lt;Backend Service&gt;&gt;&#xa;Appwrite SDK&#xa;&#xa;Account API&#xa;Database API&#xa;Storage API&#xa;Realtime API" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#BBDEFB;strokeColor=#1976D2;fontSize=11;align=left;spacing=5;" parent="1" vertex="1">
+          <mxGeometry x="180" y="520" width="200" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="backend-cloud" value="&lt;&lt;Backend Service&gt;&gt;&#xa;Appwrite Backend&#xa;&#xa;Database&#xa;Authentication&#xa;Storage&#xa;Functions&#xa;Realtime" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#BBDEFB;strokeColor=#1976D2;fontSize=11;align=left;spacing=5;" parent="1" vertex="1">
+          <mxGeometry x="480" y="520" width="220" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="external-apis" value="&lt;&lt;External Service&gt;&gt;&#xa;External APIs&#xa;&#xa;Google Maps&#xa;Payment Gateway&#xa;Push Notifications" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#C8E6C9;strokeColor=#388E3C;fontSize=11;align=left;spacing=5;" parent="1" vertex="1">
+          <mxGeometry x="780" y="520" width="220" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="backend-functions" value="&lt;&lt;Backend Service&gt;&gt;&#xa;Appwrite Functions&#xa;&#xa;handleVNPayWebhook()&#xa;Verify signature&#xa;Update payment status&#xa;Send notifications&#xa;&#xa;startDroneSimulation()&#xa;60-second loop&#xa;Update locations&#xa;&#xa;sendEmailNotification()&#xa;Order confirmed&#xa;Restaurant approved" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#BBDEFB;strokeColor=#1976D2;fontSize=10;align=left;spacing=5;" parent="1" vertex="1">
+          <mxGeometry x="1070" y="520" width="220" height="240" as="geometry" />
+        </mxCell>
+        <mxCell id="database-collections" value="&lt;&lt;Database&gt;&gt;&#xa;Appwrite Database&#xa;&#xa;📦 16 Collections:&#xa;&#xa;Core:&#xa;• users (customers, restaurants, admins)&#xa;• restaurants (profiles, locations)&#xa;• categories (menu grouping)&#xa;• menu_items (products, prices, images)&#xa;&#xa;Orders:&#xa;• orders (status, total, tracking)&#xa;• order_items (line items, notes)&#xa;• order_item_toppings (customizations)&#xa;• payments (method, status, VNPay data)&#xa;&#xa;Operations:&#xa;• drones (fleet, status, location)&#xa;• drone_trips (delivery routes) NEW&#xa;• drone_events (telemetry log) NEW&#xa;&#xa;Extras:&#xa;• addresses, vouchers, audit_logs" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFE0B2;strokeColor=#F57C00;fontSize=10;align=left;spacing=5;" parent="1" vertex="1">
+          <mxGeometry x="1360" y="520" width="500" height="240" as="geometry" />
+        </mxCell>
+        <mxCell id="conn1" value="" style="endArrow=open;endFill=0;dashed=1;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="mobile-auth" target="store-auth" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn2" value="" style="endArrow=open;endFill=0;dashed=1;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;" parent="1" source="mobile-home" target="store-auth" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn3" value="" style="endArrow=open;endFill=0;dashed=1;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="mobile-search" target="service-data" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn4" value="" style="endArrow=open;endFill=0;dashed=1;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="mobile-cart" target="store-cart" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn5" value="" style="endArrow=open;endFill=0;dashed=1;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;" parent="1" source="mobile-cart" target="service-data" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn6" value="" style="endArrow=open;endFill=0;dashed=1;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="mobile-tracking" target="store-drone" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn7" value="" style="endArrow=open;endFill=0;dashed=1;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="mobile-order" target="service-data" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn8" value="" style="endArrow=open;endFill=0;dashed=1;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.8;entryY=0;entryDx=0;entryDy=0;" parent="1" source="mobile-order" target="service-drone" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn9" value="" style="endArrow=open;endFill=0;dashed=1;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.8;entryY=0;entryDx=0;entryDy=0;" parent="1" source="restaurant-dashboard" target="component-restaurant" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn10" value="" style="endArrow=open;endFill=0;dashed=1;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="restaurant-menu" target="service-restaurant" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn11" value="" style="endArrow=classic;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;" parent="1" source="store-auth" target="backend-appwrite" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn12" value="" style="endArrow=classic;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="store-cart" target="backend-appwrite" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn13" value="" style="endArrow=classic;html=1;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;" parent="1" source="store-cart" target="backend-functions" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn14" value="" style="endArrow=classic;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;" parent="1" source="store-drone" target="backend-cloud" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn15" value="" style="endArrow=classic;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="service-data" target="backend-cloud" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn16" value="" style="endArrow=classic;html=1;dashed=1;exitX=0.8;exitY=1;exitDx=0;exitDy=0;entryX=0.2;entryY=0;entryDx=0;entryDy=0;" parent="1" source="service-drone" target="backend-functions" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn17" value="" style="endArrow=classic;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.75;entryY=0;entryDx=0;entryDy=0;" parent="1" source="component-restaurant" target="backend-cloud" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn18" value="" style="endArrow=classic;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.9;entryY=0;entryDx=0;entryDy=0;" parent="1" source="service-restaurant" target="backend-cloud" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn19" value="" style="endArrow=open;endFill=0;dashed=1;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;" parent="1" source="backend-appwrite" target="backend-cloud" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn20" value="" style="endArrow=open;endFill=0;dashed=1;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="backend-cloud" target="external-apis" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn21" value="" style="endArrow=open;endFill=0;dashed=1;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="backend-cloud" target="backend-functions" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn22" value="" style="endArrow=open;endFill=0;dashed=1;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="backend-functions" target="database-collections" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn23" value="" style="endArrow=open;endFill=0;dashed=1;html=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0;entryY=0.75;entryDx=0;entryDy=0;" parent="1" source="backend-cloud" target="database-collections" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn24" value="Realtime&#xa;(WebSocket)" style="endArrow=open;endFill=0;dashed=1;html=1;strokeColor=#9C27B0;strokeWidth=2;exitX=0.75;exitY=1;exitDx=0;exitDy=0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;fontSize=10;" parent="1" source="store-drone" target="backend-cloud" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn25" value="Realtime&#xa;Orders" style="endArrow=open;endFill=0;dashed=1;html=1;strokeColor=#9C27B0;strokeWidth=2;exitX=0.25;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontSize=10;" parent="1" source="service-restaurant" target="backend-cloud" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="label-api" value="API Calls" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontColor=#1976D2;" parent="1" vertex="1">
+          <mxGeometry x="360" y="445" width="70" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="conn26" value="" style="endArrow=classic;html=1;strokeColor=#1976D2;" parent="1" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="300" y="455" as="sourcePoint" />
+            <mxPoint x="350" y="455" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="legend-box" value="Chú thích / Legend" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#666666;align=left;verticalAlign=top;fontSize=13;fontStyle=1;spacing=10;" parent="1" vertex="1">
+          <mxGeometry x="100" y="840" width="600" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-screen" value="Màn hình/Trang&#xa;(Screen/Page)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF4C3;strokeColor=#D6B656;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="120" y="880" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-component" value="Component/Store" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E1BEE7;strokeColor=#9C27B0;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="260" y="880" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-backend" value="Backend Service" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#BBDEFB;strokeColor=#1976D2;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="400" y="880" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-external" value="External Service" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#C8E6C9;strokeColor=#388E3C;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="540" y="880" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-database" value="Database" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFE0B2;strokeColor=#F57C00;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="120" y="950" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-api-conn" value="API Call (REST HTTP)" style="endArrow=classic;html=1;strokeColor=#1976D2;" parent="1" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="270" y="965" as="sourcePoint" />
+            <mxPoint x="370" y="965" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="legend-realtime" value="WebSocket (Realtime)" style="endArrow=open;endFill=0;dashed=1;html=1;strokeColor=#9C27B0;strokeWidth=2;" parent="1" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="270" y="990" as="sourcePoint" />
+            <mxPoint x="370" y="990" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="legend-internal" value="Internal Call" style="endArrow=open;endFill=0;dashed=1;html=1;" parent="1" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="410" y="965" as="sourcePoint" />
+            <mxPoint x="510" y="965" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="tech-stack" value="Tech Stack" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#666666;align=left;verticalAlign=top;fontSize=13;fontStyle=1;spacing=10;" parent="1" vertex="1">
+          <mxGeometry x="740" y="840" width="600" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="tech-mobile" value="Mobile App:&#xa;React Native + Expo 54&#xa;NativeWind 4.2 (Tailwind)&#xa;Zustand 5.0 (State)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="760" y="880" width="180" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="tech-restaurant" value="Restaurant Portal:&#xa;Next.js 14.0.4 (App Router)&#xa;TailwindCSS 3.4&#xa;Zustand 5.0" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="960" y="880" width="180" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="tech-admin" value="Admin Dashboard:&#xa;React 18.3 + Vite 6.0&#xa;TailwindCSS 3.4&#xa;Zustand 5.0" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="1160" y="880" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="tech-backend" value="Backend:&#xa;Appwrite Cloud (BaaS)&#xa;Cloud Functions (Node.js)&#xa;TypeScript 5.7" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="760" y="950" width="180" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="tech-external" value="External:&#xa;VNPay Gateway&#xa;Google Maps / Mapbox&#xa;Firebase Cloud Messaging" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="960" y="950" width="180" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="notes-box" value="Architecture Notes" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF9E6;strokeColor=#D79B00;align=left;verticalAlign=top;fontSize=13;fontStyle=1;spacing=10;" parent="1" vertex="1">
+          <mxGeometry x="1380" y="840" width="520" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="notes-content" value="✓ 3-Layer Architecture: Presentation → Business Logic → Data Access&#xa;✓ 3 Frontend Applications: Mobile (React Native), Restaurant (Next.js), Admin (React+Vite)&#xa;✓ Centralized Backend: Appwrite Cloud (Auth, Database, Storage, Functions, Realtime)&#xa;✓ State Management: Zustand 5.0 across all apps&#xa;✓ Real-time: WebSocket subscriptions for orders and drone tracking&#xa;✓ Payment: VNPay webhook → Cloud Function → Database update&#xa;✓ Drone Simulation: Cloud Function (60s loop) → Database → Realtime → Mobile&#xa;✓ 16 Database Collections: users, restaurants, menu_items, orders, drones, etc.&#xa;✓ Security: JWT tokens, API keys, row-level permissions&#xa;✓ Scalability: Serverless functions, CDN assets, database indexing" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=10;spacing=5;" parent="1" vertex="1">
+          <mxGeometry x="1400" y="880" width="480" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="admin-login" value="Admin Login" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF4C3;strokeColor=#D6B656;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="-760" y="100" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="admin-dashboard" value="Admin Dashboard" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF4C3;strokeColor=#D6B656;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="-620" y="100" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="admin-orders" value="Orders Monitor" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF4C3;strokeColor=#D6B656;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="-480" y="100" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="admin-drones" value="Drone Fleet" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF4C3;strokeColor=#D6B656;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="-340" y="100" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="admin-restaurants" value="Restaurant Approval" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF4C3;strokeColor=#D6B656;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="-200" y="100" width="140" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="admin-analytics" value="System Analytics" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF4C3;strokeColor=#D6B656;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="-40" y="100" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="store-admin" value="&lt;&lt;Store&gt;&gt;&#xa;Admin Store&#xa;&#xa;Users (admin only)&#xa;isAuthenticated" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E1BEE7;strokeColor=#9C27B0;fontSize=11;align=left;spacing=5;" parent="1" vertex="1">
+          <mxGeometry x="-760" y="190" width="150" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="service-admin" value="&lt;&lt;Services&gt;&gt;&#xa;Admin API&#xa;&#xa;getAlerts()&#xa;approveRestaurant()&#xa;assignDrone()&#xa;getSystemData()&#xa;getDroneUtilization()" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E1BEE7;strokeColor=#9C27B0;fontSize=10;align=left;spacing=5;" parent="1" vertex="1">
+          <mxGeometry x="-590" y="190" width="170" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="component-admin2" value="&lt;&lt;Component&gt;&gt;&#xa;Admin Analytics&#xa;&#xa;GMV chart&#xa;Order trends&#xa;Drone utilization&#xa;Top restaurants" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E1BEE7;strokeColor=#9C27B0;fontSize=10;align=left;spacing=5;" parent="1" vertex="1">
+          <mxGeometry x="-400" y="190" width="150" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="conn-admin1" value="" style="endArrow=open;endFill=0;dashed=1;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="admin-dashboard" target="store-admin" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn-admin2" value="" style="endArrow=open;endFill=0;dashed=1;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;" parent="1" source="admin-orders" target="service-admin" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn-admin3" value="" style="endArrow=open;endFill=0;dashed=1;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="admin-analytics" target="component-admin2" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn-admin4" value="" style="endArrow=classic;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.15;entryY=0;entryDx=0;entryDy=0;" parent="1" source="store-admin" target="backend-appwrite" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn-admin5" value="" style="endArrow=classic;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.1;entryY=0;entryDx=0;entryDy=0;" parent="1" source="service-admin" target="backend-cloud" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

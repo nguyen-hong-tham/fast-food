@@ -1,5 +1,5 @@
 import cn from 'clsx';
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, FlatList, Image, Pressable, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from 'expo-router';
@@ -35,6 +35,45 @@ export default function Index() {
     loadPopularRestaurants();
   }, []);
 
+  // Memoize render item cho offers
+  const renderOfferItem = useCallback(({ item, index }: { item: typeof offers[0], index: number }) => {
+    const isEven = index % 2 === 0;
+    return (
+      <Pressable
+        className={cn("w-72 h-36 rounded-2xl overflow-hidden", isEven ? 'flex-row-reverse' : 'flex-row')}
+        style={{ backgroundColor: item.color }}
+      >
+        {({ pressed }) => (
+          <Fragment>
+            <View className="h-full w-1/2">
+              <Image source={item.image} className="size-full" resizeMode="contain" />
+            </View>
+            <View className={cn("flex-1 justify-center", isEven ? 'pl-4': 'pr-4')}>
+              <Text className="text-xl font-bold text-white leading-tight">
+                {item.title}
+              </Text>
+              <Image
+                source={icons.arrowRight}
+                className="size-6 mt-2"
+                resizeMode="contain"
+                tintColor="#ffffff"
+              />
+            </View>
+          </Fragment>
+        )}
+      </Pressable>
+    );
+  }, []);
+
+  // Memoize render item cho restaurants
+  const renderRestaurantItem = useCallback(({ item }: { item: RestaurantWithDistance }) => (
+    <RestaurantCard restaurant={item} />
+  ), []);
+
+  // Memoize key extractor
+  const restaurantKeyExtractor = useCallback((item: RestaurantWithDistance) => item.$id, []);
+  const offerKeyExtractor = useCallback((item: typeof offers[0], index: number) => index.toString(), []);
+
   return (
       <SafeAreaView className="flex-1 bg-white">
           <ScrollView 
@@ -60,34 +99,11 @@ export default function Index() {
                 data={offers}
                 showsHorizontalScrollIndicator={false}
                 contentContainerClassName="px-5 gap-x-3"
-                renderItem={({ item, index }) => {
-                  const isEven = index % 2 === 0;
-                  return (
-                    <Pressable
-                      className={cn("w-72 h-36 rounded-2xl overflow-hidden", isEven ? 'flex-row-reverse' : 'flex-row')}
-                      style={{ backgroundColor: item.color }}
-                    >
-                      {({ pressed }) => (
-                        <Fragment>
-                          <View className="h-full w-1/2">
-                            <Image source={item.image} className="size-full" resizeMode="contain" />
-                          </View>
-                          <View className={cn("flex-1 justify-center", isEven ? 'pl-4': 'pr-4')}>
-                            <Text className="text-xl font-bold text-white leading-tight">
-                              {item.title}
-                            </Text>
-                            <Image
-                              source={icons.arrowRight}
-                              className="size-6 mt-2"
-                              resizeMode="contain"
-                              tintColor="#ffffff"
-                            />
-                          </View>
-                        </Fragment>
-                      )}
-                    </Pressable>
-                  );
-                }}
+                renderItem={renderOfferItem}
+                keyExtractor={offerKeyExtractor}
+                removeClippedSubviews={true}
+                maxToRenderPerBatch={3}
+                windowSize={3}
               />
             </View>
 
@@ -105,14 +121,15 @@ export default function Index() {
                   <ActivityIndicator size="large" color="#FF6B35" />
                 </View>
               ) : popularRestaurants.length > 0 ? (
-                <View className="gap-y-3">
-                  {popularRestaurants.map((restaurant) => (
-                    <RestaurantCard 
-                      key={restaurant.$id} 
-                      restaurant={restaurant}
-                    />
-                  ))}
-                </View>
+                <FlatList
+                  data={popularRestaurants}
+                  renderItem={renderRestaurantItem}
+                  keyExtractor={restaurantKeyExtractor}
+                  scrollEnabled={false}
+                  removeClippedSubviews={true}
+                  maxToRenderPerBatch={5}
+                  windowSize={5}
+                />
               ) : (
                 <View className="py-10 items-center">
                   <Text className="text-gray-400">No restaurants available</Text>

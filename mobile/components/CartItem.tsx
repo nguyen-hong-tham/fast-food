@@ -1,10 +1,23 @@
 import { icons } from "@/constants";
 import { useCartStore } from "@/store/cart.store";
 import { CartItemType } from "@/type";
+import React, { useCallback } from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 
-const CartItem = ({ item }: { item: CartItemType }) => {
+const CartItem = React.memo(({ item }: { item: CartItemType }) => {
     const { increaseQty, decreaseQty, removeItem } = useCartStore();
+
+    const handleIncrease = useCallback(() => {
+        increaseQty(item.id, item.customizations!, item.notes || '');
+    }, [item.id, item.customizations, item.notes, increaseQty]);
+
+    const handleDecrease = useCallback(() => {
+        decreaseQty(item.id, item.customizations!, item.notes || '');
+    }, [item.id, item.customizations, item.notes, decreaseQty]);
+
+    const handleRemove = useCallback(() => {
+        removeItem(item.id, item.customizations!, item.notes || '');
+    }, [item.id, item.customizations, item.notes, removeItem]);
 
     return (
         <View className="cart-item">
@@ -30,7 +43,7 @@ const CartItem = ({ item }: { item: CartItemType }) => {
 
                     <View className="flex flex-row items-center gap-x-4 mt-2">
                         <TouchableOpacity
-                            onPress={() => decreaseQty(item.id, item.customizations!, item.notes || '')}
+                            onPress={handleDecrease}
                             className="cart-item__actions"
                         >
                             <Image
@@ -44,7 +57,7 @@ const CartItem = ({ item }: { item: CartItemType }) => {
                         <Text className="base-bold text-dark-100">{item.quantity}</Text>
 
                         <TouchableOpacity
-                            onPress={() => increaseQty(item.id, item.customizations!, item.notes || '')}
+                            onPress={handleIncrease}
                             className="cart-item__actions"
                         >
                             <Image
@@ -59,13 +72,15 @@ const CartItem = ({ item }: { item: CartItemType }) => {
             </View>
 
             <TouchableOpacity
-                onPress={() => removeItem(item.id, item.customizations!, item.notes || '')}
+                onPress={handleRemove}
                 className="flex-center"
             >
                 <Image source={icons.trash} className="size-5" resizeMode="contain" />
             </TouchableOpacity>
         </View>
     );
-};
+});
+
+CartItem.displayName = 'CartItem';
 
 export default CartItem;
