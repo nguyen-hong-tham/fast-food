@@ -1,10 +1,13 @@
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Platform, Alert } from 'react-native';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useCartStore } from '@/store/cart.store';
 import useAuthStore from '@/store/auth.store';
 import { createOrderWithPayment } from '@/lib/appwrite';
+import { getRestaurantById } from '@/lib/api-helpers';
+import { useDeliveryCalculation } from '@/hooks/useDeliveryCalculation';
+import { DeliveryInfoCard } from '@/components/DeliveryInfoCard';
 import cn from 'clsx';
 
 const CheckoutScreen = () => {
@@ -23,8 +26,57 @@ const CheckoutScreen = () => {
   const [notes, setNotes] = useState('');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'vnpay' | 'cod'>('vnpay');
   const [processing, setProcessing] = useState(false);
+  const [restaurant, setRestaurant] = useState<any>(null);
 
-  const total = parseFloat(totalAmount || '0');
+  const subtotal = parseFloat(totalAmount || '0');
+  
+  // Delivery calculation hook
+  const { 
+    calculation: deliveryCalc, 
+    isCalculating, 
+    calculateFromAddress 
+  } = useDeliveryCalculation();
+  
+  // Calculate total with shipping
+  const shippingFee = deliveryCalc?.shippingCost || 0;
+  const total = subtotal + shippingFee;
+
+  // Fetch restaurant data và tính delivery
+  useEffect(() => {
+    const fetchRestaurantAndCalculateDelivery = async () => {
+      if (!restaurantId) return;
+
+      try {
+        // Lấy thông tin restaurant
+        const restaurantData = await getRestaurantById(restaurantId);
+        setRestaurant(restaurantData);
+        
+        // Tính delivery nếu có địa chỉ
+        if (deliveryAddress && restaurantData?.latitude && restaurantData?.longitude) {
+          await calculateFromAddress(
+            restaurantData.latitude,
+            restaurantData.longitude,
+            deliveryAddress
+          );
+        }
+      } catch (error) {
+        console.error('🏪 Failed to fetch restaurant:', error);
+      }
+    };
+
+    fetchRestaurantAndCalculateDelivery();
+  }, [restaurantId, deliveryAddress, calculateFromAddress]);
+
+  // Tính lại delivery khi address thay đổi
+  useEffect(() => {
+    if (restaurant?.latitude && restaurant?.longitude && deliveryAddress) {
+      calculateFromAddress(
+        restaurant.latitude,
+        restaurant.longitude,
+        deliveryAddress
+      );
+    }
+  }, [deliveryAddress, restaurant, calculateFromAddress]);
 
   const handleProceedToPayment = async () => {
     if (!deliveryAddress.trim()) {
@@ -126,14 +178,55 @@ const CheckoutScreen = () => {
             style={Platform.OS === 'android' ? { elevation: 2 } : {}}
           >
             <Text className="text-lg font-bold text-gray-800 mb-3">Order Summary</Text>
+            
             <View className="flex-row justify-between items-center mb-2">
               <Text className="text-gray-600">{itemCount} items</Text>
-              <Text className="text-xl font-bold text-amber-600">
-                {total.toLocaleString('vi-VN')}₫
+              <Text className="text-lg font-semibold text-gray-800">
+                {subtotal.toLocaleString('vi-VN')}₫
               </Text>
             </View>
-            <Text className="text-sm text-gray-500">Delivery fee included</Text>
+            
+            {deliveryCalc && (
+              <>
+                <View className="flex-row justify-between items-center mb-2">
+                  <Text className="text-gray-600">Shipping fee</Text>
+                  <Text className="text-lg font-semibold text-gray-800">
+                    {deliveryCalc.shippingCost.toLocaleString('vi-VN')}₫
+                  </Text>
+                </View>
+                
+                <View className="border-t border-gray-200 pt-2 mt-2">
+                  <View className="flex-row justify-between items-center">
+                    <Text className="text-lg font-bold text-gray-800">Total</Text>
+                    <Text className="text-xl font-bold text-amber-600">
+                      {total.toLocaleString('vi-VN')}₫
+                    </Text>
+                  </View>
+                </View>
+              </>
+            )}
+            
+            {!deliveryCalc && (
+              <Text className="text-sm text-gray-500">Calculating shipping fee...</Text>
+            )}
           </View>
+
+          {/* Delivery Calculation */}
+          {deliveryCalc && (
+            <View className="mb-4" style={Platform.OS === 'android' ? { elevation: 2 } : {}}>
+              <DeliveryInfoCard calculation={deliveryCalc} style="detailed" />
+            </View>
+          )}
+
+          {/* Loading Delivery Calculation */}
+          {isCalculating && (
+            <View className="bg-white rounded-xl p-4 mb-4"
+              style={Platform.OS === 'android' ? { elevation: 2 } : {}}
+            >
+              <Text className="text-lg font-bold text-gray-800 mb-3">🚚 Delivery Info</Text>
+              <Text className="text-gray-500 text-center">Calculating delivery time & cost...</Text>
+            </View>
+          )}
 
           {/* Delivery Information */}
           <View className="bg-white rounded-xl p-4 mb-4"
