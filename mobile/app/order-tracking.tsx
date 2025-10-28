@@ -16,6 +16,7 @@ import StatusTimeline from '@/components/tracking/StatusTimeline';
 import { getOrderById, subscribeToDroneEvents, subscribeToOrder } from '@/lib/appwrite';
 import { getRestaurantById } from '@/lib/api-helpers';
 import { simulateDroneFlight } from '@/lib/drone-simulator';
+import { useDeliveryCalculation } from '@/hooks/useDeliveryCalculation';
 import { icons } from '@/constants';
 import { Order, OrderItem, Restaurant } from '@/type';
 
@@ -58,6 +59,12 @@ const OrderTrackingScreen = () => {
   const [currentPhase, setCurrentPhase] = useState<'to_restaurant' | 'to_customer' | 'idle'>('idle');
   const [phaseProgress, setPhaseProgress] = useState<number>(0);
 
+  // Delivery calculation hook
+  const { 
+    calculation: deliveryCalc, 
+    calculateFromAddress 
+  } = useDeliveryCalculation();
+
   const loadOrder = useCallback(async () => {
     if (!trackingOrderId) {
   setErrorMessage('Order not found');
@@ -79,6 +86,15 @@ const OrderTrackingScreen = () => {
           latitude: restaurantDoc.latitude,
           longitude: restaurantDoc.longitude,
         });
+        
+        // Calculate delivery info
+        if (typedOrder.deliveryAddress && restaurantDoc.latitude && restaurantDoc.longitude) {
+          await calculateFromAddress(
+            restaurantDoc.latitude,
+            restaurantDoc.longitude,
+            typedOrder.deliveryAddress
+          );
+        }
       }
     } catch (err) {
   console.error('Failed to load order tracking data', err);
@@ -422,6 +438,25 @@ const OrderTrackingScreen = () => {
                     <Image source={icons.phone} className="mr-2 h-4 w-4" tintColor="#FFFFFF" />
                     <Text className="text-sm font-quicksand-semibold text-white">Call</Text>
                   </TouchableOpacity>
+                </View>
+              </View>
+            )}
+            
+            {/* Delivery Calculation Info */}
+            {deliveryCalc && (
+              <View className="mt-4 pt-4 border-t border-gray-200">
+                <Text className="text-sm text-gray-500 mb-2">Delivery Info</Text>
+                <View className="flex-row justify-between items-center mb-1">
+                  <Text className="text-sm text-gray-600">📍 Distance</Text>
+                  <Text className="text-sm font-quicksand-medium text-dark-100">{deliveryCalc.formattedDistance}</Text>
+                </View>
+                <View className="flex-row justify-between items-center mb-1">
+                  <Text className="text-sm text-gray-600">⏰ Estimated Time</Text>
+                  <Text className="text-sm font-quicksand-medium text-primary">{deliveryCalc.formattedTime}</Text>
+                </View>
+                <View className="flex-row justify-between items-center">
+                  <Text className="text-sm text-gray-600">💰 Shipping Fee</Text>
+                  <Text className="text-sm font-quicksand-medium text-green-600">{deliveryCalc.formattedCost}</Text>
                 </View>
               </View>
             )}
