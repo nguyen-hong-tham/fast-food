@@ -10,6 +10,7 @@ import DronesPage from '@/pages/DronesPage';
 import LoginPage from '@/pages/LoginPage';
 import OrdersPage from '@/pages/OrdersPage';
 import ProductsPage from '@/pages/ProductsPage';
+import AssignDronePage from '@/pages/AssignDronePage';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -54,6 +55,7 @@ function App() {
           <Route path="customers" element={<CustomersPage />} />
           <Route path="products" element={<ProductsPage />} />
           <Route path="drones" element={<DronesPage />} />
+          <Route path="assign-drone" element={<AssignDronePage />} />
         </Route>
         
         <Route path="*" element={<Navigate to="/" replace />} />

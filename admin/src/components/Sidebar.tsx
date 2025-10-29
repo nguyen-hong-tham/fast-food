@@ -3,7 +3,8 @@ import {
     Package,
     Plane,
     ShoppingBag,
-    Users
+    Users,
+    Zap
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
@@ -13,6 +14,7 @@ const navItems = [
   { to: '/customers', icon: Users, label: 'Customers' },
   { to: '/products', icon: Package, label: 'Products' },
   { to: '/drones', icon: Plane, label: 'Drones' },
+  { to: '/assign-drone', icon: Zap, label: 'Assign Drone' },
 ];
 
 export default function Sidebar() {
