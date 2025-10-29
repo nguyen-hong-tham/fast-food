@@ -256,16 +256,24 @@ export const createNotification = async (notificationData: {
     body: string;
     data?: any;
     channel?: 'push' | 'email' | 'in_app';
+    imageUrl?: string;
+    actionUrl?: string;
 }): Promise<Notification> => {
     const notification = await databases.createDocument(
         databaseId,
         appwriteConfig.notificationsCollectionId,
         ID.unique(),
         {
-            ...notificationData,
+            userId: notificationData.userId,
+            type: notificationData.type,
+            title: notificationData.title,
+            body: notificationData.body,
+            data: notificationData.data ? JSON.stringify(notificationData.data) : undefined,
             channel: notificationData.channel || 'push',
             status: 'sent',
             sentAt: new Date().toISOString(),
+            imageUrl: notificationData.imageUrl,
+            actionUrl: notificationData.actionUrl,
         }
     );
     
@@ -296,6 +304,72 @@ export const markNotificationAsRead = async (notificationId: string): Promise<vo
             readAt: new Date().toISOString(),
         }
     );
+};
+
+export const markAllNotificationsAsRead = async (userId: string): Promise<void> => {
+    const notifications = await getUserNotifications(userId);
+    const unreadNotifications = notifications.filter(n => n.status !== 'read');
+    
+    await Promise.all(
+        unreadNotifications.map(n => markNotificationAsRead(n.$id))
+    );
+};
+
+// Helper: Send notification via Appwrite Function
+export const sendPushNotification = async (data: {
+    userId: string;
+    title: string;
+    body: string;
+    type?: 'order_update' | 'promotion' | 'system' | 'review_request';
+    orderId?: string;
+    screen?: string;
+}): Promise<boolean> => {
+    try {
+        // Save to database first
+        await createNotification({
+            userId: data.userId,
+            type: data.type || 'order_update',
+            title: data.title,
+            body: data.body,
+            data: {
+                orderId: data.orderId,
+                screen: data.screen,
+                type: data.type,
+            },
+            channel: 'push',
+        });
+
+        // TODO: Call Appwrite Function to send push notification
+        // For now, notifications are stored in DB and app will show them
+        // When Appwrite Function is deployed, uncomment below:
+        
+        /*
+        const response = await fetch(`${appwriteConfig.endpoint}/functions/send-notification/executions`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Appwrite-Project': appwriteConfig.projectId,
+            },
+            body: JSON.stringify({
+                userId: data.userId,
+                title: data.title,
+                body: data.body,
+                data: {
+                    orderId: data.orderId,
+                    screen: data.screen,
+                    type: data.type,
+                },
+            }),
+        });
+        
+        return response.ok;
+        */
+        
+        return true;
+    } catch (error) {
+        console.error('Failed to send push notification:', error);
+        return false;
+    }
 };
 
 // ===================== DRONES =====================
@@ -700,6 +774,8 @@ export default {
     createNotification,
     getUserNotifications,
     markNotificationAsRead,
+    markAllNotificationsAsRead,
+    sendPushNotification,
     
     // Drones
     createDrone,
