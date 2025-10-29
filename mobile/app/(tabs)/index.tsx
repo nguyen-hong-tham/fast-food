@@ -10,19 +10,26 @@ import { icons, offers } from "@/constants";
 import useAuthStore from "@/store/auth.store";
 import { getRestaurants } from '@/lib/appwrite';
 import { RestaurantWithDistance } from '@/type';
+import { useCurrentLocation } from '@/hooks/useCurrentLocation';
 
 export default function Index() {
   const { user } = useAuthStore();
   const [popularRestaurants, setPopularRestaurants] = useState<RestaurantWithDistance[]>([]);
   const [loading, setLoading] = useState(true);
+  const { location, loading: locationLoading, getCurrentLocation } = useCurrentLocation();
+
+  useEffect(() => {
+    // Load current location on mount
+    getCurrentLocation();
+  }, []);
 
   useEffect(() => {
     const loadPopularRestaurants = async () => {
       try {
         const restaurants = await getRestaurants(
           { sortBy: 'rating' },
-          10.8231, // HCM City default
-          106.6297
+          location?.latitude || 10.8231, // Use real location or HCM default
+          location?.longitude || 106.6297
         );
         setPopularRestaurants(restaurants.slice(0, 5)); // Top 5
       } catch (error) {
@@ -33,7 +40,7 @@ export default function Index() {
     };
 
     loadPopularRestaurants();
-  }, []);
+  }, [location]);
 
   // Memoize render item cho offers
   const renderOfferItem = useCallback(({ item, index }: { item: typeof offers[0], index: number }) => {
@@ -82,11 +89,25 @@ export default function Index() {
           >
             {/* Header */}
             <View className="flex-between flex-row w-full px-5 mt-5 mb-4">
-                <View className="flex-start">
+                <View className="flex-start flex-1">
                     <Text className="small-bold text-primary">DELIVER TO</Text>
-                    <TouchableOpacity className="flex-center flex-row gap-x-1 mt-0.5">
-                        <Text className="paragraph-bold text-dark-100">District 7</Text>
-                        <Image source={icons.arrowDown} className="size-3" resizeMode="contain" />
+                    <TouchableOpacity 
+                      className="flex-center flex-row gap-x-1 mt-0.5 max-w-full"
+                      onPress={() => router.push('/location-picker')}
+                      activeOpacity={0.7}
+                    >
+                        {locationLoading ? (
+                          <ActivityIndicator size="small" color="#FF6B35" />
+                        ) : (
+                          <>
+                            <Text className="paragraph-bold text-dark-100" numberOfLines={1} style={{ maxWidth: '85%' }}>
+                              {location?.street 
+                                ? `${location.street}, ${location.district}` 
+                                : location?.district || 'Select Location'}
+                            </Text>
+                            <Image source={icons.arrowDown} className="size-3 ml-1" resizeMode="contain" />
+                          </>
+                        )}
                     </TouchableOpacity>
                 </View>
             </View>

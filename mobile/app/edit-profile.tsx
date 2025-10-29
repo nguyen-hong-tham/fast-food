@@ -16,8 +16,6 @@ const EditProfile = () => {
     
     const [name, setName] = useState(user?.name || '');
     const [phone, setPhone] = useState(user?.phone || '');
-    const [addressHome, setAddressHome] = useState(user?.address_home || '');
-    const [addressHomeLabel, setAddressHomeLabel] = useState(user?.address_home_label || 'Home');
     const [avatar, setAvatar] = useState(user?.avatar || '');
     
     const [isLoading, setIsLoading] = useState(false);
@@ -94,8 +92,6 @@ const EditProfile = () => {
                 userId: user.$id,
                 name: name.trim(),
                 phone: phone.trim() || undefined,
-                address_home: addressHome.trim() || undefined,
-                address_home_label: addressHomeLabel.trim() || 'Home',
                 avatar: avatar || undefined,
             });
 
@@ -219,19 +215,6 @@ const EditProfile = () => {
                             keyboardType="phone-pad"
                         />
 
-                        <CustomInput
-                            label={`Address Label`}
-                            placeholder="Home, Office, etc."
-                            value={addressHomeLabel}
-                            onChangeText={setAddressHomeLabel}
-                        />
-
-                        <CustomInput
-                            label={`Address (${addressHomeLabel})`}
-                            placeholder="123 An Duong Vuong, Ho Chi Minh City"
-                            value={addressHome}
-                            onChangeText={setAddressHome}
-                        />
 
 
                     </View>

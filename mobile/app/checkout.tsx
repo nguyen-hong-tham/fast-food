@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Platform, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, Platform, Alert, Image } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -8,13 +8,24 @@ import { createOrderWithPayment } from '@/lib/appwrite';
 import { getRestaurantById } from '@/lib/api-helpers';
 import { useDeliveryCalculation } from '@/hooks/useDeliveryCalculation';
 import { DeliveryInfoCard } from '@/components/DeliveryInfoCard';
+import { icons } from '@/constants';
 import cn from 'clsx';
 
 const CheckoutScreen = () => {
-  const { restaurantId, totalAmount, itemCount } = useLocalSearchParams<{
+  const { 
+    restaurantId, 
+    totalAmount, 
+    itemCount,
+    selectedAddress,
+    selectedLatitude,
+    selectedLongitude 
+  } = useLocalSearchParams<{
     restaurantId: string;
     totalAmount: string;
     itemCount: string;
+    selectedAddress?: string;
+    selectedLatitude?: string;
+    selectedLongitude?: string;
   }>();
   
   const user = useAuthStore((state) => state.user);
@@ -27,6 +38,13 @@ const CheckoutScreen = () => {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'vnpay' | 'cod'>('vnpay');
   const [processing, setProcessing] = useState(false);
   const [restaurant, setRestaurant] = useState<any>(null);
+
+  // Update address from location picker
+  useEffect(() => {
+    if (selectedAddress) {
+      setDeliveryAddress(selectedAddress);
+    }
+  }, [selectedAddress]);
 
   const subtotal = parseFloat(totalAmount || '0');
   
@@ -66,17 +84,6 @@ const CheckoutScreen = () => {
 
     fetchRestaurantAndCalculateDelivery();
   }, [restaurantId, deliveryAddress, calculateFromAddress]);
-
-  // Tính lại delivery khi address thay đổi
-  useEffect(() => {
-    if (restaurant?.latitude && restaurant?.longitude && deliveryAddress) {
-      calculateFromAddress(
-        restaurant.latitude,
-        restaurant.longitude,
-        deliveryAddress
-      );
-    }
-  }, [deliveryAddress, restaurant, calculateFromAddress]);
 
   const handleProceedToPayment = async () => {
     if (!deliveryAddress.trim()) {
@@ -240,17 +247,24 @@ const CheckoutScreen = () => {
           >
             <Text className="text-lg font-bold text-gray-800 mb-4">Delivery Information</Text>
             
-            {/* Address Label */}
+            {/* Current Location Display with Change Button */}
             <View className="mb-4">
-              <Text className="text-gray-700 font-semibold mb-2">Address Label</Text>
-              <View className="flex-row space-x-2">
-                <Text className="text-gray-800">{deliveryAddressLabel}</Text>
+              <View className="flex-row items-center justify-between mb-2">
+                <Text className="text-gray-700 font-semibold">📍 Delivery Address *</Text>
+                <TouchableOpacity 
+                  onPress={() => router.push('/location-picker?returnScreen=checkout')}
+                  className="flex-row items-center"
+                >
+                  <Text className="text-xs text-primary font-semibold mr-1">Change</Text>
+                  <Image 
+                    source={icons.pencil} 
+                    className="size-3" 
+                    tintColor="#FF6B35"
+                    resizeMode="contain"
+                  />
+                </TouchableOpacity>
               </View>
-            </View>
-
-            {/* Delivery Address */}
-            <View className="mb-4">
-              <Text className="text-gray-700 font-semibold mb-2">Delivery Address *</Text>
+              
               <TextInput
                 className="border border-gray-300 rounded-lg p-3 text-gray-800"
                 placeholder="Enter your full delivery address"
@@ -336,7 +350,6 @@ const CheckoutScreen = () => {
                 <Text className="font-semibold text-gray-800">VNPay</Text>
                 <Text className="text-sm text-gray-600">Pay instantly with VNPay gateway</Text>
               </View>
-              <Text className="text-2xl">💳</Text>
             </TouchableOpacity>
 
             {/* COD Option */}
@@ -363,7 +376,6 @@ const CheckoutScreen = () => {
                 <Text className="font-semibold text-gray-800">Cash on Delivery</Text>
                 <Text className="text-sm text-gray-600">Pay when you receive your order</Text>
               </View>
-              <Text className="text-2xl">💰</Text>
             </TouchableOpacity>
           </View>
 

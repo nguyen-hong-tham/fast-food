@@ -148,13 +148,6 @@ const Profile = () => {
                             icon={icons.phone}
                         />
 
-                        <ProfileField
-                            label={user.address_home_label || 'Address'}
-                            value={user.address_home || ''}
-                            icon={icons.location}
-                        />
-
-
                     </View>
 
                     {/* Action Buttons */}
