@@ -1,13 +1,14 @@
 import { View, Text, FlatList, ActivityIndicator, TouchableOpacity, ScrollView, RefreshControl, Platform, TextInput, Image } from 'react-native';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 import { getRestaurants } from '@/lib/appwrite';
 import { RestaurantWithDistance, RestaurantFilters } from '@/type';
 import RestaurantCard from '@/components/RestaurantCard';
+import WebContainer from '@/components/WebContainer';
 import { RestaurantListSkeleton } from '@/components/LoadingSkeleton';
 import cn from 'clsx';
 import { icons } from '@/constants';
+import { useResponsive } from '@/lib/responsive';
 
 const RestaurantsScreen = () => {
   const [restaurants, setRestaurants] = useState<RestaurantWithDistance[]>([]);
@@ -15,6 +16,7 @@ const RestaurantsScreen = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const { isDesktop } = useResponsive();
   
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -145,23 +147,30 @@ const RestaurantsScreen = () => {
   }, []);
 
   const renderHeader = () => (
-    <View className="px-4 pb-2">
-      {/* Search Bar */}
-      <View className="flex-row items-center bg-white rounded-xl px-4 py-3 border border-gray-200 mb-4"
-        style={Platform.OS === 'android' ? { elevation: 2 } : {}}
+    <View className={cn(
+      "pb-4",
+      isDesktop ? "px-20" : "px-4"
+    )}>
+      {/* Search Bar - Larger and more prominent for web */}
+      <View 
+        className={cn(
+          "flex-row items-center bg-white rounded-xl border border-gray-200 mb-4",
+          isDesktop ? "px-6 py-4 shadow-sm" : "px-4 py-3"
+        )}
       >
         <Image
           source={icons.search}
-          className="w-5 h-5 mr-3"
+          className={cn("mr-3", isDesktop ? "w-6 h-6" : "w-5 h-5")}
           resizeMode="contain"
           tintColor="#9CA3AF"
         />
         <TextInput
-          className="flex-1 text-base"
-          placeholder="Search restaurants, or area..."
+          className={cn("flex-1", isDesktop ? "text-base" : "text-base")}
+          placeholder="Search restaurants, cuisine, or area..."
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholderTextColor="#9CA3AF"
+          style={isDesktop ? { fontSize: 16, height: 24 } : {}}
         />
         {searchQuery.length > 0 && (
           <TouchableOpacity onPress={handleClearSearch}>
@@ -170,32 +179,45 @@ const RestaurantsScreen = () => {
         )}
       </View>
 
-
-
-      {/* Filters & Sort */}
-      <View className="mb-4">
-        <Text className="text-sm font-semibold text-gray-700 mb-2">Filters & Sort</Text>
+      {/* Filters & Sort - Better styling for desktop */}
+      <View className={cn(
+        "mb-4 rounded-xl border border-gray-100",
+        isDesktop && "bg-gray-50 p-4"
+      )}>
+        <Text className={cn(
+          "font-semibold text-gray-700 mb-3",
+          isDesktop ? "text-base" : "text-sm"
+        )}>
+          Filters & Sort
+        </Text>
         
         {/* Distance Row */}
         {userLocation && (
-          <View className="mb-2">
-            <Text className="text-xs text-gray-600 mb-1">Max Distance</Text>
+          <View className="mb-3">
+            <Text className={cn(
+              "text-gray-600 mb-2",
+              isDesktop ? "text-sm" : "text-xs"
+            )}>
+              📍 Maximum Distance
+            </Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View className="flex-row gap-2">
+              <View className="flex-row" style={{ gap: isDesktop ? 12 : 8 }}>
                 {[2, 5, 10, 20].map((distance) => (
                   <TouchableOpacity
                     key={distance}
                     className={cn(
-                      'px-3 py-1.5 rounded-lg border',
+                      'rounded-lg border',
+                      isDesktop ? 'px-4 py-2' : 'px-3 py-1.5',
                       selectedDistance === distance 
-                        ? 'bg-blue-100 border-blue-400' 
+                        ? 'bg-[#FFF4E6] border-[#FF7A00]' 
                         : 'bg-white border-gray-300'
                     )}
                     onPress={() => handleDistanceFilter(distance)}
                   >
                     <Text className={cn(
-                      'text-xs font-medium',
-                      selectedDistance === distance ? 'text-blue-700' : 'text-gray-700'
+                      'font-medium',
+                      isDesktop ? 'text-sm' : 'text-xs',
+                      selectedDistance === distance ? 'text-[#FF7A00]' : 'text-gray-700'
                     )}>
                       {distance} km
                     </Text>
@@ -208,33 +230,40 @@ const RestaurantsScreen = () => {
 
         {/* Sort Options */}
         <View>
-          <Text className="text-xs text-gray-600 mb-1">Sort By</Text>
+          <Text className={cn(
+            "text-gray-600 mb-2",
+            isDesktop ? "text-sm" : "text-xs"
+          )}>
+            🔄 Sort By
+          </Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View className="flex-row gap-2">
+            <View className="flex-row" style={{ gap: isDesktop ? 12 : 8 }}>
               {[
-                { value: 'rating', label: 'Rating'},
-                { value: 'distance', label: 'Distance', disabled: !userLocation },
-                { value: 'name', label: 'Name'},
-                { value: 'newest', label: 'Newest' }
+                { value: 'rating', label: '⭐ Rating', icon: '⭐'},
+                { value: 'distance', label: '📍 Distance', icon: '📍', disabled: !userLocation },
+                { value: 'name', label: '🔤 Name', icon: '🔤'},
+                { value: 'newest', label: '🆕 Newest', icon: '🆕' }
               ].map((option) => (
                 <TouchableOpacity
                   key={option.value}
                   disabled={option.disabled}
                   className={cn(
-                    'flex-row items-center px-3 py-1.5 rounded-lg border',
+                    'flex-row items-center rounded-lg border',
+                    isDesktop ? 'px-4 py-2' : 'px-3 py-1.5',
                     option.disabled 
                       ? 'bg-gray-200 border-gray-300'
                       : sortBy === option.value 
-                        ? 'bg-green-100 border-green-400' 
+                        ? 'bg-[#FFF4E6] border-[#FF7A00]' 
                         : 'bg-white border-gray-300'
                   )}
                   onPress={() => !option.disabled && setSortBy(option.value as any)}
                 >
                   <Text className={cn(
-                    'text-xs font-medium',
+                    'font-medium',
+                    isDesktop ? 'text-sm' : 'text-xs',
                     option.disabled
                       ? 'text-gray-400'
-                      : sortBy === option.value ? 'text-green-700' : 'text-gray-700'
+                      : sortBy === option.value ? 'text-[#FF7A00]' : 'text-gray-700'
                   )}>
                     {option.label}
                   </Text>
@@ -246,22 +275,29 @@ const RestaurantsScreen = () => {
       </View>
 
       {/* Results Summary */}
-      <View className="flex-row justify-between items-center mb-2">
-        <Text className="text-sm text-gray-600">
+      <View className="flex-row justify-between items-center mb-3">
+        <Text className={cn(
+          "text-gray-600",
+          isDesktop ? "text-base font-medium" : "text-sm"
+        )}>
           {filteredRestaurants.length} restaurant{filteredRestaurants.length !== 1 ? 's' : ''} found
         </Text>
         
         {/* Clear Filters */}
-        {(selectedDistance || statusFilter !== 'all') && (
+        {(selectedDistance || statusFilter !== 'all' || searchQuery) && (
           <TouchableOpacity
-            onPress={() => {
-              setSelectedDistance(null);
-              setStatusFilter('all');
-              setSearchQuery('');
-            }}
-            className="px-3 py-1 bg-gray-100 rounded-lg"
+            onPress={handleResetFilters}
+            className={cn(
+              "bg-gray-100 rounded-lg",
+              isDesktop ? "px-4 py-2" : "px-3 py-1"
+            )}
           >
-            <Text className="text-xs text-gray-600">Clear Filters</Text>
+            <Text className={cn(
+              "text-gray-600",
+              isDesktop ? "text-sm" : "text-xs"
+            )}>
+              Clear All
+            </Text>
           </TouchableOpacity>
         )}
       </View>
@@ -270,7 +306,7 @@ const RestaurantsScreen = () => {
 
   if (loading && !refreshing) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-50">
+      <View className="flex-1 bg-gray-50">
         {/* Header */}
         <View className="px-4 pt-4 pb-2 bg-white border-b border-gray-200">
           <Text className="text-2xl font-bold text-gray-800">Restaurants</Text>
@@ -279,58 +315,116 @@ const RestaurantsScreen = () => {
           </Text>
         </View>
         <RestaurantListSkeleton count={6} />
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
-      {/* Header */}
-      <View className="px-4 pt-4 pb-2 bg-white border-b border-gray-200">
-        <Text className="text-2xl font-bold text-gray-800">Restaurants</Text>
-        <Text className="text-sm text-gray-600 mt-1">
+    <View className="flex-1 bg-gray-50">
+      {/* Header - Better styling */}
+      <View className={cn(
+        "pt-4 pb-3 bg-white border-b border-gray-200",
+        isDesktop ? "px-20" : "px-4"
+      )}>
+        <Text className={cn(
+          "font-bold text-gray-800",
+          isDesktop ? "text-3xl" : "text-2xl"
+        )}>
+          Restaurants
+        </Text>
+        <Text className={cn(
+          "text-gray-500 mt-1",
+          isDesktop ? "text-base" : "text-sm"
+        )}>
           Discover amazing food delivered by drone
         </Text>
       </View>
 
-      <FlatList
-        data={filteredRestaurants}
-        keyExtractor={keyExtractor}
-        ListHeaderComponent={renderHeader}
-        renderItem={renderRestaurantItem}
-        contentContainerClassName="px-4 pt-4"
-        showsVerticalScrollIndicator={false}
-        removeClippedSubviews={true}
-        maxToRenderPerBatch={10}
-        windowSize={10}
-        initialNumToRender={8}
-        refreshControl={
-          <RefreshControl 
-            refreshing={refreshing} 
-            onRefresh={onRefresh} 
-            colors={['#f59e0b']} 
-            tintColor="#f59e0b"
+      <WebContainer maxWidth="container">
+        {isDesktop ? (
+          // Desktop: ScrollView with Grid
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl 
+                refreshing={refreshing} 
+                onRefresh={onRefresh} 
+                colors={['#FF7A00']} 
+                tintColor="#FF7A00"
+              />
+            }
+            contentContainerClassName="pt-6"
+          >
+            {renderHeader()}
+            
+            {filteredRestaurants.length > 0 ? (
+              <View className="px-20 flex flex-row flex-wrap pb-8" style={{ gap: 24 }}>
+                {filteredRestaurants.map((restaurant) => (
+                  <View key={restaurant.$id} style={{ width: '48%' }}>
+                    <RestaurantCard restaurant={restaurant} />
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <View className="items-center justify-center py-16 px-20">
+                <Text className="text-7xl mb-4">🔍</Text>
+                <Text className="text-xl font-bold text-gray-800 mb-2">
+                  No restaurants found
+                </Text>
+                <Text className="text-gray-500 text-base text-center mb-6">
+                  Try adjusting your filters or search terms
+                </Text>
+                <TouchableOpacity
+                  onPress={handleResetFilters}
+                  className="bg-[#FF7A00] px-6 py-3 rounded-xl shadow-sm"
+                >
+                  <Text className="text-white font-semibold text-base">Reset Filters</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </ScrollView>
+        ) : (
+          // Mobile: FlatList (original)
+          <FlatList
+            data={filteredRestaurants}
+            keyExtractor={keyExtractor}
+            ListHeaderComponent={renderHeader}
+            renderItem={renderRestaurantItem}
+            contentContainerClassName="px-4 pt-4"
+            showsVerticalScrollIndicator={false}
+            removeClippedSubviews={true}
+            maxToRenderPerBatch={10}
+            windowSize={10}
+            initialNumToRender={8}
+            refreshControl={
+              <RefreshControl 
+                refreshing={refreshing} 
+                onRefresh={onRefresh} 
+                colors={['#f59e0b']} 
+                tintColor="#f59e0b"
+              />
+            }
+            ListEmptyComponent={
+              <View className="items-center justify-center py-12">
+                <Text className="text-6xl mb-4">🔍</Text>
+                <Text className="text-lg font-semibold text-gray-800 mb-2">
+                  No restaurants found
+                </Text>
+                <Text className="text-gray-500 text-sm text-center mb-4">
+                  Try adjusting your filters or search terms
+                </Text>
+                <TouchableOpacity
+                  onPress={handleResetFilters}
+                  className="bg-amber-500 px-4 py-2 rounded-lg"
+                >
+                  <Text className="text-white font-semibold">Reset Filters</Text>
+                </TouchableOpacity>
+              </View>
+            }
           />
-        }
-        ListEmptyComponent={
-          <View className="items-center justify-center py-12">
-            <Text className="text-6xl mb-4">🔍</Text>
-            <Text className="text-lg font-semibold text-gray-800 mb-2">
-              No restaurants found
-            </Text>
-            <Text className="text-gray-500 text-sm text-center mb-4">
-              Try adjusting your filters or search terms
-            </Text>
-            <TouchableOpacity
-              onPress={handleResetFilters}
-              className="bg-amber-500 px-4 py-2 rounded-lg"
-            >
-              <Text className="text-white font-semibold">Reset Filters</Text>
-            </TouchableOpacity>
-          </View>
-        }
-      />
-    </SafeAreaView>
+        )}
+      </WebContainer>
+    </View>
   );
 };
 

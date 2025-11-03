@@ -14,6 +14,8 @@ export const ensureNotificationHandlerConfigured = () => {
       shouldShowAlert: true,
       shouldPlaySound: true,
       shouldSetBadge: true,
+      shouldShowBanner: true,
+      shouldShowList: true,
     }),
   });
 
@@ -29,6 +31,12 @@ const getProjectId = () => {
 };
 
 export const registerForPushNotificationsAsync = async (userId?: string) => {
+  // Skip on web - notifications not supported
+  if (Platform.OS === 'web') {
+    console.log('Skipping push notifications setup on web');
+    return null;
+  }
+
   ensureNotificationHandlerConfigured();
 
   if (!Device.isDevice) {
@@ -96,6 +104,16 @@ export const addNotificationListeners = (
   onReceive?: (notification: Notifications.Notification) => void,
   onRespond?: (response: Notifications.NotificationResponse) => void
 ) => {
+  // Skip on web - notifications not supported
+  if (Platform.OS === 'web') {
+    console.log('Skipping notification listeners on web');
+    return {
+      remove: () => {},
+      receiveSub: null,
+      responseSub: null,
+    };
+  }
+
   ensureNotificationHandlerConfigured();
 
   const receiveSub = Notifications.addNotificationReceivedListener((notification: Notifications.Notification) => {
@@ -117,6 +135,12 @@ export const addNotificationListeners = (
 };
 
 export const clearNotifications = async () => {
+  // Skip on web - notifications API not supported
+  if (Platform.OS === 'web') {
+    console.log('Skipping clearNotifications on web');
+    return;
+  }
+
   try {
     await Notifications.dismissAllNotificationsAsync();
     if (Platform.OS === 'ios') {

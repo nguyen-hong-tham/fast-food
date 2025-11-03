@@ -28,6 +28,18 @@ module.exports = {
         "quicksand-light": ["Quicksand-Light", "sans-serif"],
         "quicksand-medium": ["Quicksand-Medium", "sans-serif"],
       },
+      // 🌐 Added for web optimization
+      screens: {
+        'sm': '640px',   // Mobile landscape
+        'md': '768px',   // Tablet
+        'lg': '1024px',  // Desktop
+        'xl': '1280px',  // Large desktop
+        '2xl': '1536px', // Extra large
+      },
+      maxWidth: {
+        'container': '1200px',
+        'content': '800px',
+      },
     },
   },
   plugins: [],
