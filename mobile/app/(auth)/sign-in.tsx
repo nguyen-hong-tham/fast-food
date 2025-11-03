@@ -5,12 +5,14 @@ import useAuthStore from "@/store/auth.store";
 import * as Sentry from '@sentry/react-native';
 import { Link, router } from "expo-router";
 import { useState } from "react";
-import { Alert, Text, View } from 'react-native';
+import { Alert, Text, View, Platform } from 'react-native';
+import { useResponsive } from '@/lib/responsive';
 
 const SignIn = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [form, setForm] = useState({ email: '', password: '' });
     const { fetchAuthenticatedUser } = useAuthStore();
+    const { isDesktop } = useResponsive();
 
     const submit = async () => {
         const { email, password } = form;
@@ -51,7 +53,14 @@ const SignIn = () => {
     }
 
     return (
-        <View className="gap-10 bg-white rounded-lg p-5 mt-5">
+        <View className={isDesktop ? "gap-6 py-4" : "gap-10 bg-white rounded-lg p-5 mt-5"}>
+            {isDesktop && (
+                <View className="mb-4">
+                    <Text className="text-3xl font-bold text-gray-800 mb-2">Welcome Back!</Text>
+                    <Text className="text-base text-gray-600">Sign in to continue to FoodFast</Text>
+                </View>
+            )}
+            
             <CustomInput
                 placeholder="Enter your email"
                 value={form.email}
@@ -73,11 +82,11 @@ const SignIn = () => {
                 onPress={submit}
             />
 
-            <View className="flex justify-center mt-5 flex-row gap-2">
-                <Text className="base-regular text-gray-100">
+            <View className={isDesktop ? "flex justify-center mt-4 flex-row gap-2" : "flex justify-center mt-5 flex-row gap-2"}>
+                <Text className={isDesktop ? "text-base text-gray-600" : "base-regular text-gray-100"}>
                     Don't have an account?
                 </Text>
-                <Link href="/sign-up" className="base-bold text-primary">
+                <Link href="/sign-up" className={isDesktop ? "text-base font-semibold text-primary" : "base-bold text-primary"}>
                     Sign Up
                 </Link>
             </View>

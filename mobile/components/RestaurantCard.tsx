@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity, Image, Platform } from 'react-native';
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Restaurant, RestaurantWithDistance } from '@/type';
 import { router } from 'expo-router';
 import cn from 'clsx';
@@ -9,6 +9,8 @@ interface RestaurantCardProps {
 }
 
 const RestaurantCard = React.memo(({ restaurant }: RestaurantCardProps) => {
+  const [isHovered, setIsHovered] = useState(false);
+  
   const handlePress = useCallback(() => {
     router.push({
       pathname: '/restaurant-detail' as any,
@@ -20,21 +22,29 @@ const RestaurantCard = React.memo(({ restaurant }: RestaurantCardProps) => {
 
   return (
     <TouchableOpacity
-      className="bg-white rounded-xl mb-4 overflow-hidden"
+      className={cn(
+        "bg-white rounded-xl mb-4 overflow-hidden transition-all duration-300",
+        Platform.OS === 'web' && isHovered && "scale-[1.02]"
+      )}
       style={Platform.OS === 'android' ? { 
-        elevation: 3, 
+        elevation: isHovered ? 8 : 3, 
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4
+        shadowOffset: { width: 0, height: isHovered ? 4 : 2 },
+        shadowOpacity: isHovered ? 0.2 : 0.1,
+        shadowRadius: isHovered ? 8 : 4
       } : {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4
+        shadowOffset: { width: 0, height: isHovered ? 4 : 2 },
+        shadowOpacity: isHovered ? 0.2 : 0.1,
+        shadowRadius: isHovered ? 8 : 4
       }}
       onPress={handlePress}
       activeOpacity={0.8}
+      {...(Platform.OS === 'web' && {
+        // @ts-ignore - Web-specific props
+        onMouseEnter: () => setIsHovered(true),
+        onMouseLeave: () => setIsHovered(false),
+      })}
     >
       {/* Cover Image */}
       <View className="relative">
@@ -42,17 +52,22 @@ const RestaurantCard = React.memo(({ restaurant }: RestaurantCardProps) => {
           source={{ 
             uri: restaurant.coverImage || restaurant.logo || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=200&fit=crop'
           }}
-          className="w-full h-48"
+          className="w-full h-48 lg:h-56"
           resizeMode="cover"
         />
         
         {/* Gradient Overlay */}
-        <View className="absolute inset-0 bg-black/20" />
+        <View className={cn(
+          "absolute inset-0",
+          isHovered ? "bg-black/30" : "bg-black/20"
+        )} />
         
-
-
-        {/* Delivery Info Badge */}
-
+        {/* New Badge - Top Right */}
+        {restaurant.totalOrders === 0 && (
+          <View className="absolute top-3 right-3 bg-green-500 px-3 py-1 rounded-full">
+            <Text className="text-white text-xs font-bold">NEW</Text>
+          </View>
+        )}
 
         {/* Logo */}
         {restaurant.logo && (

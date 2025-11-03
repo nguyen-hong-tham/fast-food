@@ -38,6 +38,7 @@ const CheckoutScreen = () => {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'vnpay' | 'cod'>('vnpay');
   const [processing, setProcessing] = useState(false);
   const [restaurant, setRestaurant] = useState<any>(null);
+  const [showItems, setShowItems] = useState(false);
 
   // Update address from location picker
   useEffect(() => {
@@ -191,14 +192,38 @@ const CheckoutScreen = () => {
             style={Platform.OS === 'android' ? { elevation: 2 } : {}}
           >
             <Text className="text-lg font-bold text-gray-800 mb-3">Order Summary</Text>
-            
+
+            {/* Summary row: item count and subtotal */}
             <View className="flex-row justify-between items-center mb-2">
               <Text className="text-gray-600">{itemCount} items</Text>
               <Text className="text-lg font-semibold text-gray-800">
                 {subtotal.toLocaleString('vi-VN')}₫
               </Text>
             </View>
-            
+
+            {/* Toggle to show detailed items (default hidden) */}
+            <View className="flex-row items-center justify-between mb-2">
+              <TouchableOpacity onPress={() => setShowItems((s) => !s)}>
+                <Text className="text-sm text-primary">{showItems ? 'Hide items' : `Show items (${itemCount})`}</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Detailed items list (only shown when toggled) */}
+            {showItems && (
+              <View className="space-y-3 mb-2">
+                {items.map((it) => (
+                  <View key={`${it.id}-${it.notes || ''}`} className="flex-row items-center">
+                    <Image source={{ uri: it.image_url }} className="size-12 rounded-lg mr-3" />
+                    <View className="flex-1">
+                      <Text className="font-semibold text-gray-800">{it.name} x{it.quantity}</Text>
+                      {it.notes ? <Text className="text-sm text-gray-500">📝 {it.notes}</Text> : null}
+                    </View>
+                    <Text className="font-semibold text-gray-800">{(it.price * it.quantity).toLocaleString('vi-VN')}₫</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
             {deliveryCalc && (
               <>
                 <View className="flex-row justify-between items-center mb-2">
@@ -207,7 +232,7 @@ const CheckoutScreen = () => {
                     {deliveryCalc.shippingCost.toLocaleString('vi-VN')}₫
                   </Text>
                 </View>
-                
+
                 <View className="border-t border-gray-200 pt-2 mt-2">
                   <View className="flex-row justify-between items-center">
                     <Text className="text-lg font-bold text-gray-800">Total</Text>

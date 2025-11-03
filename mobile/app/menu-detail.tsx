@@ -5,8 +5,23 @@ import { useCartStore } from "@/store/cart.store";
 import { MenuItem } from "@/type";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Image, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, Image, ScrollView, Text, TextInput, TouchableOpacity, View, Platform, Dimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+// Stable wrapper for desktop centered content to avoid remounting children on each render
+const DesktopContentWrapper = ({ children, isDesktop }: { children: React.ReactNode; isDesktop: boolean }) => {
+    if (!isDesktop) return <>{children}</>;
+
+    return (
+        <View style={{
+            maxWidth: 1200,
+            marginHorizontal: 'auto' as any,
+            width: '100%'
+        }}>
+            {children}
+        </View>
+    );
+};
 
 const MenuDetail = () => {
     const { menuId, restaurantId } = useLocalSearchParams<{ menuId: string; restaurantId: string }>();
@@ -15,6 +30,10 @@ const MenuDetail = () => {
     const [quantity, setQuantity] = useState(1);
     const [notes, setNotes] = useState<string>('');
     const { addItem } = useCartStore();
+
+    const isWeb = Platform.OS === 'web';
+    const screenWidth = Dimensions.get('window').width;
+    const isDesktop = isWeb && screenWidth > 768;
 
     useEffect(() => {
         const fetchMenuItem = async () => {
@@ -43,11 +62,9 @@ const MenuDetail = () => {
     const handleAddToCart = () => {
         if (!menuItem || !restaurantId) return;
 
-        // 🚨 Leader's Fix: Check restaurant conflict FIRST
         const currentRestaurantId = useCartStore.getState().restaurantId;
         
         if (currentRestaurantId && currentRestaurantId !== restaurantId) {
-            // Show restaurant conflict alert IMMEDIATELY
             Alert.alert(
                 'Different Restaurant',
                 'Cart contains items from another restaurant. Do you want to clear cart and add this item?',
@@ -57,24 +74,21 @@ const MenuDetail = () => {
                         text: 'Clear & Add', 
                         style: 'destructive',
                         onPress: () => {
-                            // Clear cart và add item mới
                             useCartStore.getState().clearCart();
                             addItemAndShowSuccess();
                         }
                     }
                 ]
             );
-            return; // STOP HERE - không show popup success
+            return;
         }
 
-        // Nếu không conflict, proceed bình thường
         addItemAndShowSuccess();
     };
 
     const addItemAndShowSuccess = () => {
-        if (!menuItem || !restaurantId) return; // Safety check
+        if (!menuItem || !restaurantId) return;
         
-        // Add item to cart (no conflict check needed)
         addItem(
             {
                 id: menuItem.$id,
@@ -88,7 +102,35 @@ const MenuDetail = () => {
             quantity
         );
 
-        // 🎯 Show success popup với choices
+        // On web, show a native browser confirm (OK = Continue shopping, Cancel = Checkout)
+        if (isWeb) {
+            const message = `${quantity}x ${menuItem.name} has been added to cart.\n\nPress OK to continue shopping or Cancel to go to checkout.`;
+            const continueShopping = globalThis.confirm(message);
+
+            if (continueShopping) {
+                // Navigate back to restaurant detail
+                // If we have restaurantId, go to restaurant-detail explicitly
+                if (restaurantId) {
+                    router.push({ pathname: '/restaurant-detail' as any, params: { id: restaurantId } });
+                } else {
+                    router.back();
+                }
+            } else {
+                const cartData = useCartStore.getState().getCartForCheckout();
+                router.push({
+                    pathname: '/checkout' as any,
+                    params: {
+                        restaurantId: cartData.restaurantId,
+                        totalAmount: cartData.totalAmount.toString(),
+                        itemCount: cartData.totalItems.toString()
+                    }
+                });
+            }
+
+            return;
+        }
+
+        // Native apps: use Alert with multiple buttons
         Alert.alert(
             'Added to Cart',
             `${quantity}x ${menuItem.name} has been added to cart.\n\nWhat would you like to do next?`,
@@ -97,7 +139,6 @@ const MenuDetail = () => {
                     text: 'Continue Shopping', 
                     style: 'default',
                     onPress: () => {
-                        // Go back to the previous screen (restaurant-detail) without creating new entry
                         router.back();
                     }
                 },
@@ -150,107 +191,137 @@ const MenuDetail = () => {
     }
 
     return (
-        <SafeAreaView className="flex-1 bg-white">
+        <SafeAreaView className="flex-1 bg-white" style={{ flex: 1 }}>
             <CustomHeader title={menuItem.name} />
             
-            <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-                {/* Image Section */}
-                <View className="relative h-64 bg-gray-100">
-                    <Image 
-                        source={{ uri: menuItem.image_url }} 
-                        className="w-full h-full"
-                        resizeMode="cover"
-                    />
-                    <View className="absolute top-4 right-4 bg-white px-3 py-1 rounded-full">
-                        <Text className="text-sm font-semibold text-amber-600">
-                            ⭐ {menuItem.rating ? menuItem.rating.toFixed(1) : '0.0'}
-                        </Text>
-                    </View>
-                </View>
-
-                {/* Content Section */}
-                <View className="px-6 py-4">
-                    {/* Title and Price */}
-                    <View className="mb-4">
-                        <Text className="text-2xl font-bold text-gray-900 mb-2">{menuItem.name}</Text>
-                        <Text className="text-xl font-semibold text-amber-600">
-                            {menuItem.price.toLocaleString('vi-VN')}₫
-                        </Text>
-                    </View>
-
-                    {/* Description */}
-                    <View className="mb-6">
-                        <Text className="text-gray-700 leading-6">{menuItem.description}</Text>
-                    </View>
-
-                    {/* Nutrition Info */}
-                    <View className="flex-row bg-gray-50 rounded-lg p-4 mb-6">
-                        <View className="flex-1">
-                            <Text className="text-sm text-gray-500">Calories</Text>
-                            <Text className="text-lg font-semibold text-gray-900">{menuItem.calories || 'N/A'}</Text>
-                        </View>
-                        <View className="flex-1">
-                            <Text className="text-sm text-gray-500">Protein</Text>
-                            <Text className="text-lg font-semibold text-gray-900">{menuItem.protein ? `${menuItem.protein}g` : 'N/A'}</Text>
-                        </View>
-                        <View className="flex-1">
-                            <Text className="text-sm text-gray-500">Stock</Text>
-                            <Text className="text-lg font-semibold text-gray-900">{menuItem.stock ?? 'Unlimited'}</Text>
-                        </View>
-                    </View>
-
-                    {/* Special Notes */}
-                    <View className="mb-6">
-                        <Text className="text-lg font-semibold text-gray-900 mb-3">Special Notes</Text>
-                        <TextInput
-                            className="bg-gray-50 rounded-lg p-4 text-gray-900 min-h-[80px]"
-                            placeholder="Add special instructions for this item (e.g., extra spicy, no onions, etc.)"
-                            placeholderTextColor="#9CA3AF"
-                            value={notes}
-                            onChangeText={setNotes}
-                            multiline
-                            textAlignVertical="top"
-                            maxLength={500}
+            <ScrollView 
+                className="flex-1" 
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ flexGrow: 1 }}
+                style={{ flex: 1 }}
+            >
+                <DesktopContentWrapper isDesktop={isDesktop}>
+                    {/* Image Section - Responsive height */}
+                    <View style={{
+                        position: 'relative',
+                        height: isDesktop ? 400 : 256, // Desktop cao hơn
+                        backgroundColor: '#f3f4f6'
+                    }}>
+                        <Image 
+                            source={{ uri: menuItem.image_url }} 
+                            style={{
+                                width: '100%',
+                                height: '100%'
+                            }}
+                            resizeMode={isWeb ? 'contain' : 'cover'} // 🔥 Web dùng contain để không bị cắt
                         />
-                        <Text className="text-sm text-gray-400 mt-2">{notes.length}/500 characters</Text>
+                        <View style={{
+                            position: 'absolute',
+                            top: 16,
+                            right: 16,
+                            backgroundColor: 'white',
+                            paddingHorizontal: 12,
+                            paddingVertical: 4,
+                            borderRadius: 9999
+                        }}>
+                            <Text className="text-sm font-semibold text-amber-600">
+                                ⭐ {menuItem.rating ? menuItem.rating.toFixed(1) : '0.0'}
+                            </Text>
+                        </View>
                     </View>
 
-                    {/* Quantity Selector */}
-                    <View className="flex-row items-center justify-between mb-6">
-                        <Text className="text-lg font-semibold text-gray-900">Quantity</Text>
-                        <View className="flex-row items-center">
-                            <TouchableOpacity
-                                className="w-10 h-10 bg-gray-200 rounded-full items-center justify-center"
-                                onPress={() => setQuantity(Math.max(1, quantity - 1))}
-                            >
-                                <Text className="text-lg font-bold text-gray-700">−</Text>
-                            </TouchableOpacity>
-                            <Text className="mx-4 text-lg font-semibold">{quantity}</Text>
-                            <TouchableOpacity
-                                className="w-10 h-10 bg-amber-500 rounded-full items-center justify-center"
-                                onPress={() => setQuantity(quantity + 1)}
-                            >
-                                <Text className="text-lg font-bold text-white">+</Text>
-                            </TouchableOpacity>
+                    {/* Content Section */}
+                    <View className="px-6 py-4">
+                        {/* Title and Price */}
+                        <View className="mb-4">
+                            <Text className="text-2xl font-bold text-gray-900 mb-2">{menuItem.name}</Text>
+                            <Text className="text-xl font-semibold text-amber-600">
+                                {menuItem.price.toLocaleString('vi-VN')}₫
+                            </Text>
                         </View>
+
+                        {/* Description */}
+                        <View className="mb-6">
+                            <Text className="text-gray-700 leading-6">{menuItem.description}</Text>
+                        </View>
+
+                        {/* Nutrition Info */}
+                        <View className="flex-row bg-gray-50 rounded-lg p-4 mb-6">
+                            <View className="flex-1">
+                                <Text className="text-sm text-gray-500">Calories</Text>
+                                <Text className="text-lg font-semibold text-gray-900">{menuItem.calories || 'N/A'}</Text>
+                            </View>
+                            <View className="flex-1">
+                                <Text className="text-sm text-gray-500">Protein</Text>
+                                <Text className="text-lg font-semibold text-gray-900">{menuItem.protein ? `${menuItem.protein}g` : 'N/A'}</Text>
+                            </View>
+                            <View className="flex-1">
+                                <Text className="text-sm text-gray-500">Stock</Text>
+                                <Text className="text-lg font-semibold text-gray-900">{menuItem.stock ?? 'Unlimited'}</Text>
+                            </View>
+                        </View>
+
+                        {/* Special Notes */}
+                        <View className="mb-6">
+                            <Text className="text-lg font-semibold text-gray-900 mb-3">Special Notes</Text>
+                            <TextInput
+                                className="bg-gray-50 rounded-lg p-4 text-gray-900 min-h-[80px]"
+                                placeholder="Add special instructions for this item (e.g., extra spicy, no onions, etc.)"
+                                placeholderTextColor="#9CA3AF"
+                                value={notes}
+                                onChangeText={setNotes}
+                                multiline
+                                textAlignVertical="top"
+                                maxLength={500}
+                                style={isWeb ? { outline: 'none' } as any : {}} // Remove blue outline on web
+                            />
+                            <Text className="text-sm text-gray-400 mt-2">{notes.length}/500 characters</Text>
+                        </View>
+
+                        {/* Quantity Selector */}
+                        <View className="flex-row items-center justify-between mb-6">
+                            <Text className="text-lg font-semibold text-gray-900">Quantity</Text>
+                            <View className="flex-row items-center">
+                                <TouchableOpacity
+                                    className="w-10 h-10 bg-gray-200 rounded-full items-center justify-center"
+                                    onPress={() => setQuantity(Math.max(1, quantity - 1))}
+                                    style={isWeb ? { cursor: 'pointer' } as any : {}}
+                                >
+                                    <Text className="text-lg font-bold text-gray-700">−</Text>
+                                </TouchableOpacity>
+                                <Text className="mx-4 text-lg font-semibold">{quantity}</Text>
+                                <TouchableOpacity
+                                    className="w-10 h-10 bg-amber-500 rounded-full items-center justify-center"
+                                    onPress={() => setQuantity(quantity + 1)}
+                                    style={isWeb ? { cursor: 'pointer' } as any : {}}
+                                >
+                                    <Text className="text-lg font-bold text-white">+</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                </DesktopContentWrapper>
+                {/* Bottom Section - Inside ScrollView but styled to stick */}
+                <View style={isDesktop ? {
+                    maxWidth: 1200,
+                    marginHorizontal: 'auto' as any,
+                    width: '100%'
+                } : {}}>
+                    <View className="px-6 py-4 border-t border-gray-200 bg-white">
+                        <View className="flex-row items-center justify-between mb-4">
+                            <Text className="text-lg font-semibold text-gray-900">Total</Text>
+                            <Text className="text-xl font-bold text-amber-600">
+                                {calculateTotal().toLocaleString('vi-VN')}₫
+                            </Text>
+                        </View>
+                        
+                        <CustomButton
+                            title={`Add ${quantity} to Cart`}
+                            onPress={handleAddToCart}
+                        />
                     </View>
                 </View>
             </ScrollView>
-
-            {/* Bottom Section */}
-            <View className="px-6 py-4 border-t border-gray-200">
-                <View className="flex-row items-center justify-between mb-4">
-                    <Text className="text-lg font-semibold text-gray-900">Total</Text>
-                    <Text className="text-xl font-bold text-amber-600">
-                        {calculateTotal().toLocaleString('vi-VN')}₫
-                    </Text>
-                </View>
-                
-                <CustomButton
-                    title={`Add ${quantity} to Cart`}
-                    onPress={handleAddToCart}
-                />
-            </View>
         </SafeAreaView>
     );
 };

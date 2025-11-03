@@ -1,7 +1,7 @@
 # 📚 FoodFast Project Documentation Hub
 
 > **Tất cả tài liệu và hướng dẫn cho dự án FoodFast**  
-> **Last Updated**: October 17, 2025
+> **Last Updated**: November 02, 2025
 
 ---
 
@@ -16,6 +16,18 @@
 3. **[database/README.md](./database/README.md)** - Setup database trước tiên
 4. **[GITHUB_ISSUES.md](./GITHUB_ISSUES.md)** - Pick một issue để làm
 5. **[PROJECT_TRACKER.md](./PROJECT_TRACKER.md)** - Track tiến độ
+
+### 🌐 **NEW! Mobile Web Optimization** (November 2025)
+
+**Mobile app chạy tốt nhưng web browser không ổn?** → Đọc ngay:
+
+1. **[INDEX_WEB_OPTIMIZATION.md](./INDEX_WEB_OPTIMIZATION.md)** - 📋 BẮT ĐẦU TỪ ĐÂY
+2. **[WEB_OPTIMIZATION_README.md](./WEB_OPTIMIZATION_README.md)** - Tổng quan
+3. **[QUICK_START_WEB_OPTIMIZATION.md](./QUICK_START_WEB_OPTIMIZATION.md)** - Fix trong 30 phút
+4. **[MOBILE_WEB_OPTIMIZATION_GUIDE.md](./MOBILE_WEB_OPTIMIZATION_GUIDE.md)** - Hướng dẫn đầy đủ
+5. **[CODE_EXAMPLES_BEFORE_AFTER.md](./CODE_EXAMPLES_BEFORE_AFTER.md)** - Code mẫu
+6. **[VISUAL_COMPARISON.md](./VISUAL_COMPARISON.md)** - So sánh trực quan
+7. **[PRESENTATION_CHECKLIST.md](./PRESENTATION_CHECKLIST.md)** - Checklist báo cáo thầy
 
 ---
 
@@ -42,7 +54,16 @@ docs/
 │   └── Fastfood-Deli_Deployment-Diagram.drawio
 │
 ├── 📂 admin/                        # Admin dashboard docs (empty)
-└── 📂 mobile/                       # Mobile app docs (empty)
+├── 📂 mobile/                       # Mobile app docs (empty)
+│
+└── 📂 web-optimization/             # 🌐 NEW! Mobile Web Optimization (Nov 2025)
+    ├── INDEX_WEB_OPTIMIZATION.md           # 📋 START HERE - Navigation guide
+    ├── WEB_OPTIMIZATION_README.md          # Tổng quan & overview
+    ├── QUICK_START_WEB_OPTIMIZATION.md     # Quick start (30 phút)
+    ├── MOBILE_WEB_OPTIMIZATION_GUIDE.md    # Complete guide (đầy đủ)
+    ├── CODE_EXAMPLES_BEFORE_AFTER.md       # Before/After code samples
+    ├── VISUAL_COMPARISON.md                # Visual diagrams & comparisons
+    └── PRESENTATION_CHECKLIST.md           # Checklist báo cáo thầy
 ```
 
 ---
