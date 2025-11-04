@@ -189,7 +189,7 @@ const NotificationsScreen = () => {
       {unreadCount > 0 && (
         <View className="bg-primary/10 px-4 py-3 border-b border-primary/20">
           <Text className="text-sm text-primary font-semibold">
-            📬 You have {unreadCount} unread notification{unreadCount > 1 ? 's' : ''}
+            You have {unreadCount} unread notification{unreadCount > 1 ? 's' : ''}
           </Text>
         </View>
       )}

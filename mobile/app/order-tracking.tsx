@@ -165,7 +165,7 @@ const OrderTrackingScreen = () => {
           return merged;
         });
       } catch (error) {
-        console.error('❌ Error processing order update:', error);
+        console.error('Error processing order update:', error);
       }
     });
 
@@ -174,7 +174,7 @@ const OrderTrackingScreen = () => {
       try {
         unsubscribe?.();
       } catch (error) {
-        console.error('❌ Error unsubscribing from order:', error);
+        console.error('Error unsubscribing from order:', error);
       }
     };
   }, [trackingOrderId]);
@@ -200,7 +200,7 @@ const OrderTrackingScreen = () => {
           setEtaMinutes(0);
         }
       } catch (error) {
-        console.error('❌ Error processing drone event:', error);
+        console.error('Error processing drone event:', error);
       }
     });
 
@@ -209,7 +209,7 @@ const OrderTrackingScreen = () => {
       try {
         unsubscribe?.();
       } catch (error) {
-        console.error('❌ Error unsubscribing from drone events:', error);
+        console.error('Error unsubscribing from drone events:', error);
       }
     };
   }, [trackingOrderId]);
@@ -221,7 +221,7 @@ const OrderTrackingScreen = () => {
     if (simulationState !== 'idle') return;
     if (hasRealtimeProgress) return;
     
-    // ✅ Trigger simulation when restaurant accepts order (status = preparing)
+    // Trigger simulation when restaurant accepts order (status = preparing)
     // Remove 'picked_up' since it's not used anymore
     const shouldStartSimulation = 
       order.status === 'preparing' || 
@@ -229,7 +229,7 @@ const OrderTrackingScreen = () => {
       order.status === 'delivering';
     if (!shouldStartSimulation) return;
 
-    console.log('🚁 Starting drone simulation for order:', order.$id, 'status:', order.status);
+    console.log('Starting drone simulation for order:', order.$id, 'status:', order.status);
 
     setSimulationState('running');
     setCountdownActive(true);
@@ -273,21 +273,21 @@ const OrderTrackingScreen = () => {
         
         // Log phase changes
         if (phase === 'to_restaurant' && progress < 0.1) {
-          console.log('🚁 Phase 1: Drone heading to restaurant...');
+          console.log('Phase 1: Drone heading to restaurant...');
         } else if (phase === 'to_customer' && progress > 0.3 && progress < 0.35) {
-          console.log('🚁 Phase 2: Drone heading to customer...');
+          console.log('Phase 2: Drone heading to customer...');
         }
       },
     })
       .then(() => {
         if (!isMounted) return;
-        console.log('✅ Drone simulation completed successfully');
+        console.log('Drone simulation completed successfully');
         setSimulationState('completed');
         setCountdownActive(false);
         setEtaMinutes(0);
       })
       .catch((err) => {
-        console.error('❌ Drone simulation failed', err);
+        console.error('Drone simulation failed', err);
         if (!isMounted) return;
         setSimulationState('idle');
         setCountdownActive(false);
@@ -370,7 +370,6 @@ const OrderTrackingScreen = () => {
               <View className="flex-row items-center justify-between mb-3">
                 <View className="flex-row items-center">
                   <View className="bg-white/20 rounded-full p-2 mr-3">
-                    <Text className="text-2xl">🚁</Text>
                   </View>
                   <View>
                     <Text className="text-white font-quicksand-bold text-lg">
@@ -460,15 +459,15 @@ const OrderTrackingScreen = () => {
               <View className="mt-4 pt-4 border-t border-gray-200">
                 <Text className="text-sm text-gray-500 mb-2">Delivery Info</Text>
                 <View className="flex-row justify-between items-center mb-1">
-                  <Text className="text-sm text-gray-600">📍 Distance</Text>
+                  <Text className="text-sm text-gray-600">Distance</Text>
                   <Text className="text-sm font-quicksand-medium text-dark-100">{deliveryCalc.formattedDistance}</Text>
                 </View>
                 <View className="flex-row justify-between items-center mb-1">
-                  <Text className="text-sm text-gray-600">⏰ Estimated Time</Text>
+                  <Text className="text-sm text-gray-600">Estimated Time</Text>
                   <Text className="text-sm font-quicksand-medium text-primary">{deliveryCalc.formattedTime}</Text>
                 </View>
                 <View className="flex-row justify-between items-center">
-                  <Text className="text-sm text-gray-600">💰 Shipping Fee</Text>
+                  <Text className="text-sm text-gray-600">Shipping Fee</Text>
                   <Text className="text-sm font-quicksand-medium text-green-600">{deliveryCalc.formattedCost}</Text>
                 </View>
               </View>
@@ -493,7 +492,7 @@ const OrderTrackingScreen = () => {
                   <Text className="mt-1 text-sm text-gray-500 font-quicksand-medium">Qty: {item.quantity}</Text>
                   {item.notes && (
                     <Text className="mt-1 text-xs text-gray-600 italic font-quicksand-regular">
-                      📝 {item.notes}
+                      {item.notes}
                     </Text>
                   )}
                   <Text className="mt-2 text-base font-quicksand-bold text-primary">

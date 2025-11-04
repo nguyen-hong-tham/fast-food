@@ -50,7 +50,7 @@ const PaymentResultScreen = () => {
           isSuccess ? 'bg-green-100' : 'bg-red-100'
         )}>
           <Text className="text-4xl">
-            {isSuccess ? '✅' : '❌'}
+            {isSuccess ? '✔️' : '❌'}
           </Text>
         </View>
 
@@ -125,10 +125,6 @@ const PaymentResultScreen = () => {
         {/* Success Content */}
         {isSuccess && (
           <View className="bg-green-50 rounded-xl p-4 w-full mb-8">
-            <View className="flex-row items-center mb-2">
-              <Text className="text-lg mr-2">🎉</Text>
-              <Text className="font-semibold text-green-800">What's Next?</Text>
-            </View>
             <Text className="text-sm text-green-700 mb-2">
               • Your order is being prepared by the restaurant
             </Text>
@@ -145,7 +141,6 @@ const PaymentResultScreen = () => {
         {!isSuccess && (
           <View className="bg-red-50 rounded-xl p-4 w-full mb-8">
             <View className="flex-row items-center mb-2">
-              <Text className="text-lg mr-2">💡</Text>
               <Text className="font-semibold text-red-800">What to do?</Text>
             </View>
             <Text className="text-sm text-red-700 mb-2">

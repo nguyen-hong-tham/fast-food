@@ -21,7 +21,7 @@ const LocationPickerScreen = () => {
   const { user, setUser } = useAuthStore();
 
   const handleSelectLocation = useCallback(async (location: UserLocation) => {
-    console.log('📍 Selected location:', location);
+    console.log('Selected location:', location);
 
     // Always save to user profile when location is selected
     if (user) {
@@ -47,7 +47,7 @@ const LocationPickerScreen = () => {
           address_home_label: location.street || location.district || 'Home',
         });
 
-        console.log('✅ Location saved to profile');
+        console.log('Location saved to profile');
       } catch (error) {
         console.error('Failed to save location:', error);
       }

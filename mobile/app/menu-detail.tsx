@@ -213,7 +213,7 @@ const MenuDetail = () => {
                                 width: '100%',
                                 height: '100%'
                             }}
-                            resizeMode={isWeb ? 'contain' : 'cover'} // 🔥 Web dùng contain để không bị cắt
+                            resizeMode={isWeb ? 'contain' : 'cover'} // Web dùng contain để không bị cắt
                         />
                         <View style={{
                             position: 'absolute',

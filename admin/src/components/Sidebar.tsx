@@ -1,8 +1,8 @@
 import {
     LayoutDashboard,
-    Package,
     Plane,
     ShoppingBag,
+    Store,
     Users,
     Zap
 } from 'lucide-react';
@@ -12,7 +12,7 @@ const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard', exact: true },
   { to: '/orders', icon: ShoppingBag, label: 'Orders' },
   { to: '/customers', icon: Users, label: 'Customers' },
-  { to: '/products', icon: Package, label: 'Products' },
+  { to: '/restaurants', icon: Store, label: 'Restaurants' },
   { to: '/drones', icon: Plane, label: 'Drones' },
   { to: '/assign-drone', icon: Zap, label: 'Assign Drone' },
 ];

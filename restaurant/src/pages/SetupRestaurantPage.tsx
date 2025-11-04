@@ -37,7 +37,7 @@ export default function SetupRestaurantPage() {
         ).join('\n\n');
       
       setDebugInfo(info);
-      console.log('📊 All restaurants:', response.documents);
+      console.log('All restaurants:', response.documents);
     } catch (err: any) {
       setDebugInfo(`Error: ${err.message}`);
     }
@@ -53,9 +53,9 @@ export default function SetupRestaurantPage() {
         throw new Error('User not authenticated');
       }
 
-      console.log('🏪 Creating restaurant');
-      console.log('📝 User accountId:', user.accountId);
-      console.log('📝 User document ID:', user.$id);
+      console.log('Creating restaurant');
+      console.log('User accountId:', user.accountId);
+      console.log('User document ID:', user.$id);
 
       // If ownerId is a relationship field in Appwrite, use user.$id (document ID)
       // If ownerId is a string field, use user.accountId
@@ -80,8 +80,8 @@ export default function SetupRestaurantPage() {
         }
       );
 
-      console.log('✅ Restaurant created:', newRestaurant.$id);
-      console.log('📝 Restaurant ownerId:', newRestaurant.ownerId);
+      console.log('Restaurant created:', newRestaurant.$id);
+      console.log('Restaurant ownerId:', newRestaurant.ownerId);
 
       // Refresh auth to load the new restaurant
       await checkAuth();
@@ -89,7 +89,7 @@ export default function SetupRestaurantPage() {
       alert('Restaurant setup successful! Your restaurant is pending admin approval.');
       navigate('/dashboard');
     } catch (err: any) {
-      console.error('❌ Setup error:', err);
+      console.error('Setup error:', err);
       setError(err.message || 'Failed to setup restaurant. Please try again.');
     } finally {
       setIsLoading(false);
@@ -118,7 +118,7 @@ export default function SetupRestaurantPage() {
                 onClick={checkExistingRestaurants}
                 className="mt-2 px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
               >
-                🔍 Check Existing Restaurants
+                Check Existing Restaurants
               </button>
             </div>
           )}

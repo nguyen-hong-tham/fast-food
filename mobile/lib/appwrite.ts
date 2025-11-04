@@ -886,7 +886,10 @@ export const getRestaurantById = async (restaurantId: string) => {
  */
 export const getRestaurantMenu = async (restaurantId: string, category?: string, query?: string) => {
     try {
-        const queries: string[] = [Query.equal('restaurantId', restaurantId)];
+        const queries: string[] = [
+            Query.equal('restaurantId', restaurantId),
+            Query.equal('isAvailable', true) // Only show available items
+        ];
 
         if (category) queries.push(Query.equal('categories', category));
         if (query) queries.push(Query.contains('name', query));

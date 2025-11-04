@@ -42,7 +42,7 @@ export default function AnalyticsPage() {
         [Query.limit(1000)]
       );
 
-      console.log('📊 Total orders in database:', ordersResponse.documents.length);
+      console.log('Total orders in database:', ordersResponse.documents.length);
       
       // Filter client-side by restaurantId (handle relationship object)
       const orders = ordersResponse.documents.filter((order: any) => {
@@ -52,7 +52,7 @@ export default function AnalyticsPage() {
         return orderRestaurantId === restaurant.$id;
       });
 
-      console.log('✅ Filtered orders for analytics:', orders.length);
+      console.log('Filtered orders for analytics:', orders.length);
 
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -84,7 +84,7 @@ export default function AnalyticsPage() {
         monthOrders: monthOrders.length,
       });
     } catch (error) {
-      console.error('❌ Error fetching analytics:', error);
+      console.error('Error fetching analytics:', error);
     } finally {
       setIsLoading(false);
     }
