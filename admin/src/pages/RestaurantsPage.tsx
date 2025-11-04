@@ -158,6 +158,12 @@ export default function RestaurantsPage() {
                     }`}>
                       {restaurant.isActive !== false ? 'Active' : 'Inactive'}
                     </span>
+                    {restaurant.rating && (
+                      <div className="flex items-center gap-1">
+                        <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                        <span className="text-xs font-medium text-gray-700">{restaurant.rating.toFixed(1)}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

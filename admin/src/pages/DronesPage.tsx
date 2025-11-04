@@ -1,6 +1,6 @@
 import { createDrone, deleteDrone, getAllDrones, updateDrone } from '@/lib/api';
 import type { Drone, DroneStatus } from '@/types';
-import { Battery, Edit, Plane, Plus, Search, Trash2, X } from 'lucide-react';
+import { Battery, Edit, Plane, Plus, Search, Trash2, X, RefreshCw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface DroneFormData {
@@ -19,6 +19,7 @@ export default function DronesPage() {
   const [filteredDrones, setFilteredDrones] = useState<Drone[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDrone, setEditingDrone] = useState<Drone | null>(null);
   const [formData, setFormData] = useState<DroneFormData>({
@@ -35,6 +36,19 @@ export default function DronesPage() {
   
   useEffect(() => {
     loadDrones();
+    
+    // Auto-refresh every 30 seconds to catch status changes
+    const interval = setInterval(async () => {
+      try {
+        const data = await getAllDrones(200);
+        setDrones(data);
+        console.log('🔄 Auto-refreshed drones');
+      } catch (error) {
+        console.error('Error auto-refreshing drones:', error);
+      }
+    }, 30000); // 30 seconds
+    
+    return () => clearInterval(interval);
   }, []);
   
   useEffect(() => {
@@ -51,6 +65,20 @@ export default function DronesPage() {
       alert('Failed to load drones');
     } finally {
       setIsLoading(false);
+    }
+  };
+  
+  const handleRefresh = async () => {
+    try {
+      setIsRefreshing(true);
+      const data = await getAllDrones(200);
+      setDrones(data);
+      console.log('✅ Drones refreshed successfully');
+    } catch (error) {
+      console.error('Error refreshing drones:', error);
+      alert('Failed to refresh drones');
+    } finally {
+      setIsRefreshing(false);
     }
   };
   
@@ -213,13 +241,24 @@ export default function DronesPage() {
           <h1 className="text-3xl font-bold text-gray-800">Drone Management</h1>
           <p className="text-gray-500 mt-2">Manage your delivery drone fleet</p>
         </div>
-        <button
-          onClick={() => handleOpenModal()}
-          className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg font-semibold hover:bg-opacity-90 transition-all"
-        >
-          <Plus className="w-5 h-5" />
-          <span>Add Drone</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="flex items-center gap-2 px-4 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-all disabled:opacity-50"
+            title="Refresh drones list"
+          >
+            <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span>Refresh</span>
+          </button>
+          <button
+            onClick={() => handleOpenModal()}
+            className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg font-semibold hover:bg-opacity-90 transition-all"
+          >
+            <Plus className="w-5 h-5" />
+            <span>Add Drone</span>
+          </button>
+        </div>
       </div>
       
       {/* Search Bar */}

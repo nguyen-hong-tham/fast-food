@@ -216,8 +216,8 @@ export default function CustomersPage() {
                     Joined Date
                   </p>
                   <p className="text-gray-700">
-                    {selectedCustomer.$createdAt
-                      ? new Date(selectedCustomer.$createdAt).toLocaleString()
+                    {selectedCustomer.createdAt 
+                      ? new Date(selectedCustomer.createdAt).toLocaleString()
                       : 'N/A'}
                   </p>
                 </div>

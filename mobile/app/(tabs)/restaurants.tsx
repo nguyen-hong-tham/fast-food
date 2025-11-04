@@ -146,15 +146,21 @@ const RestaurantsScreen = () => {
     setSearchQuery('');
   }, []);
 
-  const renderHeader = () => (
+  const renderHeader = () => {
+    const activeFilterCount = 
+      (selectedDistance ? 1 : 0) + 
+      (sortBy !== 'rating' ? 1 : 0) + 
+      (statusFilter !== 'all' ? 1 : 0);
+
+    return (
     <View className={cn(
       "pb-4",
       isDesktop ? "px-20" : "px-4"
     )}>
-      {/* Search Bar - Larger and more prominent for web */}
+      {/* Search Bar */}
       <View 
         className={cn(
-          "flex-row items-center bg-white rounded-xl border border-gray-200 mb-4",
+          "flex-row items-center bg-white rounded-xl border border-gray-200 mb-3",
           isDesktop ? "px-6 py-4 shadow-sm" : "px-4 py-3"
         )}
       >
@@ -165,12 +171,11 @@ const RestaurantsScreen = () => {
           tintColor="#9CA3AF"
         />
         <TextInput
-          className={cn("flex-1", isDesktop ? "text-base" : "text-base")}
+          className={cn("flex-1 text-gray-800", isDesktop ? "text-base" : "text-base")}
           placeholder="Search restaurants, cuisine, or area..."
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholderTextColor="#9CA3AF"
-          style={isDesktop ? { fontSize: 16, height: 24 } : {}}
         />
         {searchQuery.length > 0 && (
           <TouchableOpacity onPress={handleClearSearch}>
@@ -179,45 +184,68 @@ const RestaurantsScreen = () => {
         )}
       </View>
 
-      {/* Filters & Sort - Better styling for desktop */}
+      {/* Filters - Always Visible */}
       <View className={cn(
-        "mb-4 rounded-xl border border-gray-100",
-        isDesktop && "bg-gray-50 p-4"
+        "bg-white rounded-xl border border-gray-200 p-4 mb-3",
+        Platform.OS === 'android' && "elevation-1"
       )}>
-        <Text className={cn(
-          "font-semibold text-gray-700 mb-3",
-          isDesktop ? "text-base" : "text-sm"
-        )}>
-          Filters & Sort
-        </Text>
+        {/* Quick Sort Chips */}
+        <View className="mb-4">
+          <Text className="text-base font-bold text-gray-800 mb-2">Filters</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View className="flex-row" style={{ gap: 8 }}>
+              {[
+                { value: 'rating', label: 'Top Rated' },
+                { value: 'distance', label: 'Nearest', disabled: !userLocation },
+                { value: 'newest', label: 'New' }
+              ].map((option) => (
+                <TouchableOpacity
+                  key={option.value}
+                  disabled={option.disabled}
+                  className={cn(
+                    'flex-row items-center rounded-xl px-4 py-2 border',
+                    option.disabled 
+                      ? 'bg-gray-100 border-gray-200'
+                      : sortBy === option.value 
+                        ? 'bg-amber-500 border-amber-500' 
+                        : 'bg-white border-gray-300'
+                  )}
+                  onPress={() => !option.disabled && setSortBy(option.value as any)}
+                >
+                  <Text className={cn(
+                    'font-semibold text-sm',
+                    option.disabled
+                      ? 'text-gray-400'
+                      : sortBy === option.value ? 'text-white' : 'text-gray-700'
+                  )}>
+                    {option.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
+        </View>
         
-        {/* Distance Row */}
+        {/* Distance Filter */}
         {userLocation && (
           <View className="mb-3">
-            <Text className={cn(
-              "text-gray-600 mb-2",
-              isDesktop ? "text-sm" : "text-xs"
-            )}>
-              Maximum Distance
-            </Text>
+            <Text className="text-sm font-semibold text-gray-700 mb-2">Maximum Distance</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View className="flex-row" style={{ gap: isDesktop ? 12 : 8 }}>
+              <View className="flex-row" style={{ gap: 8 }}>
                 {[2, 5, 10, 20].map((distance) => (
                   <TouchableOpacity
                     key={distance}
                     className={cn(
-                      'rounded-lg border',
-                      isDesktop ? 'px-4 py-2' : 'px-3 py-1.5',
+                      'rounded-lg border px-4 py-2',
                       selectedDistance === distance 
-                        ? 'bg-[#FFF4E6] border-[#FF7A00]' 
+                        ? 'bg-amber-50 border-amber-500' 
                         : 'bg-white border-gray-300'
                     )}
                     onPress={() => handleDistanceFilter(distance)}
                   >
                     <Text className={cn(
-                      'font-medium',
-                      isDesktop ? 'text-sm' : 'text-xs',
-                      selectedDistance === distance ? 'text-[#FF7A00]' : 'text-gray-700'
+                      'font-medium text-sm',
+                      selectedDistance === distance ? 'text-amber-600' : 'text-gray-700'
                     )}>
                       {distance} km
                     </Text>
@@ -227,51 +255,6 @@ const RestaurantsScreen = () => {
             </ScrollView>
           </View>
         )}
-
-        {/* Sort Options */}
-        <View>
-          <Text className={cn(
-            "text-gray-600 mb-2",
-            isDesktop ? "text-sm" : "text-xs"
-          )}>
-            Sort By
-          </Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View className="flex-row" style={{ gap: isDesktop ? 12 : 8 }}>
-              {[
-                { value: 'rating', label: 'Rating'},
-                { value: 'distance', label: 'Distance', disabled: !userLocation },
-                { value: 'name', label: 'Name'},
-                { value: 'newest', label: 'Newest' }
-              ].map((option) => (
-                <TouchableOpacity
-                  key={option.value}
-                  disabled={option.disabled}
-                  className={cn(
-                    'flex-row items-center rounded-lg border',
-                    isDesktop ? 'px-4 py-2' : 'px-3 py-1.5',
-                    option.disabled 
-                      ? 'bg-gray-200 border-gray-300'
-                      : sortBy === option.value 
-                        ? 'bg-[#FFF4E6] border-[#FF7A00]' 
-                        : 'bg-white border-gray-300'
-                  )}
-                  onPress={() => !option.disabled && setSortBy(option.value as any)}
-                >
-                  <Text className={cn(
-                    'font-medium',
-                    isDesktop ? 'text-sm' : 'text-xs',
-                    option.disabled
-                      ? 'text-gray-400'
-                      : sortBy === option.value ? 'text-[#FF7A00]' : 'text-gray-700'
-                  )}>
-                    {option.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </ScrollView>
-        </View>
       </View>
 
       {/* Results Summary */}
@@ -302,7 +285,8 @@ const RestaurantsScreen = () => {
         )}
       </View>
     </View>
-  );
+    );
+  };
 
   if (loading && !refreshing) {
     return (
@@ -367,7 +351,6 @@ const RestaurantsScreen = () => {
               </View>
             ) : (
               <View className="items-center justify-center py-16 px-20">
-                <Text className="text-7xl mb-4">🔍</Text>
                 <Text className="text-xl font-bold text-gray-800 mb-2">
                   No restaurants found
                 </Text>
@@ -406,7 +389,6 @@ const RestaurantsScreen = () => {
             }
             ListEmptyComponent={
               <View className="items-center justify-center py-12">
-                <Text className="text-6xl mb-4">🔍</Text>
                 <Text className="text-lg font-semibold text-gray-800 mb-2">
                   No restaurants found
                 </Text>
