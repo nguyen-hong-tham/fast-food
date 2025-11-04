@@ -54,10 +54,19 @@ const DeliveryMap: React.FC<DeliveryMapProps> = ({
     if (!mapRef.current) return;
     if (coordinates.length === 0) return;
 
-    mapRef.current.fitToCoordinates(coordinates, {
-      edgePadding: { top: 80, bottom: 80, left: 80, right: 80 },
-      animated: true,
-    });
+    // Add delay to ensure map is ready before fitting
+    const timer = setTimeout(() => {
+      try {
+        mapRef.current?.fitToCoordinates(coordinates, {
+          edgePadding: { top: 80, bottom: 80, left: 80, right: 80 },
+          animated: true,
+        });
+      } catch (error) {
+        console.warn('Failed to fit coordinates:', error);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
   }, [coordinates]);
 
   const polylinePoints = useMemo(() => {

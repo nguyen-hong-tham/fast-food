@@ -171,7 +171,7 @@ const PaymentSelectionScreen = () => {
               {method.id === 'vnpay' && selectedMethod === method.id && (
                 <View className="mt-3 pt-3 border-t border-gray-200">
                   <Text className="text-xs text-gray-500">
-                    💳 Supports: Visa, MasterCard, JCB, ATM cards, QR Pay, E-wallets
+                    Supports: Visa, MasterCard, JCB, ATM cards, QR Pay, E-wallets
                   </Text>
                 </View>
               )}
@@ -179,7 +179,7 @@ const PaymentSelectionScreen = () => {
               {method.id === 'cod' && selectedMethod === method.id && (
                 <View className="mt-3 pt-3 border-t border-gray-200">
                   <Text className="text-xs text-gray-500">
-                    💰 Pay with cash when your order is delivered
+                    Pay with cash when your order is delivered
                   </Text>
                 </View>
               )}
@@ -190,7 +190,6 @@ const PaymentSelectionScreen = () => {
         {/* Security Note */}
         <View className="mx-4 mt-6 bg-blue-50 rounded-xl p-4">
           <View className="flex-row items-center mb-2">
-            <Text className="text-lg mr-2">🔒</Text>
             <Text className="font-semibold text-blue-800">Secure Payment</Text>
           </View>
           <Text className="text-sm text-blue-700">

@@ -34,7 +34,7 @@ const SignUp = () => {
             );
             
         } catch(error: any) {
-            console.error('❌ Registration failed:', error.message);
+            console.error('Registration failed:', error.message);
             Alert.alert('Registration Failed', error.message);
         } finally {
             setIsSubmitting(false);

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { databases } from '../lib/appwrite';
+import { databases, client } from '../lib/appwrite';
 import { Query } from 'appwrite';
 import { Plane, Battery, MapPin, Clock, Package, Zap, RefreshCw } from 'lucide-react';
 
@@ -43,18 +43,75 @@ export default function AssignDronePage() {
   const [isAssigning, setIsAssigning] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [newOrderAlert, setNewOrderAlert] = useState<string | null>(null);
 
   useEffect(() => {
     fetchReadyOrders();
     fetchAvailableDrones();
     
-    // Poll every 10 seconds for updates
+    // Subscribe to realtime updates for orders
+    const channel = `databases.${import.meta.env.VITE_APPWRITE_DATABASE_ID}.collections.${import.meta.env.VITE_APPWRITE_ORDERS_COLLECTION_ID}.documents`;
+    
+    let unsubscribe: (() => void) | null = null;
+    
+    try {
+      unsubscribe = client.subscribe(channel, (response) => {
+        try {
+          const payload = response.payload as any;
+          
+          // If an order status changed to 'ready' and has no drone assigned
+          if (payload?.status === 'ready' && !payload?.droneId) {
+            console.log('New order ready for delivery:', payload.$id);
+            
+            // Show notification
+            setNewOrderAlert(`New order #${payload.$id.slice(-8).toUpperCase()} ready for delivery!`);
+            setTimeout(() => setNewOrderAlert(null), 5000);
+            
+            // Play notification sound (optional)
+            try {
+              const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUqjk77RgGwU7k9r0yHUpBSl+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBQ==');
+              audio.volume = 0.3;
+              audio.play().catch(() => {}); // Silently fail if audio not allowed
+            } catch (e) {
+              // Ignore audio errors
+            }
+            
+            fetchReadyOrders(); // Refresh the list
+          }
+          
+          // If an order got assigned a drone or status changed from 'ready'
+          if (payload?.droneId || payload?.status !== 'ready') {
+            console.log('Order assigned or status changed:', payload.$id);
+            fetchReadyOrders(); // Refresh the list
+            fetchAvailableDrones(); // Also refresh drones (one became busy)
+          }
+        } catch (error) {
+          console.error('Error processing order update:', error);
+        }
+      });
+      
+      console.log('Subscribed to order updates');
+    } catch (error) {
+      console.error('Error subscribing to orders:', error);
+    }
+    
+    // Poll every 30 seconds as backup (increased from 10s)
     const interval = setInterval(() => {
       fetchReadyOrders();
       fetchAvailableDrones();
-    }, 10000);
+    }, 30000);
     
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      try {
+        if (unsubscribe) {
+          unsubscribe();
+          console.log('Unsubscribed from order updates');
+        }
+      } catch (error) {
+        console.error('Error unsubscribing:', error);
+      }
+    };
   }, []);
 
   const fetchReadyOrders = async () => {
@@ -259,7 +316,7 @@ export default function AssignDronePage() {
         }
       }
 
-      alert(`✅ Drone assigned successfully! (${type})`);
+      alert(`Drone assigned successfully! (${type})`);
       
       // Refresh lists
       await fetchReadyOrders();
@@ -356,6 +413,31 @@ export default function AssignDronePage() {
               <button
                 onClick={() => setError(null)}
                 className="flex-shrink-0 text-red-600 hover:text-red-500"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* New Order Alert */}
+        {newOrderAlert && (
+          <div className="mb-6 bg-green-50 border-2 border-green-400 rounded-lg p-4 shadow-lg animate-pulse">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                  <Package className="w-5 h-5 text-white" />
+                </div>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-bold text-green-900">🔔 New Order Alert</h3>
+                <p className="mt-1 text-sm font-medium text-green-800">{newOrderAlert}</p>
+              </div>
+              <button
+                onClick={() => setNewOrderAlert(null)}
+                className="flex-shrink-0 text-green-600 hover:text-green-500"
               >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />

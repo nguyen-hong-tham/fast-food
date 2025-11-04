@@ -78,7 +78,7 @@ export const simulateDroneFlight = async ({
   // PHASE 1: Drone flies to restaurant (30%)
   // ========================================
   const phase1Duration = duration * 0.3;
-  const phase1Steps = Math.max(10, Math.floor(phase1Duration / 2500));
+  const phase1Steps = Math.max(15, Math.floor(phase1Duration / 1500)); // Increased steps, reduced interval to 1.5s
   
   // Drone starts from base location (nearby restaurant)
   const droneBaseCoords: Coordinate = {
@@ -173,7 +173,7 @@ export const simulateDroneFlight = async ({
     }
   );
 
-  const phase2Steps = Math.max(20, Math.floor(phase2Duration / 2500));
+  const phase2Steps = Math.max(30, Math.floor(phase2Duration / 1500)); // More steps for smoother animation (1.5s interval)
   const waypointsToCustomer = calculateWaypoints(restaurantCoords, customerCoords, phase2Steps);
 
   console.log('🚁 PHASE 2: Drone delivering to customer...');

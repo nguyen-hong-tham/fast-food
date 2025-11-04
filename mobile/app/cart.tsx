@@ -1,10 +1,11 @@
-import { View, Text, ScrollView, TouchableOpacity, Image, Platform, Alert, FlatList } from 'react-native';
-import React, { useCallback, useMemo, useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Image, Platform, Alert, FlatList, ActivityIndicator } from 'react-native';
+import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useCartStore } from '@/store/cart.store';
 import useAuthStore from '@/store/auth.store';
-import { createOrderWithPayment } from '@/lib/appwrite';
+import { createOrderWithPayment, getRestaurantById } from '@/lib/appwrite';
+import { useDeliveryCalculation } from '@/hooks/useDeliveryCalculation';
 import cn from 'clsx';
 import CartItem from '@/components/CartItem';
 
@@ -23,9 +24,44 @@ const CartScreen = () => {
   
   const user = useAuthStore((state) => state.user);
   const [processing, setProcessing] = useState(false);
+  const [restaurant, setRestaurant] = useState<any>(null);
 
   const total = useMemo(() => getTotalPrice(), [getTotalPrice]);
   const itemCount = useMemo(() => getTotalItems(), [getTotalItems]);
+
+  // Delivery calculation
+  const { 
+    calculation: deliveryCalc, 
+    isCalculating, 
+    calculateFromAddress 
+  } = useDeliveryCalculation();
+
+  const shippingFee = deliveryCalc?.shippingCost || 0;
+  const grandTotal = total + shippingFee;
+
+  // Fetch restaurant and calculate delivery
+  useEffect(() => {
+    const fetchRestaurantAndCalculateDelivery = async () => {
+      if (!restaurantId || !user?.address_home) return;
+
+      try {
+        const restaurantData = await getRestaurantById(restaurantId);
+        setRestaurant(restaurantData);
+        
+        if (restaurantData?.latitude && restaurantData?.longitude) {
+          await calculateFromAddress(
+            restaurantData.latitude,
+            restaurantData.longitude,
+            user.address_home
+          );
+        }
+      } catch (error) {
+        console.error('Failed to fetch restaurant:', error);
+      }
+    };
+
+    fetchRestaurantAndCalculateDelivery();
+  }, [restaurantId, user?.address_home, calculateFromAddress]);
 
   const handleQuantityIncrease = useCallback((itemId: string, customizations: any[], notes?: string) => {
     increaseQty(itemId, customizations || [], notes);
@@ -294,15 +330,29 @@ const CartScreen = () => {
               
               <View className="flex-row justify-between">
                 <Text className="text-gray-600">Delivery Fee:</Text>
-                <Text className="font-semibold text-green-600">Free</Text>
+                {isCalculating ? (
+                  <ActivityIndicator size="small" color="#FF7A00" />
+                ) : (
+                  <Text className="font-semibold text-gray-800">
+                    {shippingFee > 0 ? `${shippingFee.toLocaleString('vi-VN')}₫` : 'Calculating...'}
+                  </Text>
+                )}
               </View>
+
+              {deliveryCalc && (
+                <View className="bg-amber-50 p-2 rounded-lg mt-2">
+                  <Text className="text-xs text-gray-600">
+                    📍 Distance: {deliveryCalc.formattedDistance} • ⏱️ {deliveryCalc.formattedTime}
+                  </Text>
+                </View>
+              )}
               
               <View className="h-px bg-gray-200 my-2" />
               
               <View className="flex-row justify-between items-center">
                 <Text className="text-lg font-bold text-gray-800">Total:</Text>
                 <Text className="text-xl font-bold text-amber-600">
-                  {total.toLocaleString('vi-VN')}₫
+                  {grandTotal.toLocaleString('vi-VN')}₫
                 </Text>
               </View>
             </View>
@@ -315,13 +365,18 @@ const CartScreen = () => {
         <TouchableOpacity
           className={cn(
             'py-4 px-6 rounded-xl',
-            processing ? 'bg-gray-400' : 'bg-amber-500'
+            processing || isCalculating ? 'bg-gray-400' : 'bg-amber-500'
           )}
           onPress={handleCheckout}
-          disabled={processing}
+          disabled={processing || isCalculating}
         >
           <Text className="text-white font-bold text-center text-lg">
-            {processing ? 'Processing...' : `Checkout • ${total.toLocaleString('vi-VN')}₫`}
+            {processing 
+              ? 'Processing...' 
+              : isCalculating
+                ? 'Calculating...'
+                : `Checkout • ${grandTotal.toLocaleString('vi-VN')}₫`
+            }
           </Text>
         </TouchableOpacity>
       </View>

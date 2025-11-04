@@ -165,7 +165,7 @@ const OrderTrackingScreen = () => {
           return merged;
         });
       } catch (error) {
-        console.error('❌ Error processing order update:', error);
+        console.error('Error processing order update:', error);
       }
     });
 
@@ -174,7 +174,7 @@ const OrderTrackingScreen = () => {
       try {
         unsubscribe?.();
       } catch (error) {
-        console.error('❌ Error unsubscribing from order:', error);
+        console.error('Error unsubscribing from order:', error);
       }
     };
   }, [trackingOrderId]);
@@ -200,7 +200,7 @@ const OrderTrackingScreen = () => {
           setEtaMinutes(0);
         }
       } catch (error) {
-        console.error('❌ Error processing drone event:', error);
+        console.error('Error processing drone event:', error);
       }
     });
 
@@ -209,7 +209,7 @@ const OrderTrackingScreen = () => {
       try {
         unsubscribe?.();
       } catch (error) {
-        console.error('❌ Error unsubscribing from drone events:', error);
+        console.error('Error unsubscribing from drone events:', error);
       }
     };
   }, [trackingOrderId]);
@@ -221,15 +221,23 @@ const OrderTrackingScreen = () => {
     if (simulationState !== 'idle') return;
     if (hasRealtimeProgress) return;
     
-    // ✅ Trigger simulation when restaurant accepts order (status = preparing)
-    // Remove 'picked_up' since it's not used anymore
+    // Trigger simulation when order is active
     const shouldStartSimulation = 
       order.status === 'preparing' || 
       order.status === 'ready' || 
       order.status === 'delivering';
-    if (!shouldStartSimulation) return;
+    
+    if (!shouldStartSimulation) {
+      console.log('⏸️ Simulation not triggered. Status:', order.status);
+      return;
+    }
 
-    console.log('🚁 Starting drone simulation for order:', order.$id, 'status:', order.status);
+    console.log('🚁 Starting drone simulation:');
+    console.log('  - Order ID:', order.$id);
+    console.log('  - Status:', order.status);
+    console.log('  - Drone ID:', order.droneId || 'Not assigned yet');
+    console.log('  - Restaurant:', restaurantCoords);
+    console.log('  - Customer:', customerCoords);
 
     setSimulationState('running');
     setCountdownActive(true);
@@ -239,6 +247,9 @@ const OrderTrackingScreen = () => {
       latitude: restaurantCoords.latitude + 0.005,
       longitude: restaurantCoords.longitude + 0.005,
     };
+    
+    console.log('📍 Initial drone position:', droneBaseCoords);
+    
     setDronePath([droneBaseCoords]);
     setDroneCoords(droneBaseCoords);
     
@@ -256,6 +267,9 @@ const OrderTrackingScreen = () => {
       duration: SIMULATION_DURATION,
       onProgress: ({ coordinate, progress, phase }) => {
         if (!isMounted) return;
+        
+        console.log(`🚁 Drone update: ${phase} - ${Math.round(progress * 100)}%`, coordinate);
+        
         setDroneCoords(coordinate);
         setDronePath((prev) => [...prev, coordinate]);
         setCurrentPhase(phase);
@@ -270,24 +284,17 @@ const OrderTrackingScreen = () => {
         // Update ETA based on progress
         const remainingTime = Math.max(0, (1 - progress) * (SIMULATION_DURATION / 60000));
         setEtaMinutes(remainingTime);
-        
-        // Log phase changes
-        if (phase === 'to_restaurant' && progress < 0.1) {
-          console.log('🚁 Phase 1: Drone heading to restaurant...');
-        } else if (phase === 'to_customer' && progress > 0.3 && progress < 0.35) {
-          console.log('🚁 Phase 2: Drone heading to customer...');
-        }
       },
     })
       .then(() => {
         if (!isMounted) return;
-        console.log('✅ Drone simulation completed successfully');
+        console.log('Drone simulation completed successfully');
         setSimulationState('completed');
         setCountdownActive(false);
         setEtaMinutes(0);
       })
       .catch((err) => {
-        console.error('❌ Drone simulation failed', err);
+        console.error('Drone simulation failed', err);
         if (!isMounted) return;
         setSimulationState('idle');
         setCountdownActive(false);
@@ -343,165 +350,261 @@ const OrderTrackingScreen = () => {
     );
   }
 
+  // Helper function to get status text in English
+  const getStatusText = () => {
+    switch (order.status) {
+      case 'pending':
+        return 'Awaiting Confirmation';
+      case 'preparing':
+        return 'Preparing Your Food';
+      case 'ready':
+        return 'Ready for Pickup';
+      case 'delivering':
+        return 'Out for Delivery';
+      case 'delivered':
+        return 'Delivered';
+      case 'cancelled':
+        return 'Cancelled';
+      default:
+        return 'Processing';
+    }
+  };
+
+  // Calculate ETA text
+  const getEtaText = () => {
+    if (etaMinutes && etaMinutes > 0) {
+      const minutes = Math.floor(etaMinutes);
+      return `${minutes} - ${minutes + 4} mins`;
+    }
+    if (deliveryCalc?.estimatedTime) {
+      const minutes = Math.floor(deliveryCalc.estimatedTime);
+      return `${minutes} - ${minutes + 4} mins`;
+    }
+    return '19 - 23 mins';
+  };
+
   return (
-    <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
       <CustomHeader title="Order Tracking" />
-      <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-        <View className="px-6 py-4 space-y-4">
-          {/* Order ID & Countdown */}
-          <View className="flex-row items-center justify-between">
-            <View>
-              <Text className="text-xs uppercase tracking-wide text-gray-500 font-quicksand-medium">Order</Text>
-              <Text className="text-2xl font-quicksand-bold text-dark-100">#{order.$id.slice(-6).toUpperCase()}</Text>
+      
+      {/* Map - Full width at top */}
+      <View style={{ height: 350 }}>
+        <DeliveryMap
+          restaurant={restaurantCoords}
+          customer={customerCoords}
+          drone={droneCoords}
+          path={dronePath}
+          etaMinutes={etaMinutes}
+        />
+        
+        {/* Debug Info Overlay (Remove in production) */}
+        {__DEV__ && (
+          <View className="absolute top-2 left-2 bg-black/70 rounded-lg p-2">
+            <Text className="text-white text-xs font-mono">
+              Status: {order.status}
+            </Text>
+            <Text className="text-white text-xs font-mono">
+              Phase: {currentPhase} ({Math.round(phaseProgress)}%)
+            </Text>
+            <Text className="text-white text-xs font-mono">
+              Drone: {droneCoords ? '✓ Visible' : '✗ Hidden'}
+            </Text>
+            <Text className="text-white text-xs font-mono">
+              Sim: {simulationState}
+            </Text>
+          </View>
+        )}
+      </View>
+
+      <ScrollView contentContainerStyle={{ paddingBottom: 20 }} showsVerticalScrollIndicator={false}>
+        <View className="px-4 py-4 space-y-3">
+          
+          {/* ETA Card with Progress Bar */}
+          <View className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+            <View className="mb-3">
+              <Text className="text-lg font-quicksand-bold text-gray-900">
+                Your order will arrive in {getEtaText()}
+              </Text>
             </View>
-            {etaMinutes !== undefined && etaMinutes !== null && etaMinutes > 0 && (
-              <View className="bg-dark-100/90 rounded-2xl px-5 py-3 items-center justify-center shadow-lg">
-                <Text className="text-xs font-quicksand-medium text-white/70 uppercase tracking-wide">Arrival Time</Text>
-                <Text className="text-3xl font-quicksand-bold text-white mt-1">
-                  {String(Math.floor(etaMinutes)).padStart(2, '0')}:{String(Math.floor((etaMinutes % 1) * 60)).padStart(2, '0')}
+            
+            {/* Progress Bar */}
+            <View className="bg-gray-200 rounded-full h-2 overflow-hidden mb-2">
+              <View 
+                className="bg-green-500 h-full rounded-full" 
+                style={{ 
+                  width: order.status === 'delivered' ? '100%' : 
+                         order.status === 'delivering' ? `${Math.min(phaseProgress, 100)}%` :
+                         order.status === 'ready' ? '50%' :
+                         order.status === 'preparing' ? '25%' : '10%'
+                }}
+              />
+            </View>
+          </View>
+
+          {/* Drone Info Card */}
+          <View className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+            <Text className="text-base font-quicksand-bold text-gray-900 mb-4">
+              Delivery Drone Information
+            </Text>
+            
+            {order.droneId ? (
+              <>
+                <Text className="text-sm text-gray-600 font-quicksand-medium mb-3">
+                  {currentPhase === 'to_restaurant' && 'Drone is flying to restaurant'}
+                  {currentPhase === 'to_customer' && 'Drone is delivering to you'}
+                  {currentPhase === 'idle' && order.status === 'ready' && 'Drone is waiting at restaurant'}
+                  {currentPhase === 'idle' && order.status === 'preparing' && 'Preparing your food'}
+                  {currentPhase === 'idle' && order.status === 'pending' && 'Awaiting confirmation'}
+                </Text>
+                
+                <View className="flex-row items-center justify-between">
+                  <View className="flex-row items-center flex-1">
+                    {/* Drone Avatar */}
+                    <View className="w-12 h-12 rounded-full bg-blue-100 items-center justify-center mr-3">
+                      <Text className="text-2xl">🚁</Text>
+                    </View>
+                    
+                    {/* Drone Info */}
+                    <View className="flex-1">
+                      <Text className="text-base font-quicksand-bold text-gray-900">
+                        Drone #{order.droneId.slice(-4).toUpperCase()}
+                      </Text>
+                      <View className="flex-row items-center mt-1">
+                        <Text className="text-sm text-amber-500 font-quicksand-semibold mr-1">5.0</Text>
+                        <Text className="text-xl text-amber-400">★</Text>
+                      </View>
+                      {/* Show current phase progress */}
+                      {currentPhase !== 'idle' && (
+                        <View className="mt-2">
+                          <View className="bg-gray-200 rounded-full h-1.5 w-32">
+                            <View 
+                              className="bg-blue-500 h-full rounded-full" 
+                              style={{ width: `${Math.min(phaseProgress, 100)}%` }}
+                            />
+                          </View>
+                          <Text className="text-xs text-gray-500 mt-1">
+                            {Math.round(phaseProgress)}% completed
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                  
+                  {/* Action Buttons */}
+                  <View className="flex-row space-x-2">
+                    {restaurant?.phone && (
+                      <TouchableOpacity
+                        className="w-12 h-12 rounded-full bg-gray-100 items-center justify-center"
+                        activeOpacity={0.7}
+                        onPress={handleCallRestaurant}
+                      >
+                        <Image source={icons.phone} className="w-6 h-6" tintColor="#1F2937" />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </View>
+              </>
+            ) : (
+              <View className="items-center py-4">
+                <Text className="text-2xl mb-2">🔍</Text>
+                <Text className="text-sm text-gray-500 font-quicksand-medium text-center">
+                  Looking for available drone...
                 </Text>
               </View>
             )}
           </View>
 
-          {/* Drone Status Card */}
-          {(order.status === 'preparing' || order.status === 'ready' || order.status === 'delivering') && (
-            <View className="bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl p-4 shadow-lg">
-              <View className="flex-row items-center justify-between mb-3">
-                <View className="flex-row items-center">
-                  <View className="bg-white/20 rounded-full p-2 mr-3">
-                    <Text className="text-2xl">🚁</Text>
-                  </View>
-                  <View>
-                    <Text className="text-white font-quicksand-bold text-lg">
-                      {currentPhase === 'to_restaurant' && 'Flying to Restaurant'}
-                      {currentPhase === 'to_customer' && 'Delivering to You'}
-                      {currentPhase === 'idle' && order.status === 'ready' && 'At Restaurant'}
-                    </Text>
-                    <Text className="text-white/80 font-quicksand-medium text-sm">
-                      {currentPhase === 'to_restaurant' && `${Math.round(phaseProgress)}% of journey to restaurant`}
-                      {currentPhase === 'to_customer' && `${Math.round(phaseProgress)}% of delivery journey`}
-                      {currentPhase === 'idle' && order.status === 'ready' && 'Waiting for pickup'}
-                    </Text>
-                  </View>
-                </View>
+          {/* Delivery Address Card */}
+          <View className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+            <View className="flex-row items-start">
+              <View className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center mr-3">
+                <Text className="text-lg">📍</Text>
               </View>
               
-              {/* Progress Bar */}
-              {currentPhase !== 'idle' && (
-                <View className="bg-white/20 rounded-full h-2 overflow-hidden">
-                  <View 
-                    className="bg-white h-full rounded-full" 
-                    style={{ width: `${phaseProgress}%` }}
-                  />
+              <View className="flex-1">
+                <Text className="text-base font-quicksand-bold text-gray-900 mb-1">
+                  Delivery Address
+                </Text>
+                <Text className="text-sm text-gray-600 font-quicksand-medium leading-5">
+                  {order.deliveryAddress}
+                </Text>
+                {order.phone && (
+                  <View className="flex-row items-center mt-2">
+                    <Text className="text-sm text-gray-500 font-quicksand-medium">
+                      {order.phone}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          </View>
+
+          {/* Order Status Card */}
+          <View className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+            <Text className="text-base font-quicksand-bold text-gray-900 mb-3">
+              Order Status
+            </Text>
+            <View className="bg-green-50 rounded-xl px-4 py-3">
+              <Text className="text-sm font-quicksand-semibold text-green-700">
+                {getStatusText()}
+              </Text>
+            </View>
+          </View>
+
+          {/* Restaurant Info Card */}
+          {restaurant && (
+            <View className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+              <View className="flex-row items-center">
+                <View className="w-10 h-10 rounded-full bg-amber-100 items-center justify-center mr-3">
+                  <Text className="text-lg">🍽️</Text>
                 </View>
-              )}
+                <View className="flex-1">
+                  <Text className="text-base font-quicksand-bold text-gray-900">
+                    {restaurant.name}
+                  </Text>
+                  {deliveryCalc && (
+                    <Text className="text-sm text-gray-600 font-quicksand-medium mt-1">
+                      {deliveryCalc.formattedDistance} • {deliveryCalc.formattedTime}
+                    </Text>
+                  )}
+                </View>
+              </View>
             </View>
           )}
 
-          {/* Map */}
-          <View className="rounded-3xl overflow-hidden shadow-md">
-            <DeliveryMap
-              restaurant={restaurantCoords}
-              customer={customerCoords}
-              drone={droneCoords}
-              path={dronePath}
-              etaMinutes={etaMinutes}
-            />
-          </View>
-
-          {/* Delivery Progress */}
-          <View className="rounded-3xl bg-white p-6 shadow-sm">
-            <Text className="text-xl font-quicksand-bold text-dark-100 mb-5">Delivery Progress</Text>
-            <StatusTimeline current={order.status} />
-          </View>
-
-          {/* Delivery Details */}
-          <View className="rounded-3xl bg-white p-6 shadow-sm space-y-4">
-            <Text className="text-xl font-quicksand-bold text-dark-100">Delivery Details</Text>
-            
-            <View className="bg-gray-50 rounded-2xl p-4">
-              <Text className="text-sm font-quicksand-semibold text-gray-500 uppercase tracking-wide mb-1">Delivery Address</Text>
-              <Text className="text-base font-quicksand-medium text-dark-100">{order.deliveryAddress}</Text>
-            </View>
-            
-            {restaurant && (
-              <View className="bg-gray-50 rounded-2xl p-4">
-                <Text className="text-sm font-quicksand-semibold text-gray-500 uppercase tracking-wide mb-1">Restaurant</Text>
-                <View className="flex-row items-center justify-between">
-                  <Text className="text-base font-quicksand-medium text-dark-100 flex-1">{restaurant.name}</Text>
-                  <TouchableOpacity
-                    className="flex-row items-center bg-primary rounded-xl px-4 py-2"
-                    activeOpacity={0.7}
-                    onPress={handleCallRestaurant}
-                  >
-                    <Image source={icons.phone} className="mr-2 h-4 w-4" tintColor="#FFFFFF" />
-                    <Text className="text-sm font-quicksand-semibold text-white">Call</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            )}
-            
-            {/* Payment Method */}
-            <View className="bg-gray-50 rounded-2xl p-4">
-              <Text className="text-sm font-quicksand-semibold text-gray-500 uppercase tracking-wide mb-1">Payment Method</Text>
-              <View className="flex-row items-center">
-                <Text className="text-lg mr-2">
-                  {order.paymentMethod === 'vnpay' ? '💳' : '💵'}
-                </Text>
-                <Text className="text-base font-quicksand-medium text-dark-100">
-                  {order.paymentMethod === 'vnpay' ? 'VNPay' : 'Cash on Delivery'}
-                </Text>
-              </View>
-            </View>
-
-            {/* Delivery Calculation Info */}
-            {deliveryCalc && (
-              <View className="mt-4 pt-4 border-t border-gray-200">
-                <Text className="text-sm text-gray-500 mb-2">Delivery Info</Text>
-                <View className="flex-row justify-between items-center mb-1">
-                  <Text className="text-sm text-gray-600">📍 Distance</Text>
-                  <Text className="text-sm font-quicksand-medium text-dark-100">{deliveryCalc.formattedDistance}</Text>
-                </View>
-                <View className="flex-row justify-between items-center mb-1">
-                  <Text className="text-sm text-gray-600">⏰ Estimated Time</Text>
-                  <Text className="text-sm font-quicksand-medium text-primary">{deliveryCalc.formattedTime}</Text>
-                </View>
-                <View className="flex-row justify-between items-center">
-                  <Text className="text-sm text-gray-600">💰 Shipping Fee</Text>
-                  <Text className="text-sm font-quicksand-medium text-green-600">{deliveryCalc.formattedCost}</Text>
-                </View>
-              </View>
-            )}
-          </View>
-
           {/* Order Items */}
-          <View className="rounded-3xl bg-white p-6 shadow-sm">
-            <Text className="text-xl font-quicksand-bold text-dark-100 mb-4">Order Items</Text>
-            {items.length === 0 && (
-              <Text className="text-sm text-gray-500">No items available.</Text>
-            )}
-            {items.map((item, index) => (
-              <View key={`${item.menuItemId}-${index}`} className="mb-4 last:mb-0 flex-row bg-gray-50 rounded-2xl p-3">
-                <Image
-                  source={item.image_url ? { uri: item.image_url } : icons.bag}
-                  className="h-20 w-20 rounded-xl bg-gray-100"
-                  resizeMode={item.image_url ? 'cover' : 'contain'}
-                />
-                <View className="ml-4 flex-1 justify-center">
-                  <Text className="text-base font-quicksand-bold text-dark-100">{item.name}</Text>
-                  <Text className="mt-1 text-sm text-gray-500 font-quicksand-medium">Qty: {item.quantity}</Text>
-                  {item.notes && (
-                    <Text className="mt-1 text-xs text-gray-600 italic font-quicksand-regular">
-                      📝 {item.notes}
+          {items.length > 0 && (
+            <View className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+              <Text className="text-base font-quicksand-bold text-gray-900 mb-3">
+                Order Details
+              </Text>
+              {items.map((item, index) => (
+                <View key={`${item.menuItemId}-${index}`} className="mb-3 last:mb-0">
+                  <View className="flex-row justify-between items-start">
+                    <View className="flex-1">
+                      <Text className="text-sm font-quicksand-semibold text-gray-900">
+                        {item.quantity}x {item.name}
+                      </Text>
+                      {item.notes && (
+                        <Text className="text-xs text-gray-500 font-quicksand-regular mt-1">
+                          {item.notes}
+                        </Text>
+                      )}
+                    </View>
+                    <Text className="text-sm font-quicksand-bold text-gray-900 ml-3">
+                      {(item.price * item.quantity).toLocaleString('vi-VN')}₫
                     </Text>
-                  )}
-                  <Text className="mt-2 text-base font-quicksand-bold text-primary">
-                    {(item.price * item.quantity).toLocaleString('vi-VN')}₫
-                  </Text>
+                  </View>
                 </View>
-              </View>
-            ))}
+              ))}
+            </View>
+          )}
+
+          {/* Order ID */}
+          <View className="items-center py-2">
+            <Text className="text-xs text-gray-400 font-quicksand-medium">
+              Order ID: #{order.$id.slice(-8).toUpperCase()}
+            </Text>
           </View>
         </View>
       </ScrollView>

@@ -45,7 +45,7 @@ export default function OrdersPage() {
 
     try {
       setIsLoading(true);
-      console.log('🔍 Fetching orders for restaurant:', restaurant.$id);
+      console.log('Fetching orders for restaurant:', restaurant.$id);
       
       // Fetch all orders first (because restaurantId is a relationship)
       const response = await databases.listDocuments(
@@ -57,7 +57,7 @@ export default function OrdersPage() {
         ]
       );
 
-      console.log('📊 Total orders:', response.documents.length);
+      console.log('Total orders:', response.documents.length);
       
       // Filter client-side by restaurantId (handle relationship object)
       const filtered = response.documents.filter((order: any) => {
@@ -68,10 +68,60 @@ export default function OrdersPage() {
         return orderRestaurantId === restaurant.$id;
       });
       
-      console.log('✅ Filtered orders for this restaurant:', filtered.length);
-      setOrders(filtered as any);
+      console.log('Filtered orders for this restaurant:', filtered.length);
+      
+      // Calculate total amount for each order immediately to fix 0₫ display issue
+      const ordersWithCalculatedTotals = await Promise.all(
+        filtered.map(async (order: any) => {
+          // If order already has correct total, skip calculation
+          if (order.totalAmount && order.totalAmount > 0) {
+            return order;
+          }
+          
+          try {
+            // Fetch order items
+            const itemsResponse = await databases.listDocuments(
+              config.appwrite.databaseId,
+              config.appwrite.orderItemsCollectionId,
+              [Query.limit(100)]
+            );
+            
+            // Filter items for this order
+            const orderItems = itemsResponse.documents.filter((item: any) => {
+              const itemOrderId = typeof item.orderId === 'object' ? item.orderId.$id : item.orderId;
+              return itemOrderId === order.$id;
+            });
+            
+            // Calculate total
+            const calculatedTotal = orderItems.reduce((sum: number, item: any) => {
+              return sum + (item.subtotal || 0);
+            }, 0);
+            
+            // Update in database if needed
+            if (calculatedTotal > 0 && order.totalAmount !== calculatedTotal) {
+              try {
+                await databases.updateDocument(
+                  config.appwrite.databaseId,
+                  config.appwrite.ordersCollectionId,
+                  order.$id,
+                  { totalAmount: calculatedTotal }
+                );
+              } catch (err) {
+                console.error('Failed to update total:', err);
+              }
+            }
+            
+            return { ...order, totalAmount: calculatedTotal || order.totalAmount };
+          } catch (err) {
+            console.error('Error calculating total for order:', order.$id, err);
+            return order;
+          }
+        })
+      );
+      
+      setOrders(ordersWithCalculatedTotals as any);
     } catch (error: any) {
-      console.error('❌ Error fetching orders:', error);
+      console.error('Error fetching orders:', error);
     } finally {
       setIsLoading(false);
     }
@@ -82,7 +132,7 @@ export default function OrdersPage() {
     setIsLoadingItems(true);
     
     try {
-      console.log('🔍 Fetching order items for order:', order.$id);
+      console.log('Fetching order items for order:', order.$id);
       
       // Fetch all order items first (orderId might be a relationship)
       const response = await databases.listDocuments(
@@ -93,18 +143,18 @@ export default function OrdersPage() {
         ]
       );
 
-      console.log('📊 Total order items in database:', response.documents.length);
+      console.log('Total order items in database:', response.documents.length);
       
       // Filter client-side by orderId (handle relationship object)
       const filtered = response.documents.filter((item: any) => {
         const itemOrderId = typeof item.orderId === 'object' 
           ? item.orderId.$id 
           : item.orderId;
-        console.log('🔍 Comparing item orderId:', itemOrderId, 'with:', order.$id);
+        console.log('Comparing item orderId:', itemOrderId, 'with:', order.$id);
         return itemOrderId === order.$id;
       });
 
-      console.log('✅ Order items for this order:', filtered.length);
+      console.log('Order items for this order:', filtered.length);
       setOrderItems(filtered as any);
 
       // Calculate total from order items
@@ -112,8 +162,8 @@ export default function OrdersPage() {
         return sum + (item.subtotal || 0);
       }, 0);
 
-      console.log('💰 Order totalAmount from DB:', order.totalAmount);
-      console.log('💰 Calculated total from items:', calculatedTotal);
+      console.log('Order totalAmount from DB:', order.totalAmount);
+      console.log('Calculated total from items:', calculatedTotal);
 
       // Always update selectedOrder with calculated total for display
       const updatedOrder = { ...order, totalAmount: calculatedTotal };
@@ -128,7 +178,7 @@ export default function OrdersPage() {
 
       // Update order in database if different and calculatedTotal > 0
       if (order.totalAmount !== calculatedTotal && calculatedTotal > 0) {
-        console.log('⚠️ Total amount mismatch! Updating order in database...');
+        console.log('Total amount mismatch! Updating order in database...');
         try {
           await databases.updateDocument(
             config.appwrite.databaseId,
@@ -136,14 +186,14 @@ export default function OrdersPage() {
             order.$id,
             { totalAmount: calculatedTotal }
           );
-          console.log('✅ Order total amount updated in database');
+          console.log('Order total amount updated in database');
         } catch (updateError: any) {
-          console.error('❌ Error updating order total:', updateError);
+          console.error('Error updating order total:', updateError);
           // Don't block the UI if update fails
         }
       }
     } catch (error: any) {
-      console.error('❌ Error fetching order items:', error);
+      console.error(' Error fetching order items:', error);
       alert('Failed to load order details: ' + error.message);
     } finally {
       setIsLoadingItems(false);
@@ -157,7 +207,7 @@ export default function OrdersPage() {
 
     setIsUpdating(true);
     try {
-      console.log('🔄 Updating order status:', orderId, 'to', newStatus);
+      console.log('Updating order status:', orderId, 'to', newStatus);
       
       // Validate status value matches Appwrite enum
       const validStatuses = ['pending', 'confirmed', 'preparing', 'ready', 'picked_up', 'delivering', 'delivered', 'cancelled'];
@@ -169,7 +219,7 @@ export default function OrdersPage() {
         status: newStatus
       };
       
-      console.log('📤 Sending update data:', updateData);
+      console.log('Sending update data:', updateData);
       
       await databases.updateDocument(
         config.appwrite.databaseId,
@@ -178,7 +228,7 @@ export default function OrdersPage() {
         updateData
       );
 
-      console.log('✅ Order status updated successfully');
+      console.log('Order status updated successfully');
       
       // Refresh orders to get latest data
       await fetchOrders();
@@ -190,7 +240,7 @@ export default function OrdersPage() {
 
       alert('Order status updated successfully!');
     } catch (error: any) {
-      console.error('❌ Error updating order status:', error);
+      console.error('Error updating order status:', error);
       console.error('Error details:', {
         message: error.message,
         code: error.code,
@@ -590,7 +640,7 @@ export default function OrdersPage() {
                   )}
                   {(selectedOrder.status === 'ready' || selectedOrder.status === 'picked_up') && (
                     <div className="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg font-medium">
-                      🚁 Drone is delivering your order...
+                      Drone is delivering your order...
                     </div>
                   )}
                   <button

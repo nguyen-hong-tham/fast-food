@@ -14,7 +14,7 @@ interface ExtendedHeaderProps extends CustomHeaderProps {
 const CustomHeader = ({ 
     title, 
     showBackButton = true, 
-    showSearchButton = true,
+    showSearchButton = false, // Changed default to false
     onBackPress,
     centered = false
 }: ExtendedHeaderProps) => {
