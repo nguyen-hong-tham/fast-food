@@ -76,7 +76,7 @@ sgu_cnpm_foodfast/
 **Công nghệ:**
 - React + TypeScript  
 - Vite, TailwindCSS  
-- Firebase (Auth, Firestore, Cloud Functions)
+- Appwrite (Auth, Database, Storage, Realtime)
 
 ---
 
@@ -114,13 +114,13 @@ sgu_cnpm_foodfast/
 ---
 
 ### 4. **Cloud Functions** (`/functions`)
-> Chứa logic backend và API cho toàn hệ thống.
+> Chứa Appwrite Cloud Functions cho logic backend.
 
 **Chức năng:**
-- Xử lý thanh toán  
-- Gửi thông báo  
+- Gửi thông báo push  
+- Xử lý webhook events  
 - Quản lý drone giao hàng *(dự kiến)*  
-- Xử lý dữ liệu và logs  
+- Background tasks và automation  
 
 ---
 
@@ -129,7 +129,7 @@ sgu_cnpm_foodfast/
 | Loại | Công Nghệ |
 |------|------------|
 | **Frontend** | React, React Native, TypeScript, TailwindCSS, Vite |
-| **Backend** | Firebase (Auth, Firestore, Functions, Storage, Messaging) |
+| **Backend** | Appwrite Cloud (Auth, Database, Storage, Realtime, Functions) |
 | **State Management** | Zustand |
 | **Dev Tools** | ESLint, Prettier, Git |
 
@@ -140,7 +140,7 @@ sgu_cnpm_foodfast/
 - Node.js ≥ 18.x  
 - npm hoặc yarn  
 - Expo CLI (cho mobile app)  
-- Firebase CLI  
+- Appwrite Cloud account  
 - Git
 
 ---
@@ -159,7 +159,7 @@ cd sgu_cnpm_foodfast
 ```bash
 cd admin
 npm install
-cp .env.example .env   # Cấu hình Firebase
+cp .env.example .env   # Cấu hình Appwrite
 npm run dev
 ```
 
@@ -167,6 +167,7 @@ npm run dev
 ```bash
 cd restaurant
 npm install
+cp .env.example .env   # Cấu hình Appwrite
 npm run dev
 ```
 
@@ -174,15 +175,15 @@ npm run dev
 ```bash
 cd mobile
 npm install
+cp .env.example .env   # Cấu hình Appwrite
 npx expo start
 ```
 
 #### Cloud Functions
 ```bash
-cd functions
+cd functions/send-notification
 npm install
-firebase login
-firebase deploy --only functions
+# Deploy lên Appwrite Cloud (xem README.md trong thư mục)
 ```
 
 ---
