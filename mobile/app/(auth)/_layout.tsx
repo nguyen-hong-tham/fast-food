@@ -29,13 +29,13 @@ export default function AuthLayout() {
                                         </View>
                                         <Text className="text-4xl font-bold text-white mb-4">FoodFast</Text>
                                         <Text className="text-xl text-white/90 text-center mb-8">
-                                            Order amazing food{'\n'}delivered by drone 🚁
+                                            Order amazing food{'\n'}delivered by drone
                                         </Text>
                                         <View className="bg-white/20 rounded-2xl p-6 backdrop-blur">
                                             <Text className="text-white text-center text-base">
-                                                ✨ Fast delivery with drones{'\n'}
-                                                🍽️ 100+ restaurants{'\n'}
-                                                🎉 Special offers daily
+                                                Fast delivery with drones{'\n'}
+                                                100+ restaurants{'\n'}
+                                                Special offers daily
                                             </Text>
                                         </View>
                                     </View>

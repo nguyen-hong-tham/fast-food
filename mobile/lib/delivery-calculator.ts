@@ -7,16 +7,16 @@ import { calculateDistance } from './appwrite';
 
 // Cấu hình delivery
 export const DELIVERY_CONFIG = {
-  // Thời gian: 1km = 5 phút
-  TIME_PER_KM: 5, // minutes
+  // Thời gian: 1km = 0.5 phút (30 giây)
+  TIME_PER_KM: 0.5, // minutes
   
-  // Phí ship: 6k/1km
-  COST_PER_KM: 6000, // VND
+  // Phí ship: 3k/1km
+  COST_PER_KM: 3000, // VND
   
   // Phí tối thiểu (dưới 1km vẫn tính 1km)
   MIN_DISTANCE: 1, // km
-  MIN_COST: 6000, // VND
-  MIN_TIME: 5, // minutes
+  MIN_COST: 3000, // VND
+  MIN_TIME: 0.5, // minutes (30 seconds)
   
   // Thời gian chuẩn bị đơn hàng (cooking time)
   PREPARATION_TIME: 15, // minutes

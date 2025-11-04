@@ -5,11 +5,11 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 // Pages
 import Layout from '@/components/Layout';
 import CustomersPage from '@/pages/CustomersPage';
+import RestaurantsPage from '@/pages/RestaurantsPage';
 import DashboardPage from '@/pages/DashboardPage';
 import DronesPage from '@/pages/DronesPage';
 import LoginPage from '@/pages/LoginPage';
 import OrdersPage from '@/pages/OrdersPage';
-import ProductsPage from '@/pages/ProductsPage';
 import AssignDronePage from '@/pages/AssignDronePage';
 
 // Protected Route Component
@@ -53,7 +53,7 @@ function App() {
           <Route index element={<DashboardPage />} />
           <Route path="orders" element={<OrdersPage />} />
           <Route path="customers" element={<CustomersPage />} />
-          <Route path="products" element={<ProductsPage />} />
+          <Route path="restaurants" element={<RestaurantsPage />} />
           <Route path="drones" element={<DronesPage />} />
           <Route path="assign-drone" element={<AssignDronePage />} />
         </Route>

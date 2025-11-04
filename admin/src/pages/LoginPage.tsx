@@ -104,7 +104,7 @@ export default function LoginPage() {
         {/* Info */}
         <div className="mt-6 p-4 bg-gray-50 rounded-lg">
           <p className="text-xs text-gray-600 text-center">
-            🔒 This is an admin-only area. Only users with admin privileges can access this dashboard.
+            This is an admin-only area. Only users with admin privileges can access this dashboard.
           </p>
         </div>
       </div>

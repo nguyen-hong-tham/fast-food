@@ -161,7 +161,7 @@ export const useAuthStore = create<AuthState>()(
                 restaurant = mapRestaurantDocument(restaurantDoc);
               }
             } catch (queryError: any) {
-              console.warn('⚠️ Query by ownerId failed, trying to fetch all:', queryError.message);
+              console.warn('Query by ownerId failed, trying to fetch all:', queryError.message);
               
               // If query fails (relationship issue), fetch all and filter client-side
               try {
@@ -171,7 +171,7 @@ export const useAuthStore = create<AuthState>()(
                   [Query.limit(100)]
                 );
 
-                console.log('📊 Total restaurants:', allRestaurants.documents.length);
+                console.log('Total restaurants:', allRestaurants.documents.length);
 
                 // Filter by ownerId (handle both string and relationship object)
                 const restaurantDoc = allRestaurants.documents.find((doc: any) => {
@@ -186,18 +186,18 @@ export const useAuthStore = create<AuthState>()(
                 });
 
                 if (restaurantDoc) {
-                  console.log('✅ Found restaurant by filtering:', restaurantDoc.$id);
+                  console.log('Found restaurant by filtering:', restaurantDoc.$id);
                   restaurant = mapRestaurantDocument(restaurantDoc);
                 } else {
-                  console.log('❌ No restaurant found for this user');
+                  console.log('No restaurant found for this user');
                 }
               } catch (fetchError) {
-                console.error('❌ Error fetching all restaurants:', fetchError);
+                console.error('Error fetching all restaurants:', fetchError);
               }
             }
 
             if (restaurant) {
-              console.log('✅ Restaurant loaded:', restaurant.name);
+              console.log('Restaurant loaded:', restaurant.name);
             }
           }
 
@@ -225,7 +225,7 @@ export const useAuthStore = create<AuthState>()(
             return;
           }
 
-          console.log('🔄 Refreshing restaurant data...');
+          console.log('Refreshing restaurant data...');
           
           const restaurantDoc = await databases.getDocument(
             config.appwrite.databaseId,
@@ -235,9 +235,9 @@ export const useAuthStore = create<AuthState>()(
 
           const restaurant = mapRestaurantDocument(restaurantDoc);
           set({ restaurant });
-          console.log('✅ Restaurant data refreshed:', restaurant);
+          console.log('Restaurant data refreshed:', restaurant);
         } catch (error) {
-          console.error('❌ Error refreshing restaurant:', error);
+          console.error('Error refreshing restaurant:', error);
         }
       },
     }),

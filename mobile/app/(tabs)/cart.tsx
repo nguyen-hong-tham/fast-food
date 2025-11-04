@@ -3,11 +3,14 @@ import CustomButton from "@/components/CustomButton";
 import CustomHeader from "@/components/CustomHeader";
 import useAuthStore from '@/store/auth.store';
 import { useCartStore } from "@/store/cart.store";
+import { useDeliveryCalculation } from '@/hooks/useDeliveryCalculation';
+import { getRestaurantById } from '@/lib/appwrite';
 import cn from "clsx";
 import { router } from 'expo-router';
-import { Alert, FlatList, Text, TouchableOpacity, View, Image } from 'react-native';
+import { Alert, FlatList, Text, TouchableOpacity, View, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { icons, images } from "@/constants";
+import { useEffect, useState } from 'react';
 
 interface PaymentInfoStripeProps {
     label: string;
@@ -30,12 +33,45 @@ const PaymentInfoStripe = ({ label,  value,  labelStyle,  valueStyle, }: Payment
 const Cart = () => {
     const { items, getTotalItems, getTotalPrice, clearCart, restaurantId } = useCartStore();
     const { user } = useAuthStore();
+    const [restaurant, setRestaurant] = useState<any>(null);
 
     const totalItems = getTotalItems();
     const totalPrice = getTotalPrice();
-    const deliveryFee = 15000; // 15,000 VND
+
+    // Delivery calculation
+    const { 
+        calculation: deliveryCalc, 
+        isCalculating, 
+        calculateFromAddress 
+    } = useDeliveryCalculation();
+
+    const deliveryFee = deliveryCalc?.shippingCost || 0;
     const discount = 0; // No discount by default
     const finalTotal = totalPrice + deliveryFee - discount;
+
+    // Fetch restaurant and calculate delivery
+    useEffect(() => {
+        const fetchRestaurantAndCalculateDelivery = async () => {
+            if (!restaurantId || !user?.address_home) return;
+
+            try {
+                const restaurantData = await getRestaurantById(restaurantId);
+                setRestaurant(restaurantData);
+                
+                if (restaurantData?.latitude && restaurantData?.longitude) {
+                    await calculateFromAddress(
+                        restaurantData.latitude,
+                        restaurantData.longitude,
+                        user.address_home
+                    );
+                }
+            } catch (error) {
+                console.error('Failed to fetch restaurant:', error);
+            }
+        };
+
+        fetchRestaurantAndCalculateDelivery();
+    }, [restaurantId, user?.address_home, calculateFromAddress]);
 
     const handleClearCart = () => {
         Alert.alert(
@@ -82,7 +118,7 @@ const Cart = () => {
             pathname: '/checkout' as any,
             params: {
                 restaurantId,
-                totalAmount: finalTotal.toString(),
+                totalAmount: totalPrice.toString(), // Pass subtotal only
                 itemCount: totalItems.toString()
             }
         });
@@ -98,12 +134,7 @@ const Cart = () => {
                 ListHeaderComponent={() => (
                     <View>
                         <View className="flex-row items-center justify-between mb-4">
-                            <CustomHeader 
-                                title="Your Cart" 
-                                showBackButton={false} 
-                                showSearchButton={false}
-                                centered={false}
-                            />
+                            <Text className="text-2xl font-bold text-gray-800">Your Cart</Text>
                             {totalItems > 0 && (
                                 <TouchableOpacity onPress={handleClearCart}>
                                     <Text className="text-red-500 font-semibold">Clear All</Text>
@@ -111,17 +142,6 @@ const Cart = () => {
                             )}
                         </View>
                         
-                        {totalItems > 0 && (
-                            <View className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 flex-row items-center">
-                                <Text className="text-2xl mr-2">🍽️</Text>
-                                <View className="flex-1">
-                                    <Text className="font-semibold text-dark-100">
-                                        {totalItems} {totalItems === 1 ? 'item' : 'items'} in cart
-                                    </Text>
-                                    <Text className="text-sm text-gray-600">Review and checkout when ready</Text>
-                                </View>
-                            </View>
-                        )}
                     </View>
                 )}
                 ListEmptyComponent={() => (
@@ -147,7 +167,7 @@ const Cart = () => {
                     <View className="gap-5">
                         {/* Continue Shopping */}
                         <TouchableOpacity 
-                            className="bg-gray-100 rounded-xl p-4 flex-row items-center justify-center"
+                            className="p-4 flex-row items-center justify-center"
                             onPress={() => router.push('/(tabs)/restaurants')}
                         >
                             <Image source={icons.plus} className="w-5 h-5 mr-2" tintColor="#FF6B35" />
@@ -159,6 +179,15 @@ const Cart = () => {
                             <Text className="h3-bold text-dark-100 mb-4">
                                 Order Summary
                             </Text>
+                            <PaymentInfoStripe
+                                label="Distance"
+                                value={isCalculating ? 'Calculating...' : `${deliveryCalc?.formattedDistance || 'N/A'}`}
+                                
+                            />
+                            <PaymentInfoStripe
+                                label="Estimated Time"
+                                value={isCalculating ? 'Calculating...' : `${deliveryCalc?.formattedTime || 'N/A'}`}
+                            />
 
                             <PaymentInfoStripe
                                 label={`Subtotal (${totalItems} ${totalItems === 1 ? 'item' : 'items'})`}
@@ -166,15 +195,9 @@ const Cart = () => {
                             />
                             <PaymentInfoStripe
                                 label="Delivery Fee"
-                                value={`${deliveryFee.toLocaleString('vi-VN')}₫`}
+                                value={isCalculating ? 'Calculating...' : `${deliveryFee.toLocaleString('vi-VN')}₫`}
                             />
-                            {discount > 0 && (
-                                <PaymentInfoStripe
-                                    label="Discount"
-                                    value={`- ${discount.toLocaleString('vi-VN')}₫`}
-                                    valueStyle="!text-success"
-                                />
-                            )}
+
                             <View className="border-t border-gray-300 my-3" />
                             <PaymentInfoStripe
                                 label="Total"

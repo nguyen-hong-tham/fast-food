@@ -96,7 +96,7 @@ export default function Index() {
                   <View className="flex-row items-center justify-between px-12 py-10">
                     <View className="flex-1">
                       <Text className="text-4xl font-bold text-white mb-3">
-                        Order amazing food{'\n'}delivered by drone 🚀
+                        Order amazing food{'\n'}delivered by drone
                       </Text>
                       <Text className="text-lg text-white/90 mb-6">
                         Fast, fresh, and innovative delivery right to your doorstep

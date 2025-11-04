@@ -198,7 +198,7 @@ const RestaurantsScreen = () => {
               "text-gray-600 mb-2",
               isDesktop ? "text-sm" : "text-xs"
             )}>
-              📍 Maximum Distance
+              Maximum Distance
             </Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View className="flex-row" style={{ gap: isDesktop ? 12 : 8 }}>
@@ -234,15 +234,15 @@ const RestaurantsScreen = () => {
             "text-gray-600 mb-2",
             isDesktop ? "text-sm" : "text-xs"
           )}>
-            🔄 Sort By
+            Sort By
           </Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View className="flex-row" style={{ gap: isDesktop ? 12 : 8 }}>
               {[
-                { value: 'rating', label: '⭐ Rating', icon: '⭐'},
-                { value: 'distance', label: '📍 Distance', icon: '📍', disabled: !userLocation },
-                { value: 'name', label: '🔤 Name', icon: '🔤'},
-                { value: 'newest', label: '🆕 Newest', icon: '🆕' }
+                { value: 'rating', label: 'Rating'},
+                { value: 'distance', label: 'Distance', disabled: !userLocation },
+                { value: 'name', label: 'Name'},
+                { value: 'newest', label: 'Newest' }
               ].map((option) => (
                 <TouchableOpacity
                   key={option.value}

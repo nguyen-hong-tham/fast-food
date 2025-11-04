@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Platform, Alert, Image } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, Platform, Alert, Image, ActivityIndicator } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -7,7 +7,6 @@ import useAuthStore from '@/store/auth.store';
 import { createOrderWithPayment } from '@/lib/appwrite';
 import { getRestaurantById } from '@/lib/api-helpers';
 import { useDeliveryCalculation } from '@/hooks/useDeliveryCalculation';
-import { DeliveryInfoCard } from '@/components/DeliveryInfoCard';
 import { icons } from '@/constants';
 import cn from 'clsx';
 
@@ -79,7 +78,7 @@ const CheckoutScreen = () => {
           );
         }
       } catch (error) {
-        console.error('🏪 Failed to fetch restaurant:', error);
+        console.error('Failed to fetch restaurant:', error);
       }
     };
 
@@ -143,7 +142,7 @@ const CheckoutScreen = () => {
           params: {
             success: 'true',
             orderId: order.$id,
-            amount: totalAmount,
+            amount: total.toString(),
             method: 'cod'
           }
         });
@@ -155,7 +154,7 @@ const CheckoutScreen = () => {
           params: {
             success: 'true',
             orderId: order.$id,
-            amount: totalAmount,
+            amount: total.toString(),
             method: 'vnpay'
           }
         });
@@ -187,72 +186,32 @@ const CheckoutScreen = () => {
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <View className="p-4">
-          {/* Order Summary */}
-          <View className="bg-white rounded-xl p-4 mb-4"
-            style={Platform.OS === 'android' ? { elevation: 2 } : {}}
-          >
-            <Text className="text-lg font-bold text-gray-800 mb-3">Order Summary</Text>
-
-            {/* Summary row: item count and subtotal */}
-            <View className="flex-row justify-between items-center mb-2">
-              <Text className="text-gray-600">{itemCount} items</Text>
-              <Text className="text-lg font-semibold text-gray-800">
-                {subtotal.toLocaleString('vi-VN')}₫
-              </Text>
-            </View>
-
-            {/* Toggle to show detailed items (default hidden) */}
-            <View className="flex-row items-center justify-between mb-2">
-              <TouchableOpacity onPress={() => setShowItems((s) => !s)}>
-                <Text className="text-sm text-primary">{showItems ? 'Hide items' : `Show items (${itemCount})`}</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Detailed items list (only shown when toggled) */}
-            {showItems && (
-              <View className="space-y-3 mb-2">
-                {items.map((it) => (
-                  <View key={`${it.id}-${it.notes || ''}`} className="flex-row items-center">
-                    <Image source={{ uri: it.image_url }} className="size-12 rounded-lg mr-3" />
-                    <View className="flex-1">
-                      <Text className="font-semibold text-gray-800">{it.name} x{it.quantity}</Text>
-                      {it.notes ? <Text className="text-sm text-gray-500">📝 {it.notes}</Text> : null}
-                    </View>
-                    <Text className="font-semibold text-gray-800">{(it.price * it.quantity).toLocaleString('vi-VN')}₫</Text>
-                  </View>
-                ))}
-              </View>
-            )}
-
-            {deliveryCalc && (
-              <>
-                <View className="flex-row justify-between items-center mb-2">
-                  <Text className="text-gray-600">Shipping fee</Text>
-                  <Text className="text-lg font-semibold text-gray-800">
-                    {deliveryCalc.shippingCost.toLocaleString('vi-VN')}₫
-                  </Text>
-                </View>
-
-                <View className="border-t border-gray-200 pt-2 mt-2">
-                  <View className="flex-row justify-between items-center">
-                    <Text className="text-lg font-bold text-gray-800">Total</Text>
-                    <Text className="text-xl font-bold text-amber-600">
-                      {total.toLocaleString('vi-VN')}₫
-                    </Text>
-                  </View>
-                </View>
-              </>
-            )}
-            
-            {!deliveryCalc && (
-              <Text className="text-sm text-gray-500">Calculating shipping fee...</Text>
-            )}
-          </View>
-
-          {/* Delivery Calculation */}
+          
+          {/* Delivery Information Card - Consolidated */}
           {deliveryCalc && (
-            <View className="mb-4" style={Platform.OS === 'android' ? { elevation: 2 } : {}}>
-              <DeliveryInfoCard calculation={deliveryCalc} style="detailed" />
+            <View className="bg-white rounded-xl p-4 mb-4"
+              style={Platform.OS === 'android' ? { elevation: 2 } : {}}
+            >
+              <Text className="text-lg font-bold text-gray-800 mb-3">Delivery Info</Text>
+              
+              {/* Distance & Time Row */}
+              <View className="flex-row justify-between mb-2">
+                <View className="flex-1">
+                  <Text className="text-xs text-gray-500">Distance</Text>
+                  <Text className="text-base font-semibold text-gray-800">{deliveryCalc.formattedDistance}</Text>
+                </View>
+                <View className="flex-1">
+                  <Text className="text-xs text-gray-500">Estimated Time</Text>
+                  <Text className="text-base font-semibold text-amber-600">{deliveryCalc.formattedTime}</Text>
+                </View>
+              </View>
+
+              {/* Breakdown */}
+              <View className="bg-amber-50 p-2 rounded-lg">
+                <Text className="text-xs text-gray-600">
+                  Prep: 15 min + Delivery: {deliveryCalc.deliveryTime} min
+                </Text>
+              </View>
             </View>
           )}
 
@@ -261,26 +220,81 @@ const CheckoutScreen = () => {
             <View className="bg-white rounded-xl p-4 mb-4"
               style={Platform.OS === 'android' ? { elevation: 2 } : {}}
             >
-              <Text className="text-lg font-bold text-gray-800 mb-3">🚚 Delivery Info</Text>
-              <Text className="text-gray-500 text-center">Calculating delivery time & cost...</Text>
+              <Text className="text-lg font-bold text-gray-800 mb-3">Delivery Info</Text>
+              <ActivityIndicator size="small" color="#FF7A00" />
+              <Text className="text-gray-500 text-center mt-2 text-sm">Calculating delivery...</Text>
             </View>
           )}
 
-          {/* Delivery Information */}
+          {/* Order Summary - Simplified */}
           <View className="bg-white rounded-xl p-4 mb-4"
             style={Platform.OS === 'android' ? { elevation: 2 } : {}}
           >
-            <Text className="text-lg font-bold text-gray-800 mb-4">Delivery Information</Text>
+            <View className="flex-row justify-between items-center mb-3">
+              <Text className="text-lg font-bold text-gray-800">Order Summary</Text>
+              <TouchableOpacity onPress={() => setShowItems((s) => !s)}>
+                <Text className="text-sm text-primary">{showItems ? 'Hide' : `Show (${itemCount})`}</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Detailed items list (only shown when toggled) */}
+            {showItems && (
+              <View className="mb-3 pb-3 border-b border-gray-200">
+                {items.map((it) => (
+                  <View key={`${it.id}-${it.notes || ''}`} className="flex-row items-center mb-2">
+                    <Image source={{ uri: it.image_url }} className="size-10 rounded-lg mr-2" />
+                    <View className="flex-1">
+                      <Text className="text-sm font-semibold text-gray-800">{it.name} x{it.quantity}</Text>
+                    </View>
+                    <Text className="text-sm font-semibold text-gray-800">
+                      {(it.price * it.quantity).toLocaleString('vi-VN')}₫
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {/* Summary totals */}
+            <View className="space-y-2">
+              <View className="flex-row justify-between">
+                <Text className="text-gray-600">Subtotal:</Text>
+                <Text className="font-semibold">{subtotal.toLocaleString('vi-VN')}₫</Text>
+              </View>
+              
+              <View className="flex-row justify-between">
+                <Text className="text-gray-600">Shipping Fee:</Text>
+                <Text className="font-semibold text-gray-800">
+                  {shippingFee.toLocaleString('vi-VN')}₫
+                </Text>
+              </View>
+
+              <View className="border-t border-gray-200 pt-2 mt-2">
+                <View className="flex-row justify-between items-center">
+                  <Text className="text-lg font-bold text-gray-800">Total</Text>
+                  <Text className="text-xl font-bold text-amber-600">
+                    {total.toLocaleString('vi-VN')}₫
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </View>
+
+          {/* Delivery Address & Contact - Combined */}
+          <View className="bg-white rounded-xl p-4 mb-4"
+            style={Platform.OS === 'android' ? { elevation: 2 } : {}}
+          >
+            <Text className="text-lg font-bold text-gray-800 mb-4">Delivery Details</Text>
             
-            {/* Current Location Display with Change Button */}
+            {/* Delivery Address */}
             <View className="mb-4">
               <View className="flex-row items-center justify-between mb-2">
-                <Text className="text-gray-700 font-semibold">📍 Delivery Address *</Text>
+                <Text className="text-gray-700 font-semibold">Address *</Text>
                 <TouchableOpacity 
                   onPress={() => router.push('/location-picker?returnScreen=checkout')}
-                  className="flex-row items-center"
+                  className="flex-row items-center px-3 py-1.5 bg-amber-50 rounded-lg"
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
-                  <Text className="text-xs text-primary font-semibold mr-1">Change</Text>
+                  <Text className="text-xs text-amber-600 font-semibold mr-1">Change</Text>
                   <Image 
                     source={icons.pencil} 
                     className="size-3" 
@@ -296,14 +310,14 @@ const CheckoutScreen = () => {
                 value={deliveryAddress}
                 onChangeText={setDeliveryAddress}
                 multiline
-                numberOfLines={3}
+                numberOfLines={2}
                 textAlignVertical="top"
               />
             </View>
 
             {/* Phone Number */}
             <View className="mb-4">
-              <Text className="text-gray-700 font-semibold mb-2">Phone Number *</Text>
+              <Text className="text-gray-700 font-semibold mb-2">Phone *</Text>
               <TextInput
                 className="border border-gray-300 rounded-lg p-3 text-gray-800"
                 placeholder="Enter your phone number"
@@ -313,48 +327,39 @@ const CheckoutScreen = () => {
               />
             </View>
 
-            {/* Notes */}
-            <View>
-              <Text className="text-gray-700 font-semibold mb-2">Special Instructions (Optional)</Text>
-              <TextInput
-                className="border border-gray-300 rounded-lg p-3 text-gray-800"
-                placeholder="Add any special instructions for your order..."
-                value={notes}
-                onChangeText={setNotes}
-                multiline
-                numberOfLines={2}
-                textAlignVertical="top"
-              />
+            {/* Contact Info Display */}
+            <View className="bg-gray-50 p-3 rounded-lg">
+              <Text className="text-xs text-gray-500 mb-1">Contact Information</Text>
+              <Text className="text-sm text-gray-700">{user?.name} • {user?.email}</Text>
             </View>
           </View>
 
-          {/* Contact Information */}
+          {/* Notes */}
           <View className="bg-white rounded-xl p-4 mb-4"
             style={Platform.OS === 'android' ? { elevation: 2 } : {}}
           >
-            <Text className="text-lg font-bold text-gray-800 mb-3">Contact Information</Text>
-            <View className="space-y-2">
-              <View className="flex-row justify-between">
-                <Text className="text-gray-600">Name:</Text>
-                <Text className="font-semibold text-gray-800">{user?.name}</Text>
-              </View>
-              <View className="flex-row justify-between">
-                <Text className="text-gray-600">Email:</Text>
-                <Text className="font-semibold text-gray-800">{user?.email}</Text>
-              </View>
-            </View>
+            <Text className="text-gray-700 font-semibold mb-2">Special Instructions (Optional)</Text>
+            <TextInput
+              className="border border-gray-300 rounded-lg p-3 text-gray-800"
+              placeholder="Add any special instructions..."
+              value={notes}
+              onChangeText={setNotes}
+              multiline
+              numberOfLines={2}
+              textAlignVertical="top"
+            />
           </View>
 
           {/* Payment Method */}
           <View className="bg-white rounded-xl p-4 mb-4"
             style={Platform.OS === 'android' ? { elevation: 2 } : {}}
           >
-            <Text className="text-lg font-bold text-gray-800 mb-4">Payment Method</Text>
+            <Text className="text-lg font-bold text-gray-800 mb-3">Payment Method</Text>
             
             {/* VNPay Option */}
             <TouchableOpacity
               className={cn(
-                'flex-row items-center p-4 rounded-lg border mb-3',
+                'flex-row items-center p-3 rounded-lg border mb-2',
                 selectedPaymentMethod === 'vnpay' 
                   ? 'border-amber-500 bg-amber-50' 
                   : 'border-gray-300 bg-white'
@@ -373,14 +378,14 @@ const CheckoutScreen = () => {
               </View>
               <View className="flex-1">
                 <Text className="font-semibold text-gray-800">VNPay</Text>
-                <Text className="text-sm text-gray-600">Pay instantly with VNPay gateway</Text>
+                <Text className="text-xs text-gray-500">Pay instantly with VNPay gateway</Text>
               </View>
             </TouchableOpacity>
 
             {/* COD Option */}
             <TouchableOpacity
               className={cn(
-                'flex-row items-center p-4 rounded-lg border',
+                'flex-row items-center p-3 rounded-lg border',
                 selectedPaymentMethod === 'cod' 
                   ? 'border-amber-500 bg-amber-50' 
                   : 'border-gray-300 bg-white'
@@ -399,34 +404,9 @@ const CheckoutScreen = () => {
               </View>
               <View className="flex-1">
                 <Text className="font-semibold text-gray-800">Cash on Delivery</Text>
-                <Text className="text-sm text-gray-600">Pay when you receive your order</Text>
+                <Text className="text-xs text-gray-500">Pay when you receive</Text>
               </View>
             </TouchableOpacity>
-          </View>
-
-          {/* Estimated Delivery */}
-          <View className="bg-white rounded-xl p-4 mb-4"
-            style={Platform.OS === 'android' ? { elevation: 2 } : {}}
-          >
-            <Text className="text-lg font-bold text-gray-800 mb-3">Estimated Delivery</Text>
-            <View className="flex-row items-center">
-              <Text className="text-2xl mr-3">🚁</Text>
-              <View className="flex-1">
-                <Text className="font-semibold text-gray-800">Drone Delivery</Text>
-                {deliveryCalc ? (
-                  <View>
-                    <Text className="text-amber-600 font-semibold">{deliveryCalc.formattedTime}</Text>
-                    <Text className="text-xs text-gray-500 mt-1">
-                      Prep: 15 min + Delivery: {deliveryCalc.deliveryTime} min
-                    </Text>
-                  </View>
-                ) : isCalculating ? (
-                  <Text className="text-gray-500">Calculating...</Text>
-                ) : (
-                  <Text className="text-gray-600">30-45 minutes (estimated)</Text>
-                )}
-              </View>
-            </View>
           </View>
         </View>
       </ScrollView>

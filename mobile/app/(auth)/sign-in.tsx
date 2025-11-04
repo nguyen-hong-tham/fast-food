@@ -31,7 +31,7 @@ const SignIn = () => {
             router.replace('/');
             
         } catch(error: any) {
-            console.error('❌ Login failed:', error);
+            console.error('Login failed:', error);
             
             // Handle rate limit error
             if (error.code === 429 || error.message?.includes('Rate limit')) {

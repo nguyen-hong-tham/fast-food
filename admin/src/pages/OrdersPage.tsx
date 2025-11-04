@@ -1,6 +1,6 @@
 import { getAllOrders, updateOrderStatus } from '@/lib/api';
 import type { Order } from '@/types';
-import { Filter, Search } from 'lucide-react';
+import { Filter, Search, Eye, MapPin, Phone, Mail, Package, Clock, CreditCard } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 const STATUS_OPTIONS = ['pending', 'preparing', 'ready', 'delivering', 'completed', 'cancelled'];
@@ -19,6 +19,7 @@ export default function OrdersPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   
   useEffect(() => {
     loadOrders();
@@ -180,22 +181,175 @@ export default function OrdersPage() {
                       {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'N/A'}
                     </td>
                     <td className="px-6 py-4">
-                      <select
-                        value={order.status}
-                        onChange={(e) => handleStatusChange(order.$id, e.target.value)}
-                        className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
-                      >
-                        {STATUS_OPTIONS.map(status => (
-                          <option key={status} value={status} className="capitalize">
-                            {status}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setSelectedOrder(order)}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="View Details"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <select
+                          value={order.status}
+                          onChange={(e) => handleStatusChange(order.$id, e.target.value)}
+                          className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                        >
+                          {STATUS_OPTIONS.map(status => (
+                            <option key={status} value={status} className="capitalize">
+                              {status}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Order Detail Modal */}
+      {selectedOrder && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-800">Order Details</h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  Order #{selectedOrder.$id.slice(-8).toUpperCase()}
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedOrder(null)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            {/* Modal Content */}
+            <div className="p-6 space-y-6">
+              {/* Status & Payment */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <p className="text-sm text-gray-500 mb-2">Order Status</p>
+                  <span className={`inline-block px-4 py-2 rounded-full text-sm font-semibold capitalize ${
+                    STATUS_COLORS[selectedOrder.status] || 'bg-gray-100 text-gray-800'
+                  }`}>
+                    {selectedOrder.status}
+                  </span>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <p className="text-sm text-gray-500 mb-2 flex items-center gap-2">
+                    <CreditCard className="w-4 h-4" />
+                    Payment Method
+                  </p>
+                  <p className="text-lg font-semibold text-gray-800 capitalize">
+                    {selectedOrder.paymentMethod || 'N/A'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Customer Info */}
+              <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+                <h3 className="font-semibold text-gray-800 mb-3">Customer Information</h3>
+                <div className="space-y-2">
+                  {selectedOrder.phone && (
+                    <div className="flex items-center gap-3">
+                      <Phone className="w-4 h-4 text-gray-400" />
+                      <span className="text-gray-700">{selectedOrder.phone}</span>
+                    </div>
+                  )}
+                  {selectedOrder.email && (
+                    <div className="flex items-center gap-3">
+                      <Mail className="w-4 h-4 text-gray-400" />
+                      <span className="text-gray-700">{selectedOrder.email}</span>
+                    </div>
+                  )}
+                  {selectedOrder.deliveryAddress && (
+                    <div className="flex items-start gap-3">
+                      <MapPin className="w-4 h-4 text-gray-400 mt-1" />
+                      <span className="text-gray-700">{selectedOrder.deliveryAddress}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Order Items */}
+              <div className="bg-gray-50 rounded-xl p-4">
+                <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                  <Package className="w-5 h-5" />
+                  Order Items
+                </h3>
+                {selectedOrder.items && selectedOrder.items.length > 0 ? (
+                  <div className="space-y-3">
+                    {selectedOrder.items.map((item: any, index: number) => (
+                      <div key={index} className="flex items-center justify-between bg-white rounded-lg p-3">
+                        <div className="flex items-center gap-3">
+                          {item.imageUrl && (
+                            <img
+                              src={item.imageUrl}
+                              alt={item.name}
+                              className="w-12 h-12 rounded-lg object-cover"
+                            />
+                          )}
+                          <div>
+                            <p className="font-medium text-gray-800">{item.name || 'Unknown Item'}</p>
+                            <p className="text-sm text-gray-500">Quantity: {item.quantity || 1}</p>
+                          </div>
+                        </div>
+                        <p className="font-semibold text-gray-800">
+                          {((item.price || 0) * (item.quantity || 1)).toLocaleString('vi-VN')}₫
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-center py-4">No items found</p>
+                )}
+              </div>
+
+              {/* Order Timeline */}
+              <div className="bg-gray-50 rounded-xl p-4">
+                <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                  <Clock className="w-5 h-5" />
+                  Order Timeline
+                </h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600">Created:</span>
+                    <span className="font-medium text-gray-800">
+                      {selectedOrder.createdAt 
+                        ? new Date(selectedOrder.createdAt).toLocaleString()
+                        : 'N/A'}
+                    </span>
+                  </div>
+                  {selectedOrder.updatedAt && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">Last Updated:</span>
+                      <span className="font-medium text-gray-800">
+                        {new Date(selectedOrder.updatedAt).toLocaleString()}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Total */}
+              <div className="bg-primary bg-opacity-10 border-2 border-primary rounded-xl p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-lg font-semibold text-gray-800">Total Amount:</span>
+                  <span className="text-2xl font-bold text-primary">
+                    {selectedOrder.total?.toLocaleString('vi-VN') || '0'}₫
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
