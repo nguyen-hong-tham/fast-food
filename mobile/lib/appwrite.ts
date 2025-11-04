@@ -51,11 +51,9 @@ export const createUser = async ({ email, password, name }: CreateUserParams) =>
         newAccount = await account.create(ID.unique(), email, password, name);
         if (!newAccount) throw new Error('Failed to create account');
 
-        // Bước 2: Tạo avatar URL
-        const avatarUrl = avatars.getInitials(name);
-
-        // Bước 3: Tạo document trong user collection
+        // Bước 2: Tạo document trong user collection
         // Note: Only include attributes that exist in Appwrite user collection
+        // Avatar will be optional - user can update later in profile
         const userDoc = await databases.createDocument(
             appwriteConfig.databaseId,
             appwriteConfig.userCollectionId,
@@ -64,8 +62,8 @@ export const createUser = async ({ email, password, name }: CreateUserParams) =>
                 email, 
                 name, 
                 accountId: newAccount.$id, 
-                avatar: avatarUrl,
                 role: 'customer'
+                // avatar: optional - can be added later via profile update
                 // phone and address removed - not in Appwrite schema
                 // Add them in Appwrite Console if needed: Database → user → Attributes
             }

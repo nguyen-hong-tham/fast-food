@@ -53,25 +53,75 @@ export default function AnalyticsPage() {
       });
 
       console.log('Filtered orders for analytics:', orders.length);
+      console.log('Sample order totalAmount:', orders[0]?.totalAmount);
+
+      // Calculate total amount for each order from order_items
+      const ordersWithCalculatedTotals = await Promise.all(
+        orders.map(async (order: any) => {
+          // If order has totalAmount, use it
+          if (order.totalAmount && order.totalAmount > 0) {
+            return { ...order, calculatedTotal: order.totalAmount };
+          }
+          
+          try {
+            // Fetch order items for this order
+            const itemsResponse = await databases.listDocuments(
+              config.appwrite.databaseId,
+              config.appwrite.orderItemsCollectionId,
+              [Query.limit(100)]
+            );
+            
+            // Filter items for this specific order
+            const orderItems = itemsResponse.documents.filter((item: any) => {
+              const itemOrderId = typeof item.orderId === 'object' 
+                ? item.orderId.$id 
+                : item.orderId;
+              return itemOrderId === order.$id;
+            });
+            
+            // Calculate total from items
+            const calculatedTotal = orderItems.reduce((sum: number, item: any) => {
+              return sum + (item.subtotal || 0);
+            }, 0);
+            
+            return { ...order, calculatedTotal: calculatedTotal > 0 ? calculatedTotal : order.totalAmount };
+          } catch (err) {
+            console.error('Error calculating total for order:', order.$id, err);
+            return { ...order, calculatedTotal: order.totalAmount || 0 };
+          }
+        })
+      );
+
+      console.log('Orders with calculated totals:', ordersWithCalculatedTotals.length);
 
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-      // Calculate stats
-      const totalRevenue = orders.reduce((sum, order: any) => sum + (order.totalAmount || 0), 0);
-      const totalOrders = orders.length;
+      // Calculate stats using calculatedTotal
+      const totalRevenue = ordersWithCalculatedTotals.reduce((sum, order: any) => sum + (order.calculatedTotal || 0), 0);
+      const totalOrders = ordersWithCalculatedTotals.length;
       const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
-      const todayOrders = orders.filter((order: any) => 
+      const todayOrders = ordersWithCalculatedTotals.filter((order: any) => 
         new Date(order.$createdAt) >= today
       );
-      const todayRevenue = todayOrders.reduce((sum, order: any) => sum + (order.totalAmount || 0), 0);
+      const todayRevenue = todayOrders.reduce((sum, order: any) => sum + (order.calculatedTotal || 0), 0);
 
-      const monthOrders = orders.filter((order: any) => 
+      const monthOrders = ordersWithCalculatedTotals.filter((order: any) => 
         new Date(order.$createdAt) >= thisMonth
       );
-      const monthRevenue = monthOrders.reduce((sum, order: any) => sum + (order.totalAmount || 0), 0);
+      const monthRevenue = monthOrders.reduce((sum, order: any) => sum + (order.calculatedTotal || 0), 0);
+
+      console.log('📊 Analytics Stats:', {
+        totalRevenue,
+        totalOrders,
+        averageOrderValue,
+        todayRevenue,
+        todayOrders: todayOrders.length,
+        monthRevenue,
+        monthOrders: monthOrders.length
+      });
 
       setStats({
         totalRevenue,

@@ -150,7 +150,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
             />
           </TouchableOpacity>
           <Text className="text-lg font-bold text-gray-900 flex-1">
-            Nội nhận
+            Location Picker
           </Text>
           {showMapButton && (
             <TouchableOpacity
@@ -161,7 +161,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
               className="px-3 py-1"
             >
               <Text className="text-sm text-primary font-semibold">
-                Chọn từ bản đồ
+                Choose from map
               </Text>
             </TouchableOpacity>
           )}
@@ -212,7 +212,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
             <>
               <Text className="text-xl mr-2">📍</Text>
               <Text className="text-sm font-semibold text-amber-700 flex-1" numberOfLines={1}>
-                Vị trí hiện tại
+                Use currnent location
               </Text>
             </>
           )}
@@ -224,8 +224,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
           activeOpacity={0.7}
           disabled
         >
-          <Text className="text-xl mr-2">🏠</Text>
-          <Text className="text-sm font-semibold text-gray-500">Thêm nhà</Text>
+          <Text className="text-sm font-semibold text-gray-500">Add home/office</Text>
         </TouchableOpacity>
       </View>
 

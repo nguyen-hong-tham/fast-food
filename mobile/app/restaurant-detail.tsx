@@ -206,7 +206,7 @@ const RestaurantDetailScreen = () => {
                     
                     <View className="space-y-3">
                       <View className="flex-row items-center">
-                        <Text className="text-base mr-2">📍</Text>
+                        <Text className="text-base mr-2">Location: </Text>
                         <Text className="text-sm text-gray-600 flex-1" numberOfLines={2}>
                           {restaurant.address}
                         </Text>

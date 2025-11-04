@@ -3,7 +3,6 @@ import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, FlatList, Image, Pressable, ScrollView, Text, TouchableOpacity, View, Platform } from "react-native";
 import { router } from 'expo-router';
 
-import CartButton from "@/components/CartButton";
 import RestaurantCard from "@/components/RestaurantCard";
 import WebContainer from "@/components/WebContainer";
 import { icons, offers } from "@/constants";
@@ -286,8 +285,6 @@ export default function Index() {
             )}
           </ScrollView>
         </WebContainer>
-          
-        <CartButton />
       </View>
   );
 }
