@@ -1,322 +1,642 @@
-# FoodFast<div align="center"><div align="center">
+# 🍔 FoodFast - Hệ Thống Giao Đồ Ăn Bằng Drone# FoodFast<div align="center"><div align="center">
 
 
 
-Drone-assisted food ordering platform connecting customers, restaurants, and the operations team at Sai Gon University.
+> Nền tảng đặt đồ ăn hiện đại với công nghệ giao hàng bằng drone, kết nối khách hàng, nhà hàng và đội ngũ vận hành.
 
 
+
+[![React Native](https://img.shields.io/badge/React_Native-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactnative.dev/)Drone-assisted food ordering platform connecting customers, restaurants, and the operations team at Sai Gon University.
+
+[![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
+
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+
+[![Appwrite](https://img.shields.io/badge/Appwrite-F02E65?style=for-the-badge&logo=appwrite&logoColor=white)](https://appwrite.io/)
 
 ![React Native](https://img.shields.io/badge/React%20Native-Expo%2054-61DAFB.svg)# 🚁 FoodFast - Drone Delivery Food Ordering System# 🚁 FoodFast - Drone Delivery Food Ordering System
 
+---
+
 ![Next.js](https://img.shields.io/badge/Next.js-14-000.svg)
+
+## 📖 Tổng Quan
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6.svg)
 
+**FoodFast** là dự án môn Công Nghệ Phần Mềm tại Đại học Sài Gòn (SGU), xây dựng một hệ sinh thái giao đồ ăn hoàn chỉnh với 3 nền tảng riêng biệt:
+
 ![Appwrite](https://img.shields.io/badge/Appwrite-Backend-F02E65.svg)
 
-### *Nền tảng giao đồ ăn thông minh với công nghệ Drone Delivery*### *Nền tảng giao đồ ăn thông minh với công nghệ Drone Delivery*
+- 📱 **Mobile App**: Ứng dụng cho khách hàng đặt món và theo dõi đơn hàng
+
+- 🏪 **Restaurant Portal**: Cổng quản lý cho nhà hàng nhận đơn và quản lý menu### *Nền tảng giao đồ ăn thông minh với công nghệ Drone Delivery*### *Nền tảng giao đồ ăn thông minh với công nghệ Drone Delivery*
+
+- 🎛️ **Admin Dashboard**: Bảng điều khiển cho quản trị viên giám sát hệ thống
 
 ---
 
+### 🎯 Mục Tiêu Dự Án
 
 
-## Table of Contents
 
-- [Overview](#overview)[![React Native](https://img.shields.io/badge/React%20Native-Expo%2054-61DAFB?style=for-the-badge&logo=react&logoColor=white)](https://reactnative.dev/)[![React Native](https://img.shields.io/badge/React%20Native-Expo%2054-61DAFB?style=for-the-badge&logo=react&logoColor=white)](https://reactnative.dev/)
+- Xây dựng quy trình đặt đồ ăn end-to-end với trải nghiệm người dùng tốt
 
-- [Key Features](#key-features)
+- Tích hợp công nghệ drone delivery với mô phỏng thời gian thực## Table of Contents
 
-- [Architecture](#architecture)[![Next.js](https://img.shields.io/badge/Next.js-14-000000?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)[![Next.js](https://img.shields.io/badge/Next.js-14-000000?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
+- Áp dụng kiến trúc phân tán với Appwrite Backend
 
-- [Project Structure](#project-structure)
+- Quản lý đơn hàng, thanh toán và vận hành hiệu quả- [Overview](#overview)[![React Native](https://img.shields.io/badge/React%20Native-Expo%2054-61DAFB?style=for-the-badge&logo=react&logoColor=white)](https://reactnative.dev/)[![React Native](https://img.shields.io/badge/React%20Native-Expo%2054-61DAFB?style=for-the-badge&logo=react&logoColor=white)](https://reactnative.dev/)
 
-- [Getting Started](#getting-started)[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
-- [Environment Variables](#environment-variables)
 
-- [Available Scripts](#available-scripts)[![Appwrite](https://img.shields.io/badge/Appwrite-Backend-F02E65?style=for-the-badge&logo=appwrite&logoColor=white)](https://appwrite.io/)[![Appwrite](https://img.shields.io/badge/Appwrite-Backend-F02E65?style=for-the-badge&logo=appwrite&logoColor=white)](https://appwrite.io/)
+---- [Key Features](#key-features)
+
+
+
+## ✨ Tính Năng Chính- [Architecture](#architecture)[![Next.js](https://img.shields.io/badge/Next.js-14-000000?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)[![Next.js](https://img.shields.io/badge/Next.js-14-000000?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
+
+
+
+### 📱 Ứng Dụng Khách Hàng (Mobile)- [Project Structure](#project-structure)
+
+
+
+**Đã hoàn thành:**- [Getting Started](#getting-started)[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+
+- ✅ Đăng ký, đăng nhập và quản lý hồ sơ cá nhân
+
+- ✅ Duyệt danh sách nhà hàng và menu món ăn- [Environment Variables](#environment-variables)
+
+- ✅ Thêm món vào giỏ hàng với tùy chọn toppings
+
+- ✅ Đặt hàng và xem lịch sử đơn hàng- [Available Scripts](#available-scripts)[![Appwrite](https://img.shields.io/badge/Appwrite-Backend-F02E65?style=for-the-badge&logo=appwrite&logoColor=white)](https://appwrite.io/)[![Appwrite](https://img.shields.io/badge/Appwrite-Backend-F02E65?style=for-the-badge&logo=appwrite&logoColor=white)](https://appwrite.io/)
+
+- ✅ Cập nhật trạng thái đơn hàng real-time
 
 - [Documentation](#documentation)
 
-- [Roadmap](#roadmap)
+**Đang phát triển:**
 
-- [Contributing](#contributing)
+- 🚧 Tích hợp thanh toán VNPay- [Roadmap](#roadmap)
+
+- 🚧 Theo dõi đơn hàng trên bản đồ real-time
+
+- 🚧 Nhận thông báo push (Firebase FCM)- [Contributing](#contributing)
+
+- 🚧 Đánh giá nhà hàng và món ăn
 
 - [Team](#team)[![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)[![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
 
+### 🏪 Cổng Nhà Hàng (Web)
+
 - [License](#license)
 
-[![GitHub Stars](https://img.shields.io/github/stars/phatle224/sgu_cnpm_foodfast?style=flat-square)](https://github.com/phatle224/sgu_cnpm_foodfast/stargazers)[![GitHub Stars](https://img.shields.io/github/stars/phatle224/sgu_cnpm_foodfast?style=flat-square)](https://github.com/phatle224/sgu_cnpm_foodfast/stargazers)
+**Đang phát triển:**
 
----
+- 🚧 Đăng ký và xác thực nhà hàng[![GitHub Stars](https://img.shields.io/github/stars/phatle224/sgu_cnpm_foodfast?style=flat-square)](https://github.com/phatle224/sgu_cnpm_foodfast/stargazers)[![GitHub Stars](https://img.shields.io/github/stars/phatle224/sgu_cnpm_foodfast?style=flat-square)](https://github.com/phatle224/sgu_cnpm_foodfast/stargazers)
+
+- 🚧 Dashboard theo dõi đơn hàng real-time
+
+- 🚧 Quản lý menu (CRUD món ăn, categories)---
+
+- 🚧 Thống kê doanh thu và món bán chạy
 
 [![GitHub Issues](https://img.shields.io/github/issues/phatle224/sgu_cnpm_foodfast?style=flat-square)](https://github.com/phatle224/sgu_cnpm_foodfast/issues)[![GitHub Issues](https://img.shields.io/github/issues/phatle224/sgu_cnpm_foodfast?style=flat-square)](https://github.com/phatle224/sgu_cnpm_foodfast/issues)
 
+### 🎛️ Admin Dashboard (Web)
+
 ## Overview
 
-FoodFast delivers an end-to-end food-ordering experience backed by Appwrite. The project is part of the SGU Software Engineering course and focuses on building reliable workflows for customers, restaurants, and administrators while experimenting with autonomous drone delivery.
+**Đã hoàn thành:**
 
+- ✅ Xác thực admin và phân quyềnFoodFast delivers an end-to-end food-ordering experience backed by Appwrite. The project is part of the SGU Software Engineering course and focuses on building reliable workflows for customers, restaurants, and administrators while experimenting with autonomous drone delivery.
 
+- ✅ Tổng quan hệ thống (đơn hàng, doanh thu, người dùng)
+
+- ✅ Quản lý đơn hàng (xem, lọc, cập nhật trạng thái)
+
+- ✅ Danh sách khách hàng
 
 ---**[📱 Demo](#-demo) • [✨ Features](#-tính-năng-chính) • [🛠 Tech Stack](#-tech-stack) • [📖 Docs](./docs/README.md) • [🚀 Quick Start](#-quick-start)****[📱 Demo](#-demo) • [✨ Features](#-tính-năng-chính) • [🛠 Tech Stack](#-tech-stack) • [📖 Docs](./docs/README.md) • [🚀 Quick Start](#-quick-start)**
 
+**Đang phát triển:**
+
+- 🚧 Phê duyệt nhà hàng
+
+- 🚧 Quản lý đội drone (gán drone, theo dõi)
+
+- 🚧 Thống kê và báo cáo chi tiết## Key Features
 
 
-## Key Features
+
+### 🚁 Hệ Thống Drone (Dự kiến)
 
 
 
-### Customer Mobile App (Expo React Native)------
+- Đăng ký và theo dõi trạng thái drone### Customer Mobile App (Expo React Native)------
 
-- Register, sign in, and manage personal profile
+- Mô phỏng giao hàng 60 giây
+
+- Cập nhật vị trí real-time- Register, sign in, and manage personal profile
+
+- Phân tích hiệu suất đội drone
 
 - Browse restaurants and menu categories
 
+---
+
 - Build orders with customizations and vouchers
+
+## 🛠️ Công Nghệ Sử Dụng
 
 - Review active and past orders with live status updates (tracking in progress)*Dự án môn Công Nghệ Phần Mềm - Trường Đại học Sài Gòn (SGU)*<img src="./docs/images/banner.png" alt="FoodFast Banner" width="100%" />
 
+### Frontend
 
+- **Mobile**: React Native (Expo 54) + TypeScript + NativeWind
 
-### Restaurant Portal (Next.js)
+- **Web**: Next.js 14 + TypeScript + Tailwind CSS
+
+- **State Management**: Zustand### Restaurant Portal (Next.js)
+
+- **Navigation**: Expo Router (Mobile), React Router (Admin)
 
 - Restaurant onboarding and profile management
 
-- Real-time order board with quick actions</div>*Dự án môn Công Nghệ Phần Mềm - Trường Đại học Sài Gòn (SGU)*
+### Backend & Services
 
-- Menu management with images and availability controls
+- **BaaS**: Appwrite Cloud (Auth, Database, Storage, Realtime)- Real-time order board with quick actions</div>*Dự án môn Công Nghệ Phần Mềm - Trường Đại học Sài Gòn (SGU)*
 
-- Analytics on sales and best sellers (planned)
+- **Database**: 16 collections (6 hiện tại + 10 mới)
 
+- **Payment**: VNPay (dự kiến)- Menu management with images and availability controls
 
+- **Maps**: Google Maps (dự kiến)
 
-### Admin Dashboard (Next.js + Vite)---</div>
-
-- Approve restaurant partners and manage accounts
-
-- Monitor all platform orders and customer details
-
-- Assign drones and review fleet status (in development)
-
-- View platform-wide metrics and audit logs (planned)## 📋 Mục Lục---
+- **Notifications**: Firebase Cloud Messaging (dự kiến)- Analytics on sales and best sellers (planned)
 
 
 
-### Drone Delivery System (Planned)
+### Dev Tools
 
-- Register drones and monitor telemetry
+- TypeScript 5.7
 
-- Simulate 60-second delivery loops- [Giới Thiệu](#-giới-thiệu)## 🚀 Quick Start
+- Git & GitHub### Admin Dashboard (Next.js + Vite)---</div>
 
-- Provide live location updates for customers
+- VS Code
 
-- Track drone utilization and maintenance windows- [Demo](#-demo)
-
-
-
----- [Tính Năng Chính](#-tính-năng-chính)**🆕 Developer mới?** → **[Đọc Documentation Hub](./docs/README.md)** (5 phút)
+- npm- Approve restaurant partners and manage accounts
 
 
 
-## Architecture- [Tech Stack](#-tech-stack)
-
-- **Frontend**: Expo React Native app, Next.js portals for restaurant and admin users
-
-- **Backend**: Appwrite (Auth, Database, Storage, Realtime, Functions)- [Kiến Trúc Hệ Thống](#-kiến-trúc-hệ-thống)**⚡ Bắt đầu ngay**:
-
-- **Integrations**: VNPay (planned), Firebase Cloud Messaging, Google Maps
-
-- **Deployment**: Expo EAS for mobile builds, Vercel/Netlify for web dashboards- [Cấu Trúc Project](#-cấu-trúc-project)```bash
+---- Monitor all platform orders and customer details
 
 
 
-High-level flow:- [Quick Start](#-quick-start)# 1. Setup Database (Tuần 1 - CRITICAL)
-
-1. Customers place orders from the mobile app (Appwrite collections: `orders`, `order_items`).
-
-2. Restaurants confirm and prepare orders via the web portal.- [Database Schema](#-database-schema)Read: docs/database/APPWRITE_SETUP_GUIDE.md
-
-3. Admin assigns a drone; telemetry events are emitted through Appwrite Realtime.
-
-4. Customers track delivery until completion.- [Development Roadmap](#-development-roadmap)Create: 16 Appwrite collections
+## 📁 Cấu Trúc Dự Án- Assign drones and review fleet status (in development)
 
 
 
----- [Documentation](#-documentation)
+```- View platform-wide metrics and audit logs (planned)## 📋 Mục Lục---
+
+sgu_cnpm_foodfast/
+
+│
+
+├── mobile/              # React Native - Ứng dụng khách hàng
+
+│   ├── app/            # Expo Router screens### Drone Delivery System (Planned)
+
+│   ├── components/     # React components
+
+│   ├── lib/            # Appwrite client & utilities- Register drones and monitor telemetry
+
+│   ├── store/          # Zustand stores
+
+│   └── assets/         # Images, fonts, icons- Simulate 60-second delivery loops- [Giới Thiệu](#-giới-thiệu)## 🚀 Quick Start
+
+│
+
+├── restaurant/         # Next.js - Cổng nhà hàng- Provide live location updates for customers
+
+│   ├── src/
+
+│   │   ├── app/       # Next.js App Router- Track drone utilization and maintenance windows- [Demo](#-demo)
+
+│   │   ├── components/
+
+│   │   └── lib/
+
+│   └── package.json
+
+│---- [Tính Năng Chính](#-tính-năng-chính)**🆕 Developer mới?** → **[Đọc Documentation Hub](./docs/README.md)** (5 phút)
+
+├── admin/              # Next.js + Vite - Admin dashboard
+
+│   ├── src/
+
+│   │   ├── pages/     # React Router pages
+
+│   │   ├── components/## Architecture- [Tech Stack](#-tech-stack)
+
+│   │   └── lib/
+
+│   └── package.json- **Frontend**: Expo React Native app, Next.js portals for restaurant and admin users
+
+│
+
+├── docs/               # Tài liệu dự án- **Backend**: Appwrite (Auth, Database, Storage, Realtime, Functions)- [Kiến Trúc Hệ Thống](#-kiến-trúc-hệ-thống)**⚡ Bắt đầu ngay**:
+
+│   ├── UC1_DAT_DO_AN.md          # Use case: Đặt đồ ăn
+
+│   ├── PROJECT_REQUIREMENTS_vi.md # Yêu cầu dự án- **Integrations**: VNPay (planned), Firebase Cloud Messaging, Google Maps
+
+│   ├── DEVELOPMENT_ROADMAP.md     # Lộ trình phát triển
+
+│   └── database/                  # Database schema & guides- **Deployment**: Expo EAS for mobile builds, Vercel/Netlify for web dashboards- [Cấu Trúc Project](#-cấu-trúc-project)```bash
+
+│
+
+├── drawio/             # Sơ đồ hệ thống (Draw.io)
+
+│   ├── UC1-activity-diagram.drawio
+
+│   ├── UC1-sequence-diagram.drawioHigh-level flow:- [Quick Start](#-quick-start)# 1. Setup Database (Tuần 1 - CRITICAL)
+
+│   └── ...
+
+│1. Customers place orders from the mobile app (Appwrite collections: `orders`, `order_items`).
+
+└── functions/          # Appwrite Cloud Functions
+
+```2. Restaurants confirm and prepare orders via the web portal.- [Database Schema](#-database-schema)Read: docs/database/APPWRITE_SETUP_GUIDE.md
 
 
 
-## Project Structure- [Contributing](#-contributing)# 2. Pick an issue (Tuần 2+)
-
-```
-
-sgu_cnpm_foodfast/- [Team](#-team)Read: docs/GITHUB_ISSUES.md
-
-├── mobile/           # Expo React Native customer app
-
-├── restaurant/       # Next.js restaurant portal- [License](#-license)Choose: Issue #1, #7, #15, or #23
-
-├── admin/            # Next.js + Vite admin dashboard
-
-├── docs/             # Project documentation (requirements, guides, use cases)
-
-├── drawio/           # Draw.io diagram sources
-
-├── functions/        # Appwrite cloud functions (e.g., notifications)---# 3. Start coding
-
-└── shared/           # Shared utilities, constants, and types
-
-```git checkout -b feature/[issue-number]-description
+---3. Admin assigns a drone; telemetry events are emitted through Appwrite Realtime.
 
 
 
----## 🎯 Giới Thiệu```
+## 🚀 Hướng Dẫn Cài Đặt4. Customers track delivery until completion.- [Development Roadmap](#-development-roadmap)Create: 16 Appwrite collections
 
 
 
-## Getting Started
+### Yêu Cầu
 
 
 
-### Prerequisites**FoodFast** là một nền tảng giao đồ ăn toàn diện với công nghệ **Drone Delivery**, tích hợp 3 ứng dụng độc lập phục vụ các đối tượng người dùng khác nhau.**📊 Track Progress**: [PROJECT_TRACKER.md](./docs/PROJECT_TRACKER.md)
+- Node.js >= 18.0---- [Documentation](#-documentation)
 
-- Node.js 18+
-
-- npm 9+
+- npm >= 9.0
 
 - Git
 
-- Expo Go app (for testing on devices)### 🎨 Hệ Sinh Thái 3 Nền Tảng---
+- Expo Go app (cho mobile)
 
+## Project Structure- [Contributing](#-contributing)# 2. Pick an issue (Tuần 2+)
 
+### Bước 1: Clone Repository
 
-### 1. Clone the repository
+```
 
 ```bash
 
-git clone https://github.com/phatle224/sgu_cnpm_foodfast.git<div align="center">## 📋 Mục Lục
+git clone https://github.com/phatle224/sgu_cnpm_foodfast.gitsgu_cnpm_foodfast/- [Team](#-team)Read: docs/GITHUB_ISSUES.md
 
 cd sgu_cnpm_foodfast
 
-```
+```├── mobile/           # Expo React Native customer app
 
 
 
-### 2. Configure Appwrite```- [Giới Thiệu](#-giới-thiệu)
-
-1. Create a project on [Appwrite Cloud](https://cloud.appwrite.io/).
-
-2. Provision the collections described in `docs/database/DATABASE_SCHEMA.md`.┌─────────────────┐         ┌─────────────────┐         ┌─────────────────┐- [Tính Năng](#-tính-năng)
-
-3. Create a storage bucket for images.
-
-4. Copy the endpoint, project ID, database ID, and bucket ID.│   📱 Mobile     │         │   🏪 Restaurant │         │   🎛️  Admin     │- [Tech Stack](#-tech-stack)
+### Bước 2: Cấu Hình Appwrite├── restaurant/       # Next.js restaurant portal- [License](#-license)Choose: Issue #1, #7, #15, or #23
 
 
 
-### 3. Install dependencies│   Customer App  │◄────────┤   Web Portal    │────────►│   Dashboard     │- [Cấu Trúc Dự Án](#-cấu-trúc-dự-án)
+1. Tạo project tại [Appwrite Cloud](https://cloud.appwrite.io/)├── admin/            # Next.js + Vite admin dashboard
+
+2. Tạo database và collections theo `docs/database/DATABASE_SCHEMA.md`
+
+3. Tạo storage bucket cho hình ảnh├── docs/             # Project documentation (requirements, guides, use cases)
+
+4. Copy Project ID, Database ID, Bucket ID
+
+├── drawio/           # Draw.io diagram sources
+
+### Bước 3: Cài Đặt Dependencies
+
+├── functions/        # Appwrite cloud functions (e.g., notifications)---# 3. Start coding
+
+#### Mobile App
+
+```bash└── shared/           # Shared utilities, constants, and types
+
+cd mobile
+
+npm install```git checkout -b feature/[issue-number]-description
+
+
+
+# Tạo file .env
+
+cat > .env << EOF
+
+EXPO_PUBLIC_APPWRITE_ENDPOINT=https://cloud.appwrite.io/v1---## 🎯 Giới Thiệu```
+
+EXPO_PUBLIC_APPWRITE_PROJECT_ID=your_project_id
+
+EXPO_PUBLIC_APPWRITE_DATABASE_ID=your_database_id
+
+EXPO_PUBLIC_APPWRITE_BUCKET_ID=your_bucket_id
+
+EOF## Getting Started
+
+
+
+# Chạy ứng dụng
+
+npm start
+
+```### Prerequisites**FoodFast** là một nền tảng giao đồ ăn toàn diện với công nghệ **Drone Delivery**, tích hợp 3 ứng dụng độc lập phục vụ các đối tượng người dùng khác nhau.**📊 Track Progress**: [PROJECT_TRACKER.md](./docs/PROJECT_TRACKER.md)
+
+
+
+#### Admin Dashboard- Node.js 18+
 
 ```bash
 
-cd mobile && npm install│                 │         │                 │         │                 │- [Development Roadmap](#-development-roadmap)
+cd admin- npm 9+
 
-cd ../admin && npm install
+npm install
 
-cd ../restaurant && npm install│  • Đặt đồ ăn    │         │  • Nhận đơn     │         │  • Duyệt NHàng  │- [Cài Đặt](#-cài-đặt)
+- Git
+
+# Tạo file .env
+
+cat > .env << EOF- Expo Go app (for testing on devices)### 🎨 Hệ Sinh Thái 3 Nền Tảng---
+
+VITE_APPWRITE_ENDPOINT=https://cloud.appwrite.io/v1
+
+VITE_APPWRITE_PROJECT_ID=your_project_id
+
+VITE_APPWRITE_DATABASE_ID=your_database_id
+
+VITE_APPWRITE_BUCKET_ID=your_bucket_id### 1. Clone the repository
+
+EOF
+
+```bash
+
+# Chạy dashboard
+
+npm run devgit clone https://github.com/phatle224/sgu_cnpm_foodfast.git<div align="center">## 📋 Mục Lục
 
 ```
+
+cd sgu_cnpm_foodfast
+
+#### Restaurant Portal
+
+```bash```
+
+cd restaurant
+
+npm install
+
+
+
+# Tạo file .env.local### 2. Configure Appwrite```- [Giới Thiệu](#-giới-thiệu)
+
+cat > .env.local << EOF
+
+NEXT_PUBLIC_APPWRITE_ENDPOINT=https://cloud.appwrite.io/v11. Create a project on [Appwrite Cloud](https://cloud.appwrite.io/).
+
+NEXT_PUBLIC_APPWRITE_PROJECT_ID=your_project_id
+
+NEXT_PUBLIC_APPWRITE_DATABASE_ID=your_database_id2. Provision the collections described in `docs/database/DATABASE_SCHEMA.md`.┌─────────────────┐         ┌─────────────────┐         ┌─────────────────┐- [Tính Năng](#-tính-năng)
+
+NEXT_PUBLIC_APPWRITE_BUCKET_ID=your_bucket_id
+
+EOF3. Create a storage bucket for images.
+
+
+
+# Chạy portal4. Copy the endpoint, project ID, database ID, and bucket ID.│   📱 Mobile     │         │   🏪 Restaurant │         │   🎛️  Admin     │- [Tech Stack](#-tech-stack)
+
+npm run dev
+
+```
+
+
+
+---### 3. Install dependencies│   Customer App  │◄────────┤   Web Portal    │────────►│   Dashboard     │- [Cấu Trúc Dự Án](#-cấu-trúc-dự-án)
+
+
+
+## 📊 Tiến Độ Dự Án```bash
+
+
+
+| Component | Tiến Độ | Trạng Thái |cd mobile && npm install│                 │         │                 │         │                 │- [Development Roadmap](#-development-roadmap)
+
+|-----------|---------|------------|
+
+| Mobile App | 70% | ✅ Hoạt động |cd ../admin && npm install
+
+| Restaurant Portal | 15% | 🚧 Đang phát triển |
+
+| Admin Dashboard | 40% | ✅ Hoạt động |cd ../restaurant && npm install│  • Đặt đồ ăn    │         │  • Nhận đơn     │         │  • Duyệt NHàng  │- [Cài Đặt](#-cài-đặt)
+
+| Database | 37% (6/16 collections) | 🔴 Cần bổ sung |
+
+| Payment Integration | 0% | 🔴 Chưa bắt đầu |```
+
+| Drone System | 0% | 🔴 Chưa bắt đầu |
 
 │  • Thanh toán   │         │  • Quản lý menu │         │  • Gán drone    │- [Documentation](#-documentation)
 
+**Chi tiết**: Xem `docs/PROJECT_TRACKER.md` và `docs/DEVELOPMENT_ROADMAP.md`
+
 ### 4. Create environment files
-
-Refer to the [Environment Variables](#environment-variables) table below, then copy values into `.env` (mobile), `.env` (admin), and `.env.local` (restaurant).│  • Theo dõi     │         │  • Thống kê     │         │  • Giám sát     │- [Contributing](#-contributing)
-
-
-
-### 5. Run the apps└─────────────────┘         └─────────────────┘         └─────────────────┘- [Team](#-team)
-
-```bash
-
-# Mobile app         │                           │                           │
-
-yarn start   # or npm start
-
-         └───────────────────────────┼───────────────────────────┘---
-
-# Admin dashboard
-
-npm run dev --prefix admin                                     │
-
-
-
-# Restaurant portal                         ┌───────────▼───────────┐## 🎯 Giới Thiệu
-
-npm run dev --prefix restaurant
-
-```                         │   ☁️  Appwrite Cloud   │
-
-
-
----                         │   Backend Services    │**FoodFast** là nền tảng giao đồ ăn đa bên (multi-sided platform) với công nghệ drone delivery:
-
-
-
-## Environment Variables                         │                       │
-
-| App | File | Keys |
-
-|-----|------|------|                         │  • Authentication     │- 📱 **Customer Mobile App** - Browse restaurants, Order food, Track drone real-time
-
-| Mobile | `.env` | `EXPO_PUBLIC_APPWRITE_ENDPOINT`, `EXPO_PUBLIC_APPWRITE_PROJECT_ID`, `EXPO_PUBLIC_APPWRITE_DATABASE_ID`, `EXPO_PUBLIC_APPWRITE_BUCKET_ID` |
-
-| Admin | `.env` | `VITE_APPWRITE_ENDPOINT`, `VITE_APPWRITE_PROJECT_ID`, `VITE_APPWRITE_DATABASE_ID`, `VITE_APPWRITE_BUCKET_ID`, collection IDs (`VITE_APPWRITE_USER_COLLECTION_ID`, ...) |                         │  • Database (16 coll) │- 🏪 **Restaurant Portal** - Menu management, Order processing, Analytics
-
-| Restaurant | `.env.local` | `NEXT_PUBLIC_APPWRITE_ENDPOINT`, `NEXT_PUBLIC_APPWRITE_PROJECT_ID`, `NEXT_PUBLIC_APPWRITE_DATABASE_ID`, `NEXT_PUBLIC_APPWRITE_BUCKET_ID` |
-
-| Functions | `functions/send-notification/.env` | `APPWRITE_FUNCTION_ENDPOINT`, `APPWRITE_FUNCTION_PROJECT_ID`, `APPWRITE_FUNCTION_API_KEY` |                         │  • Storage            │- 🎛️ **Admin Dashboard** - Restaurant approval, Drone fleet management, System analytics
-
-
-
----                         │  • Realtime           │- � **Drone Delivery System** - 60-second simulation, Real-time tracking, Telemetry
-
-
-
-## Available Scripts                         └───────────┬───────────┘
-
-| Context | Command | Description |
-
-|---------|---------|-------------|                                     │**Mục tiêu**: Xây dựng hệ sinh thái giao đồ ăn hoàn chỉnh với trải nghiệm tốt nhất cho 3 bên: Khách hàng, Nhà hàng, và Admin vận hành.
-
-| mobile | `npm start` | Launch Expo dev client |
-
-| mobile | `npm run android` / `npm run ios` | Run on emulator/device |                         ┌───────────▼───────────┐
-
-| mobile | `npm run web` | Run web preview |
-
-| admin | `npm run dev` | Start Vite dev server |                         │   🚁 Drone System     │**Dự án**: Môn Công Nghệ Phần Mềm - Đại học Sài Gòn (SGU)
-
-| admin | `npm run build` | Create production build |
-
-| restaurant | `npm run dev` | Start Next.js dev server |                         │   Delivery Engine     │
-
-| restaurant | `npm run build` | Build production bundle |
-
-                         │                       │---
 
 ---
 
-                         │  • Auto Assignment    │
+Refer to the [Environment Variables](#environment-variables) table below, then copy values into `.env` (mobile), `.env` (admin), and `.env.local` (restaurant).│  • Theo dõi     │         │  • Thống kê     │         │  • Giám sát     │- [Contributing](#-contributing)
+
+## 📚 Tài Liệu
+
+
+
+Tài liệu chi tiết được tổ chức trong thư mục `docs/`:
+
+### 5. Run the apps└─────────────────┘         └─────────────────┘         └─────────────────┘- [Team](#-team)
+
+- **[UC1_DAT_DO_AN.md](./docs/UC1_DAT_DO_AN.md)** - Use Case chi tiết: Đặt đồ ăn
+
+- **[PROJECT_REQUIREMENTS_vi.md](./docs/PROJECT_REQUIREMENTS_vi.md)** - Yêu cầu dự án đầy đủ```bash
+
+- **[DEVELOPMENT_ROADMAP.md](./docs/DEVELOPMENT_ROADMAP.md)** - Lộ trình phát triển 6 tuần
+
+- **[database/DATABASE_SCHEMA.md](./docs/database/DATABASE_SCHEMA.md)** - Schema 16 collections# Mobile app         │                           │                           │
+
+- **[database/APPWRITE_SETUP_GUIDE.md](./docs/database/APPWRITE_SETUP_GUIDE.md)** - Hướng dẫn setup backend
+
+yarn start   # or npm start
+
+### Sơ Đồ Hệ Thống
+
+         └───────────────────────────┼───────────────────────────┘---
+
+Các file Draw.io trong thư mục `drawio/`:
+
+- Activity Diagram - UC1# Admin dashboard
+
+- Sequence Diagram - UC1
+
+- Component Diagramnpm run dev --prefix admin                                     │
+
+- Deployment Diagram
+
+- ERD Database
+
+
+
+---# Restaurant portal                         ┌───────────▼───────────┐## 🎯 Giới Thiệu
+
+
+
+## 🤝 Đóng Gópnpm run dev --prefix restaurant
+
+
+
+1. Fork repository```                         │   ☁️  Appwrite Cloud   │
+
+2. Tạo branch: `git checkout -b feature/ten-tinh-nang`
+
+3. Commit thay đổi: `git commit -m 'Thêm tính năng X'`
+
+4. Push lên branch: `git push origin feature/ten-tinh-nang`
+
+5. Tạo Pull Request---                         │   Backend Services    │**FoodFast** là nền tảng giao đồ ăn đa bên (multi-sided platform) với công nghệ drone delivery:
+
+
+
+### Quy Tắc Commit
+
+
+
+```## Environment Variables                         │                       │
+
+feat: Thêm tính năng mới
+
+fix: Sửa lỗi| App | File | Keys |
+
+docs: Cập nhật tài liệu
+
+style: Format code|-----|------|------|                         │  • Authentication     │- 📱 **Customer Mobile App** - Browse restaurants, Order food, Track drone real-time
+
+refactor: Tái cấu trúc code
+
+test: Thêm tests| Mobile | `.env` | `EXPO_PUBLIC_APPWRITE_ENDPOINT`, `EXPO_PUBLIC_APPWRITE_PROJECT_ID`, `EXPO_PUBLIC_APPWRITE_DATABASE_ID`, `EXPO_PUBLIC_APPWRITE_BUCKET_ID` |
+
+chore: Cập nhật dependencies
+
+```| Admin | `.env` | `VITE_APPWRITE_ENDPOINT`, `VITE_APPWRITE_PROJECT_ID`, `VITE_APPWRITE_DATABASE_ID`, `VITE_APPWRITE_BUCKET_ID`, collection IDs (`VITE_APPWRITE_USER_COLLECTION_ID`, ...) |                         │  • Database (16 coll) │- 🏪 **Restaurant Portal** - Menu management, Order processing, Analytics
+
+
+
+---| Restaurant | `.env.local` | `NEXT_PUBLIC_APPWRITE_ENDPOINT`, `NEXT_PUBLIC_APPWRITE_PROJECT_ID`, `NEXT_PUBLIC_APPWRITE_DATABASE_ID`, `NEXT_PUBLIC_APPWRITE_BUCKET_ID` |
+
+
+
+## 👥 Đội Ngũ Phát Triển| Functions | `functions/send-notification/.env` | `APPWRITE_FUNCTION_ENDPOINT`, `APPWRITE_FUNCTION_PROJECT_ID`, `APPWRITE_FUNCTION_API_KEY` |                         │  • Storage            │- 🎛️ **Admin Dashboard** - Restaurant approval, Drone fleet management, System analytics
+
+
+
+- **Lê Hồng Phát** - [@phatle224](https://github.com/phatle224) - Full-stack Developer
+
+- **Nguyễn Hồng Thắm** - [@nguyen-hong-tham](https://github.com/nguyen-hong-tham) - Frontend Developer
+
+---                         │  • Realtime           │- � **Drone Delivery System** - 60-second simulation, Real-time tracking, Telemetry
+
+**Giảng viên hướng dẫn**: TS. Nguyễn Quốc Huy  
+
+**Môn học**: Công Nghệ Phần Mềm  
+
+**Học kỳ**: 1 / Năm học 2025-2026  
+
+**Trường**: Đại học Sài Gòn (SGU)## Available Scripts                         └───────────┬───────────┘
+
+
+
+---| Context | Command | Description |
+
+
+
+## 📞 Liên Hệ|---------|---------|-------------|                                     │**Mục tiêu**: Xây dựng hệ sinh thái giao đồ ăn hoàn chỉnh với trải nghiệm tốt nhất cho 3 bên: Khách hàng, Nhà hàng, và Admin vận hành.
+
+
+
+- **Email**: hongphatle224@gmail.com| mobile | `npm start` | Launch Expo dev client |
+
+- **GitHub**: [phatle224/sgu_cnpm_foodfast](https://github.com/phatle224/sgu_cnpm_foodfast)
+
+- **Issues**: [GitHub Issues](https://github.com/phatle224/sgu_cnpm_foodfast/issues)| mobile | `npm run android` / `npm run ios` | Run on emulator/device |                         ┌───────────▼───────────┐
+
+
+
+---| mobile | `npm run web` | Run web preview |
+
+
+
+## 📄 License| admin | `npm run dev` | Start Vite dev server |                         │   🚁 Drone System     │**Dự án**: Môn Công Nghệ Phần Mềm - Đại học Sài Gòn (SGU)
+
+
+
+Distributed under the MIT License. See `LICENSE` for more information.| admin | `npm run build` | Create production build |
+
+
+
+---| restaurant | `npm run dev` | Start Next.js dev server |                         │   Delivery Engine     │
+
+
+
+## 🙏 Acknowledgments| restaurant | `npm run build` | Build production bundle |
+
+
+
+- [React Native](https://reactnative.dev/) - Mobile framework                         │                       │---
+
+- [Expo](https://expo.dev/) - Development platform
+
+- [Next.js](https://nextjs.org/) - React framework---
+
+- [Appwrite](https://appwrite.io/) - Backend as a Service
+
+- [Tailwind CSS](https://tailwindcss.com/) - CSS framework                         │  • Auto Assignment    │
+
+- [Zustand](https://zustand-demo.pmnd.rs/) - State management
 
 ## Documentation
 
+---
+
 Key references located in `docs/`:                         │  • Route Planning     │## ✨ Tính Năng
+
+<div align="center">
 
 - `README.md` – documentation index
 
+**⭐ Nếu thấy project hữu ích, hãy cho một star nhé! ⭐**
+
 - `PROJECT_REQUIREMENTS_vi.md` – full functional/non-functional requirements                         │  • Real-time Tracking │
 
+Made with ❤️ by FoodFast Team
+
 - `UC1_DAT_DO_AN.md` – focused use case for "Đặt đồ ăn"
+
+</div>
 
 - `DEVELOPMENT_ROADMAP.md` – phase-by-phase plan and timeline                         └───────────────────────┘### 📱 Customer Mobile App (70% Complete)
 
