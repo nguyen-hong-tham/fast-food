@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import DashboardLayout from '@/components/DashboardLayout';
+
 import { useAuthStore } from '@/store/authStore';
 import { databases } from '@/lib/appwrite';
 import { config } from '@/config';
@@ -141,23 +141,20 @@ export default function SettingsPage() {
 
   if (!restaurant) {
     return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-96">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">No Restaurant Found</h2>
-            <p className="text-gray-600">
-              Your account is not associated with any restaurant yet.
-            </p>
-          </div>
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">No Restaurant Found</h2>
+          <p className="text-gray-600">
+            Your account is not associated with any restaurant yet.
+          </p>
         </div>
-      </DashboardLayout>
+      </div>
     );
   }
 
   return (
-    <DashboardLayout>
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div>
+    <div className="max-w-4xl mx-auto space-y-6">
+      <div>
           <h1 className="text-3xl font-bold text-gray-900">Restaurant Settings</h1>
           <p className="mt-2 text-gray-600">
             Update your restaurant information and complete your profile.
@@ -398,7 +395,6 @@ export default function SettingsPage() {
             </button>
           </div>
         </form>
-      </div>
-    </DashboardLayout>
+    </div>
   );
 }

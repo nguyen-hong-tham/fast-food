@@ -221,15 +221,13 @@ const OrderCard = React.memo(({ order }: OrderCardProps) => {
                 <View className="mt-3 pt-3 border-t border-gray-100">
                     <TouchableOpacity
                         className={`rounded-xl py-3 flex-row items-center justify-center ${
-                            hasReviewed ? 'bg-gray-200' : 'bg-amber-500'
+                            hasReviewed ? 'bg-amber-500' : 'bg-amber-500'
                         }`}
                         onPress={handleRateRestaurant}
                         disabled={hasReviewed}
                         activeOpacity={0.8}
                     >
-                        <Text className="text-lg mr-2">⭐</Text>
-                        <Text className={`paragraph-semibold ${
-                            hasReviewed ? 'text-gray-500' : 'text-white'
+                        <Text className={`paragraph-semibold text-white'
                         }`}>
                             {hasReviewed ? 'Already Reviewed' : 'Rate This Restaurant'}
                         </Text>

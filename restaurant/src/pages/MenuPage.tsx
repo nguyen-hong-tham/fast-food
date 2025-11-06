@@ -1,19 +1,27 @@
 import { useState, useEffect } from 'react';
-import DashboardLayout from '@/components/DashboardLayout';
+
 import { useAuthStore } from '@/store/authStore';
 import { databases, Query, ID } from '@/lib/appwrite';
 import { config } from '@/config';
 import type { MenuItem } from '@/types';
 import MenuItemForm from '@/components/MenuItemForm';
-import { Plus, Search, Edit, Trash2, Eye, EyeOff } from 'lucide-react';
+import MenuItemReviewsModal from '@/components/MenuItemReviewsModal';
+import { getMenuItemAverageRating } from '@/lib/reviews';
+import { Plus, Search, Edit, Trash2, Eye, EyeOff, Star, MessageSquare } from 'lucide-react';
 
 export default function MenuPage() {
   const { restaurant } = useAuthStore();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [menuItemRatings, setMenuItemRatings] = useState<Record<string, { average: number; total: number }>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+  const [reviewsModal, setReviewsModal] = useState<{ isOpen: boolean; itemId: string; itemName: string }>({
+    isOpen: false,
+    itemId: '',
+    itemName: '',
+  });
 
   useEffect(() => {
     if (restaurant?.$id) {
@@ -28,22 +36,65 @@ export default function MenuPage() {
     }
     try {
       setIsLoading(true);
-      // Fetch all menu items first since restaurantId is stored as a relation
-      const response = await databases.listDocuments(
-        config.appwrite.databaseId,
-        config.appwrite.menuCollectionId,
-        [Query.limit(100)]
-      );
-      // Filter client-side by restaurant ID
-      const filtered = response.documents.filter((item: any) => {
-        const itemRestaurantId = typeof item.restaurantId === 'object' ? item.restaurantId.$id : item.restaurantId;
-        return itemRestaurantId === restaurant.$id;
-      });
+      
+      // Try server-side filtering first
+      let filtered: any[];
+      try {
+        const response = await databases.listDocuments(
+          config.appwrite.databaseId,
+          config.appwrite.menuCollectionId,
+          [
+            Query.equal('restaurantId', restaurant.$id),
+            Query.limit(100)
+          ]
+        );
+        filtered = response.documents;
+      } catch {
+        // Fallback to client-side filtering
+        const response = await databases.listDocuments(
+          config.appwrite.databaseId,
+          config.appwrite.menuCollectionId,
+          [Query.limit(100)]
+        );
+        filtered = response.documents.filter((item: any) => {
+          const itemRestaurantId = typeof item.restaurantId === 'object' ? item.restaurantId.$id : item.restaurantId;
+          return itemRestaurantId === restaurant.$id;
+        });
+      }
+      
       setMenuItems(filtered as any);
+
+      // ✅ OPTIMIZATION: Load ratings lazily in background
+      // Don't block UI while fetching ratings
+      loadRatingsInBackground(filtered);
     } catch (error) {
       console.error('Error fetching menu items:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Load ratings in background without blocking UI
+  const loadRatingsInBackground = async (items: any[]) => {
+    const ratings: Record<string, { average: number; total: number }> = {};
+    
+    // Process in batches of 5 to avoid overwhelming the API
+    const batchSize = 5;
+    for (let i = 0; i < items.length; i += batchSize) {
+      const batch = items.slice(i, i + batchSize);
+      await Promise.all(
+        batch.map(async (item: any) => {
+          try {
+            const rating = await getMenuItemAverageRating(item.$id);
+            ratings[item.$id] = { average: rating.average, total: rating.total };
+            // Update state progressively as ratings load
+            setMenuItemRatings(prev => ({ ...prev, [item.$id]: rating }));
+          } catch (error) {
+            console.error(`Error fetching rating for item ${item.$id}:`, error);
+            ratings[item.$id] = { average: 0, total: 0 };
+          }
+        })
+      );
     }
   };
 
@@ -115,18 +166,15 @@ export default function MenuPage() {
 
   if (!restaurant) {
     return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <p className="text-gray-500">Loading...</p>
-        </div>
-      </DashboardLayout>
+      <div className="flex items-center justify-center h-64">
+        <p className="text-gray-500">Loading...</p>
+      </div>
     );
   }
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold text-gray-900">Menu Management</h1>
           <button
             className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
@@ -208,25 +256,45 @@ export default function MenuPage() {
                     )}
                   </div>
                   <p className="text-gray-600 text-sm mb-3 line-clamp-2">{item.description}</p>
-                  <div className="flex items-center justify-between mb-4">
+                  
+                  <div className="flex items-center justify-between mb-3">
                     <span className="text-xl font-bold text-primary-600">
                       {item.price.toLocaleString('vi-VN')}₫
                     </span>
-                    {item.rating && (
-                      <span className="text-sm text-gray-600">⭐ {item.rating.toFixed(1)}</span>
+                    {/* Auto Rating from Reviews */}
+                    {menuItemRatings[item.$id] && menuItemRatings[item.$id].total > 0 ? (
+                      <div className="flex items-center gap-1 text-yellow-500">
+                        <Star className="w-4 h-4 fill-current" />
+                        <span className="text-sm font-semibold text-gray-700">
+                          {menuItemRatings[item.$id].average.toFixed(1)}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          ({menuItemRatings[item.$id].total})
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-400">No reviews</span>
                     )}
                   </div>
+
                   {/* Actions */}
-                  <div className="flex gap-2">
+                  <div className="grid grid-cols-3 gap-2">
                     <button
-                      className="flex-1 flex items-center justify-center px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                      className="flex items-center justify-center px-2 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm"
                       onClick={() => handleEditClick(item)}
                     >
                       <Edit className="w-4 h-4 mr-1" />
                       Edit
                     </button>
                     <button
-                      className="flex items-center justify-center px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                      className="flex items-center justify-center px-2 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors text-sm"
+                      onClick={() => setReviewsModal({ isOpen: true, itemId: item.$id, itemName: item.name })}
+                    >
+                      <MessageSquare className="w-4 h-4 mr-1" />
+                      Reviews
+                    </button>
+                    <button
+                      className="flex items-center justify-center px-2 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
                       onClick={() => handleDeleteClick(item.$id)}
                     >
                       <Trash2 className="w-4 h-4" />
@@ -237,7 +305,7 @@ export default function MenuPage() {
             ))}
           </div>
         )}
-      </div>
+
       {isFormOpen && (
         <MenuItemForm
           initialData={editingItem || {}}
@@ -248,6 +316,14 @@ export default function MenuPage() {
           }}
         />
       )}
-    </DashboardLayout>
+      
+      {/* Reviews Modal */}
+      <MenuItemReviewsModal
+        menuItemId={reviewsModal.itemId}
+        menuItemName={reviewsModal.itemName}
+        isOpen={reviewsModal.isOpen}
+        onClose={() => setReviewsModal({ isOpen: false, itemId: '', itemName: '' })}
+      />
+    </div>
   );
 }

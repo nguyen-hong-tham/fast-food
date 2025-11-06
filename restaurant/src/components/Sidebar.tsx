@@ -1,20 +1,18 @@
 import {
-    LayoutDashboard,
-    Plane,
-    ShoppingBag,
-    Store,
-    Users,
-    Zap
+  LayoutDashboard,
+  UtensilsCrossed,
+  ShoppingBag,
+  BarChart3,
+  Settings
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
 const navItems = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard', exact: true },
-  { to: '/orders', icon: ShoppingBag, label: 'Orders' },
-  { to: '/customers', icon: Users, label: 'Customers' },
-  { to: '/restaurants', icon: Store, label: 'Restaurants' },
-  { to: '/drones', icon: Plane, label: 'Drones' },
-  { to: '/assign-drone', icon: Zap, label: 'Assign Drone' },
+  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', exact: true },
+  { to: '/dashboard/menu', icon: UtensilsCrossed, label: 'Menu' },
+  { to: '/dashboard/orders', icon: ShoppingBag, label: 'Orders' },
+  { to: '/dashboard/analytics', icon: BarChart3, label: 'Analytics' },
+  { to: '/settings', icon: Settings, label: 'Settings' },
 ];
 
 export default function Sidebar() {
@@ -23,7 +21,7 @@ export default function Sidebar() {
       {/* Logo */}
       <div className="p-6 border-b border-gray-200">
         <h1 className="text-2xl font-bold text-primary">FoodFast</h1>
-        <p className="text-sm text-gray-500 mt-1">Admin Dashboard</p>
+        <p className="text-sm text-gray-500 mt-1">Restaurant Portal</p>
       </div>
       
       {/* Navigation */}
@@ -36,7 +34,7 @@ export default function Sidebar() {
             className={({ isActive }) =>
               `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                 isActive
-                  ? 'bg-primary text-white'
+                  ? 'bg-orange-500 text-white hover:bg-orange-600'
                   : 'text-gray-700 hover:bg-gray-100'
               }`
             }
