@@ -257,7 +257,6 @@ export interface Review extends Models.Document {
   deliverySpeed?: number; // 1-5
   service?: number; // 1-5
   comment?: string;
-  images?: string[];
   isVisible: boolean;
   restaurantResponse?: string;
   createdAt: string;
@@ -420,6 +419,45 @@ export interface UpdateUserParams {
   address_home?: string;
   address_home_label?: string;
   avatar?: string;
+}
+
+// ===================== REVIEWS =====================
+
+export interface Review extends Models.Document {
+  userId: string;
+  orderId: string;
+  restaurantId: string;
+  menuItemId: string;
+  rating: number; // 1-5
+  comment?: string;
+  images?: string[]; // Array of image URLs
+  helpful?: number; // Number of people found this helpful
+  reply?: string; // Restaurant's reply
+  repliedAt?: string;
+  isVerifiedPurchase?: boolean;
+  status?: 'active' | 'hidden' | 'reported';
+  // Appwrite auto fields: $id, $createdAt, $updatedAt
+}
+
+export interface CreateReviewParams {
+  orderId: string;
+  menuItemId: string;
+  rating: number;
+  comment?: string;
+  images?: string[];
+}
+
+export interface ReviewWithUser extends Review {
+  user?: {
+    name: string;
+    avatar?: string;
+  };
+}
+
+export interface MenuItemWithReviews extends MenuItem {
+  reviews?: Review[];
+  averageRating?: number;
+  totalReviews?: number;
 }
 
 export interface CreateUserParams {

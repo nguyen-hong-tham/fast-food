@@ -1,8 +1,10 @@
 import { icons } from '@/constants';
 import { Order } from '@/type';
 import { router } from 'expo-router';
-import React, { useCallback, useMemo } from 'react';
-import { Image, Text, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useMemo, useState, useEffect } from 'react';
+import { Image, Text, TouchableOpacity, View, Alert } from 'react-native';
+import { hasUserReviewedOrder } from '@/lib/restaurant-reviews';
+import useAuthStore from '@/store/auth.store';
 
 interface OrderCardProps {
     order: Order;
@@ -33,8 +35,29 @@ const STATUS_LABELS = {
 };
 
 const OrderCard = React.memo(({ order }: OrderCardProps) => {
+    const { user } = useAuthStore();
+    const [hasReviewed, setHasReviewed] = useState(false);
+    const [checkingReview, setCheckingReview] = useState(true);
+    
     const statusColor = STATUS_COLORS[order.status];
     const statusLabel = STATUS_LABELS[order.status];
+    
+    // Check if user has already reviewed this order
+    useEffect(() => {
+        const checkReview = async () => {
+            if (order.status === 'delivered' && user?.$id) {
+                try {
+                    const reviewed = await hasUserReviewedOrder(user.$id, order.$id);
+                    setHasReviewed(reviewed);
+                } catch (error) {
+                    console.error('Error checking review status:', error);
+                }
+            }
+            setCheckingReview(false);
+        };
+        
+        checkReview();
+    }, [order.$id, order.status, user?.$id]);
     
     // Parse items from JSON string - use useMemo
     const items = useMemo(() => 
@@ -78,6 +101,28 @@ const OrderCard = React.memo(({ order }: OrderCardProps) => {
             });
         }
     }, [order.status, order.$id]);
+
+    const handleRateRestaurant = useCallback(async () => {
+        if (!user?.$id) {
+            Alert.alert('Error', 'You must be logged in to rate');
+            return;
+        }
+
+        if (hasReviewed) {
+            Alert.alert('Already Reviewed', 'You have already reviewed this order');
+            return;
+        }
+
+        // Navigate to rating screen
+        router.push({
+            pathname: '/rate-restaurant',
+            params: {
+                orderId: order.$id,
+                restaurantId: order.restaurantId || '',
+                restaurantName: 'Restaurant', // TODO: Fetch restaurant name from API
+            },
+        });
+    }, [order.$id, order.restaurantId, user?.$id, hasReviewed]);
 
     return (
         <TouchableOpacity
@@ -170,6 +215,27 @@ const OrderCard = React.memo(({ order }: OrderCardProps) => {
                     />
                 </View>
             </View>
+
+            {/* Rate Restaurant Button - Only show for delivered orders */}
+            {order.status === 'delivered' && !checkingReview && (
+                <View className="mt-3 pt-3 border-t border-gray-100">
+                    <TouchableOpacity
+                        className={`rounded-xl py-3 flex-row items-center justify-center ${
+                            hasReviewed ? 'bg-gray-200' : 'bg-amber-500'
+                        }`}
+                        onPress={handleRateRestaurant}
+                        disabled={hasReviewed}
+                        activeOpacity={0.8}
+                    >
+                        <Text className="text-lg mr-2">⭐</Text>
+                        <Text className={`paragraph-semibold ${
+                            hasReviewed ? 'text-gray-500' : 'text-white'
+                        }`}>
+                            {hasReviewed ? 'Already Reviewed' : 'Rate This Restaurant'}
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+            )}
         </TouchableOpacity>
     );
 });

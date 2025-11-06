@@ -22,7 +22,7 @@ export const appwriteConfig = {
   restaurantsCollectionId: "restaurants",
   orderItemsCollectionId: "order_items",
   paymentsCollectionId: "payments",
-  // reviewsCollectionId: "reviews", // NOT EXISTS in current database
+  reviewsCollectionId: "reviews", // NEW: Reviews collection
   notificationsCollectionId: "notifications",
   dronesCollectionId: "drones",
   droneEventsCollectionId: "drone_events",
