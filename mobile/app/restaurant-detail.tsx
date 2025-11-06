@@ -9,6 +9,8 @@ import Filter from '@/components/Filter';
 import WebContainer from '@/components/WebContainer';
 import { useResponsive } from '@/lib/responsive';
 import cn from 'clsx';
+import { getRestaurantReviewsWithUserInfo, getRestaurantAverageRating } from '@/lib/restaurant-reviews';
+import ReviewCard from '@/components/ReviewCard';
 
 const RestaurantDetailScreen = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -24,7 +26,19 @@ const RestaurantDetailScreen = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   
   // Reviews state
-  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [rating, setRating] = useState({
+    average: 0,
+    total: 0,
+    distribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
+    averageByCategory: {
+      foodQuality: 0,
+      deliverySpeed: 0,
+      service: 0,
+    },
+  });
+  const [reviewSortBy, setReviewSortBy] = useState<'newest' | 'highest' | 'lowest'>('newest');
+  const [minRatingFilter, setMinRatingFilter] = useState<number | undefined>(undefined);
 
   // Fetch restaurant details
   useEffect(() => {
@@ -62,25 +76,44 @@ const RestaurantDetailScreen = () => {
     })();
   }, [id]);
 
-  // Fetch reviews - Temporarily disabled until reviews collection is created
+  // Fetch reviews
   useEffect(() => {
     if (!id) return;
     
-    // TODO: Enable when reviews collection is created in database
-    // (async () => {
-    //   try {
-    //     const data = await getRestaurantReviews(id);
-    //     setReviews(data as any as Review[]);
-    //   } catch (error) {
-    //     console.error('Error fetching reviews:', error);
-    //     // Set empty array if no reviews found
-    //     setReviews([]);
-    //   }
-    // })();
+    loadReviews();
+  }, [id, reviewSortBy, minRatingFilter]);
+
+  const loadReviews = async () => {
+    if (!id) return;
     
-    // For now, set empty reviews
-    setReviews([]);
-  }, [id]);
+    try {
+      const [reviewsData, ratingData] = await Promise.all([
+        getRestaurantReviewsWithUserInfo(id, 50),
+        getRestaurantAverageRating(id),
+      ]);
+
+      // Apply filters and sorting
+      let filteredReviews = reviewsData;
+      
+      if (minRatingFilter) {
+        filteredReviews = filteredReviews.filter((r: any) => r.overallRating >= minRatingFilter);
+      }
+
+      // Sort
+      if (reviewSortBy === 'highest') {
+        filteredReviews.sort((a: any, b: any) => b.overallRating - a.overallRating);
+      } else if (reviewSortBy === 'lowest') {
+        filteredReviews.sort((a: any, b: any) => a.overallRating - b.overallRating);
+      }
+      // 'newest' is default from API
+
+      setReviews(filteredReviews);
+      setRating(ratingData);
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
+      setReviews([]);
+    }
+  };
 
   // Filter menu by category
   useEffect(() => {

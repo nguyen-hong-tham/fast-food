@@ -29,7 +29,6 @@ export default function MenuItemForm({ initialData = {}, onSubmit, onCancel }: M
   const [imageUrl, setImageUrl] = useState(initialData.image_url || '');
   const [calories, setCalories] = useState<number>(initialData.calories ?? 50);
   const [protein, setProtein] = useState<number>(initialData.protein ?? 100);
-  const [rating, setRating] = useState<number | undefined>(initialData.rating ?? 5);
   const [isAvailable, setIsAvailable] = useState<boolean>(initialData.isAvailable ?? true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -57,7 +56,6 @@ export default function MenuItemForm({ initialData = {}, onSubmit, onCancel }: M
         image_url: imageUrl.trim() || undefined,
         calories: calories || undefined,
         protein: protein || undefined,
-        rating: rating || undefined,
         isAvailable,
       });
     } finally {
@@ -161,34 +159,17 @@ export default function MenuItemForm({ initialData = {}, onSubmit, onCancel }: M
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="rating">
-                Rating
-              </label>
-              <input
-                id="rating"
-                type="number"
-                step="0.1"
-                min="0"
-                max="5"
-                value={rating ?? ''}
-                onChange={(e) => setRating(e.target.value ? parseFloat(e.target.value) : undefined)}
-                className="text-black bg-white w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-            </div>
-            <div className="flex items-center mt-6">
-              <input
-                id="isAvailable"
-                type="checkbox"
-                checked={isAvailable}
-                onChange={(e) => setIsAvailable(e.target.checked)}
-                className="mr-2"
-              />
-              <label htmlFor="isAvailable" className="text-sm text-gray-700">
-                Available
-              </label>
-            </div>
+          <div className="flex items-center">
+            <input
+              id="isAvailable"
+              type="checkbox"
+              checked={isAvailable}
+              onChange={(e) => setIsAvailable(e.target.checked)}
+              className="mr-2"
+            />
+            <label htmlFor="isAvailable" className="text-sm text-gray-700">
+              Available
+            </label>
           </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t">

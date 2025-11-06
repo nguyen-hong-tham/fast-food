@@ -2,6 +2,9 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from './store/authStore'
 import { useEffect } from 'react'
 
+// Components
+import Layout from './components/Layout'
+
 // Pages
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
@@ -79,47 +82,31 @@ function App() {
         }
       />
 
-      {/* Protected Routes */}
+      {/* Protected Routes with Layout */}
       <Route
         path="/dashboard"
         element={
           <ProtectedRoute>
-            <DashboardPage />
+            <Layout />
           </ProtectedRoute>
         }
-      />
-      <Route
-        path="/dashboard/menu"
-        element={
-          <ProtectedRoute>
-            <MenuPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/orders"
-        element={
-          <ProtectedRoute>
-            <OrdersPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/analytics"
-        element={
-          <ProtectedRoute>
-            <AnalyticsPage />
-          </ProtectedRoute>
-        }
-      />
+      >
+        <Route index element={<DashboardPage />} />
+        <Route path="menu" element={<MenuPage />} />
+        <Route path="orders" element={<OrdersPage />} />
+        <Route path="analytics" element={<AnalyticsPage />} />
+      </Route>
+      
       <Route
         path="/settings"
         element={
           <ProtectedRoute>
-            <SettingsPage />
+            <Layout />
           </ProtectedRoute>
         }
-      />
+      >
+        <Route index element={<SettingsPage />} />
+      </Route>
 
       {/* Root Route */}
       <Route path="/" element={<Navigate to="/dashboard" replace />} />

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import DashboardLayout from '@/components/DashboardLayout';
+
 import { useAuthStore } from '@/store/authStore';
 import { databases, Query } from '@/lib/appwrite';
 import { config } from '@/config';
@@ -35,80 +35,104 @@ export default function AnalyticsPage() {
       setIsLoading(true);
       console.log('🔍 Fetching analytics for restaurant:', restaurant.$id);
       
-      // Fetch all orders first (because restaurantId is a relationship)
-      const ordersResponse = await databases.listDocuments(
-        config.appwrite.databaseId,
-        config.appwrite.ordersCollectionId,
-        [Query.limit(1000)]
-      );
-
-      console.log('Total orders in database:', ordersResponse.documents.length);
-      
-      // Filter client-side by restaurantId (handle relationship object)
-      const orders = ordersResponse.documents.filter((order: any) => {
-        const orderRestaurantId = typeof order.restaurantId === 'object' 
-          ? order.restaurantId.$id 
-          : order.restaurantId;
-        return orderRestaurantId === restaurant.$id;
-      });
+      // Try server-side filtering first
+      let orders: any[];
+      try {
+        const ordersResponse = await databases.listDocuments(
+          config.appwrite.databaseId,
+          config.appwrite.ordersCollectionId,
+          [
+            Query.equal('restaurantId', restaurant.$id),
+            Query.limit(1000)
+          ]
+        );
+        orders = ordersResponse.documents;
+      } catch {
+        // Fallback: Fetch all and filter client-side
+        const ordersResponse = await databases.listDocuments(
+          config.appwrite.databaseId,
+          config.appwrite.ordersCollectionId,
+          [Query.limit(1000)]
+        );
+        orders = ordersResponse.documents.filter((order: any) => {
+          const orderRestaurantId = typeof order.restaurantId === 'object' 
+            ? order.restaurantId.$id 
+            : order.restaurantId;
+          return orderRestaurantId === restaurant.$id;
+        });
+      }
 
       console.log('Filtered orders for analytics:', orders.length);
-      console.log('Sample order totalAmount:', orders[0]?.totalAmount);
 
-      // Calculate total amount for each order from order_items
-      const ordersWithCalculatedTotals = await Promise.all(
-        orders.map(async (order: any) => {
-          // If order has totalAmount, use it
-          if (order.totalAmount && order.totalAmount > 0) {
-            return { ...order, calculatedTotal: order.totalAmount };
-          }
+      // ✅ SMART CALCULATION: Fix missing/zero totalAmount
+      // Fetch order items once, group by orderId, calculate totals
+      const ordersNeedingTotals = orders.filter((o: any) => !o.totalAmount || o.totalAmount === 0);
+      
+      let ordersWithTotals = orders;
+      if (ordersNeedingTotals.length > 0) {
+        console.log(`📊 ${ordersNeedingTotals.length} orders need total calculation`);
+        
+        try {
+          const itemsResponse = await databases.listDocuments(
+            config.appwrite.databaseId,
+            config.appwrite.orderItemsCollectionId,
+            [Query.limit(1000)]
+          );
           
-          try {
-            // Fetch order items for this order
-            const itemsResponse = await databases.listDocuments(
-              config.appwrite.databaseId,
-              config.appwrite.orderItemsCollectionId,
-              [Query.limit(100)]
+          // Group by orderId
+          const itemsByOrderId: Record<string, any[]> = {};
+          itemsResponse.documents.forEach((item: any) => {
+            const orderId = typeof item.orderId === 'object' ? item.orderId.$id : item.orderId;
+            if (!itemsByOrderId[orderId]) itemsByOrderId[orderId] = [];
+            itemsByOrderId[orderId].push(item);
+          });
+          
+          // Calculate totals
+          ordersWithTotals = orders.map((order: any) => {
+            if (order.totalAmount && order.totalAmount > 0) {
+              return { ...order, calculatedTotal: order.totalAmount };
+            }
+            
+            const items = itemsByOrderId[order.$id] || [];
+            const calculatedTotal = items.reduce((sum: number, item: any) => 
+              sum + (item.subtotal || 0), 0
             );
             
-            // Filter items for this specific order
-            const orderItems = itemsResponse.documents.filter((item: any) => {
-              const itemOrderId = typeof item.orderId === 'object' 
-                ? item.orderId.$id 
-                : item.orderId;
-              return itemOrderId === order.$id;
-            });
-            
-            // Calculate total from items
-            const calculatedTotal = orderItems.reduce((sum: number, item: any) => {
-              return sum + (item.subtotal || 0);
-            }, 0);
-            
-            return { ...order, calculatedTotal: calculatedTotal > 0 ? calculatedTotal : order.totalAmount };
-          } catch (err) {
-            console.error('Error calculating total for order:', order.$id, err);
-            return { ...order, calculatedTotal: order.totalAmount || 0 };
-          }
-        })
-      );
+            return { ...order, calculatedTotal };
+          });
+          
+          console.log('✅ Analytics totals calculated');
+        } catch (calcError) {
+          console.error('Error calculating analytics totals:', calcError);
+          ordersWithTotals = orders.map((order: any) => ({
+            ...order,
+            calculatedTotal: order.totalAmount || 0
+          }));
+        }
+      } else {
+        ordersWithTotals = orders.map((order: any) => ({
+          ...order,
+          calculatedTotal: order.totalAmount || 0
+        }));
+      }
 
-      console.log('Orders with calculated totals:', ordersWithCalculatedTotals.length);
+      console.log('Orders with totals:', ordersWithTotals.length);
 
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
       // Calculate stats using calculatedTotal
-      const totalRevenue = ordersWithCalculatedTotals.reduce((sum, order: any) => sum + (order.calculatedTotal || 0), 0);
-      const totalOrders = ordersWithCalculatedTotals.length;
+      const totalRevenue = ordersWithTotals.reduce((sum, order: any) => sum + (order.calculatedTotal || 0), 0);
+      const totalOrders = ordersWithTotals.length;
       const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
-      const todayOrders = ordersWithCalculatedTotals.filter((order: any) => 
+      const todayOrders = ordersWithTotals.filter((order: any) => 
         new Date(order.$createdAt) >= today
       );
       const todayRevenue = todayOrders.reduce((sum, order: any) => sum + (order.calculatedTotal || 0), 0);
 
-      const monthOrders = ordersWithCalculatedTotals.filter((order: any) => 
+      const monthOrders = ordersWithTotals.filter((order: any) => 
         new Date(order.$createdAt) >= thisMonth
       );
       const monthRevenue = monthOrders.reduce((sum, order: any) => sum + (order.calculatedTotal || 0), 0);
@@ -142,18 +166,15 @@ export default function AnalyticsPage() {
 
   if (!restaurant) {
     return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <p className="text-gray-500">Loading...</p>
-        </div>
-      </DashboardLayout>
+      <div className="flex items-center justify-center h-64">
+        <p className="text-gray-500">Loading...</p>
+      </div>
     );
   }
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold text-gray-900">Analytics</h1>
           <button 
             onClick={fetchAnalytics}
@@ -284,7 +305,6 @@ export default function AnalyticsPage() {
             </div>
           </>
         )}
-      </div>
-    </DashboardLayout>
+    </div>
   );
 }

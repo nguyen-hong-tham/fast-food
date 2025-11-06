@@ -40,16 +40,16 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <div className="fixed inset-y-0 left-0 w-64 bg-white shadow-lg">
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center justify-center h-16 px-4 bg-primary-600">
+          <div className="flex items-center justify-center h-16 px-4 bg-gradient-to-r from-primary-500 to-secondary-500">
             <Store className="w-8 h-8 text-white mr-2" />
             <span className="text-xl font-bold text-white">FoodFast</span>
           </div>
 
           {/* Restaurant Info */}
           {restaurant && (
-            <div className="p-4 border-b">
-              <p className="text-sm font-medium text-gray-900">{restaurant.name}</p>
-              <p className="text-xs text-gray-500">{user?.name}</p>
+            <div className="p-4 border-b bg-orange-50">
+              <p className="text-sm font-semibold text-gray-900">{restaurant.name}</p>
+              <p className="text-xs text-gray-600">{user?.name || 'Restaurant Owner'}</p>
             </div>
           )}
 
@@ -64,8 +64,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   to={item.href}
                   className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
                     isActive
-                      ? 'bg-primary-50 text-primary-600'
-                      : 'text-gray-700 hover:bg-gray-50'
+                      ? 'bg-orange-500 text-white'
+                      : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
                   <Icon className="w-5 h-5 mr-3" />

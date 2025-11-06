@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import DashboardLayout from '@/components/DashboardLayout';
+
 import { useAuthStore } from '@/store/authStore';
 import { databases, Query } from '@/lib/appwrite';
 import { config } from '@/config';
@@ -29,6 +29,19 @@ export default function OrdersPage() {
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [isLoadingItems, setIsLoadingItems] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  
+  // Helper function to check if order is new (< 5 minutes old)
+  const isNewOrder = (order: Order): boolean => {
+    const orderTime = new Date(order.$createdAt).getTime();
+    const now = Date.now();
+    const fiveMinutes = 5 * 60 * 1000;
+    return now - orderTime < fiveMinutes;
+  };
+
+  // Get count of new orders
+  const newOrderCount = orders.filter(order => 
+    isNewOrder(order) && order.status === 'pending'
+  ).length;
 
   useEffect(() => {
     if (restaurant?.$id) {
@@ -47,79 +60,89 @@ export default function OrdersPage() {
       setIsLoading(true);
       console.log('Fetching orders for restaurant:', restaurant.$id);
       
-      // Fetch all orders first (because restaurantId is a relationship)
-      const response = await databases.listDocuments(
-        config.appwrite.databaseId,
-        config.appwrite.ordersCollectionId,
-        [
-          Query.orderDesc('$createdAt'),
-          Query.limit(100)
-        ]
-      );
-
-      console.log('Total orders:', response.documents.length);
+      // Try to query with restaurantId filter (will work if it's a string attribute)
+      // If it fails, fall back to client-side filtering
+      let filtered: any[];
       
-      // Filter client-side by restaurantId (handle relationship object)
-      const filtered = response.documents.filter((order: any) => {
-        const orderRestaurantId = typeof order.restaurantId === 'object' 
-          ? order.restaurantId.$id 
-          : order.restaurantId;
-        console.log('🔍 Comparing order restaurantId:', orderRestaurantId, 'with:', restaurant.$id);
-        return orderRestaurantId === restaurant.$id;
-      });
+      try {
+        // Attempt server-side filtering
+        const response = await databases.listDocuments(
+          config.appwrite.databaseId,
+          config.appwrite.ordersCollectionId,
+          [
+            Query.equal('restaurantId', restaurant.$id),
+            Query.orderDesc('$createdAt'),
+            Query.limit(100)
+          ]
+        );
+        filtered = response.documents;
+        console.log('✅ Server-side filtering successful:', filtered.length, 'orders');
+      } catch (queryError) {
+        // If server-side filtering fails (relationship), do client-side filtering
+        console.log('⚠️ Server-side filtering failed, using client-side filtering');
+        const response = await databases.listDocuments(
+          config.appwrite.databaseId,
+          config.appwrite.ordersCollectionId,
+          [
+            Query.orderDesc('$createdAt'),
+            Query.limit(100)
+          ]
+        );
+        
+        // Filter client-side by restaurantId (handle relationship object)
+        filtered = response.documents.filter((order: any) => {
+          const orderRestaurantId = typeof order.restaurantId === 'object' 
+            ? order.restaurantId.$id 
+            : order.restaurantId;
+          return orderRestaurantId === restaurant.$id;
+        });
+        console.log('Client-side filtered:', filtered.length, 'orders');
+      }
       
-      console.log('Filtered orders for this restaurant:', filtered.length);
+      // ✅ SMART OPTIMIZATION: Calculate missing totals efficiently
+      // Fetch ALL order items once, then group by orderId
+      const ordersNeedingTotals = filtered.filter((o: any) => !o.totalAmount || o.totalAmount === 0);
       
-      // Calculate total amount for each order immediately to fix 0₫ display issue
-      const ordersWithCalculatedTotals = await Promise.all(
-        filtered.map(async (order: any) => {
-          // If order already has correct total, skip calculation
-          if (order.totalAmount && order.totalAmount > 0) {
-            return order;
-          }
+      if (ordersNeedingTotals.length > 0) {
+        console.log(`📊 ${ordersNeedingTotals.length} orders need total calculation`);
+        
+        try {
+          // Fetch all order items in one call
+          const itemsResponse = await databases.listDocuments(
+            config.appwrite.databaseId,
+            config.appwrite.orderItemsCollectionId,
+            [Query.limit(500)]
+          );
           
-          try {
-            // Fetch order items
-            const itemsResponse = await databases.listDocuments(
-              config.appwrite.databaseId,
-              config.appwrite.orderItemsCollectionId,
-              [Query.limit(100)]
+          // Group items by orderId
+          const itemsByOrderId: Record<string, any[]> = {};
+          itemsResponse.documents.forEach((item: any) => {
+            const orderId = typeof item.orderId === 'object' ? item.orderId.$id : item.orderId;
+            if (!itemsByOrderId[orderId]) itemsByOrderId[orderId] = [];
+            itemsByOrderId[orderId].push(item);
+          });
+          
+          // Calculate totals for orders that need it
+          const updatedOrders = filtered.map((order: any) => {
+            if (order.totalAmount && order.totalAmount > 0) return order;
+            
+            const items = itemsByOrderId[order.$id] || [];
+            const calculatedTotal = items.reduce((sum: number, item: any) => 
+              sum + (item.subtotal || 0), 0
             );
             
-            // Filter items for this order
-            const orderItems = itemsResponse.documents.filter((item: any) => {
-              const itemOrderId = typeof item.orderId === 'object' ? item.orderId.$id : item.orderId;
-              return itemOrderId === order.$id;
-            });
-            
-            // Calculate total
-            const calculatedTotal = orderItems.reduce((sum: number, item: any) => {
-              return sum + (item.subtotal || 0);
-            }, 0);
-            
-            // Update in database if needed
-            if (calculatedTotal > 0 && order.totalAmount !== calculatedTotal) {
-              try {
-                await databases.updateDocument(
-                  config.appwrite.databaseId,
-                  config.appwrite.ordersCollectionId,
-                  order.$id,
-                  { totalAmount: calculatedTotal }
-                );
-              } catch (err) {
-                console.error('Failed to update total:', err);
-              }
-            }
-            
-            return { ...order, totalAmount: calculatedTotal || order.totalAmount };
-          } catch (err) {
-            console.error('Error calculating total for order:', order.$id, err);
-            return order;
-          }
-        })
-      );
-      
-      setOrders(ordersWithCalculatedTotals as any);
+            return { ...order, totalAmount: calculatedTotal };
+          });
+          
+          console.log('✅ Totals calculated successfully');
+          setOrders(updatedOrders as any);
+        } catch (calcError) {
+          console.error('Error calculating totals:', calcError);
+          setOrders(filtered as any);
+        }
+      } else {
+        setOrders(filtered as any);
+      }
     } catch (error: any) {
       console.error('Error fetching orders:', error);
     } finally {
@@ -306,19 +329,30 @@ export default function OrdersPage() {
 
   if (!restaurant) {
     return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <p className="text-gray-500">Loading...</p>
-        </div>
-      </DashboardLayout>
+      <div className="flex items-center justify-center h-64">
+        <p className="text-gray-500">Loading...</p>
+      </div>
     );
   }
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-gray-900">Orders</h1>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold text-gray-900">Orders</h1>
+            {/* 🔔 NEW ORDER BADGE */}
+            {newOrderCount > 0 && (
+              <div className="flex items-center gap-2 px-3 py-1 bg-orange-100 border-2 border-orange-500 rounded-full animate-pulse">
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-orange-500"></span>
+                </span>
+                <span className="text-sm font-bold text-orange-700">
+                  {newOrderCount} đơn mới
+                </span>
+              </div>
+            )}
+          </div>
           <button 
             onClick={fetchOrders}
             className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
@@ -368,15 +402,36 @@ export default function OrdersPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {filteredOrders.map((order) => (
-              <div key={order.$id} className="bg-white rounded-lg shadow hover:shadow-md transition-shadow">
+            {filteredOrders.map((order) => {
+              const isNew = isNewOrder(order);
+              return (
+              <div 
+                key={order.$id} 
+                className={`rounded-lg shadow hover:shadow-md transition-all ${
+                  isNew 
+                    ? 'bg-gradient-to-r from-orange-50 to-yellow-50 border-2 border-orange-400 animate-pulse' 
+                    : 'bg-white'
+                }`}
+              >
                 <div className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center">
+                      {/* 🔔 NEW ORDER INDICATOR */}
+                      {isNew && (
+                        <div className="mr-2 relative">
+                          <span className="absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75 animate-ping"></span>
+                          <span className="relative inline-flex rounded-full h-4 w-4 bg-orange-500"></span>
+                        </div>
+                      )}
                       {getStatusIcon(order.status)}
                       <div className="ml-3">
                         <h3 className="text-lg font-semibold text-gray-900">
                           Order #{order.$id.slice(-8).toUpperCase()}
+                          {isNew && (
+                            <span className="ml-2 px-2 py-0.5 bg-orange-500 text-white text-xs rounded-full font-bold">
+                              MỚI
+                            </span>
+                          )}
                         </h3>
                         <p className="text-sm text-gray-500">
                           {new Date(order.$createdAt).toLocaleString('vi-VN')}
@@ -469,10 +524,10 @@ export default function OrdersPage() {
                   </div>
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
         )}
-      </div>
 
       {/* Order Details Modal */}
       {selectedOrder && (
@@ -655,6 +710,6 @@ export default function OrdersPage() {
           </div>
         </div>
       )}
-    </DashboardLayout>
+    </div>
   );
 }

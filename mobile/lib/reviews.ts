@@ -186,7 +186,8 @@ export const getMenuItemAverageRating = async (
 };
 
 /**
- * Check if user has already reviewed this item in this order
+ * Check if user has 
+ *  reviewed this item in this order
  */
 export const hasUserReviewedItem = async (
   userId: string,

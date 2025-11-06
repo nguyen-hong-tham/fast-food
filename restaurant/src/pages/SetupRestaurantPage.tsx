@@ -22,26 +22,6 @@ export default function SetupRestaurantPage() {
     longitude: 106.660172,
   });
 
-  const checkExistingRestaurants = async () => {
-    try {
-      setDebugInfo('Checking...');
-      const response = await databases.listDocuments(
-        config.appwrite.databaseId,
-        config.appwrite.restaurantsCollectionId,
-        []
-      );
-      
-      const info = `Total restaurants: ${response.documents.length}\n\n` +
-        response.documents.map((doc: any, i) => 
-          `${i + 1}. ID: ${doc.$id}\n   OwnerID: ${typeof doc.ownerId === 'object' ? JSON.stringify(doc.ownerId) : doc.ownerId}\n   Name: ${doc.name}`
-        ).join('\n\n');
-      
-      setDebugInfo(info);
-      console.log('All restaurants:', response.documents);
-    } catch (err: any) {
-      setDebugInfo(`Error: ${err.message}`);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,34 +87,9 @@ export default function SetupRestaurantPage() {
           <p className="mt-2 text-gray-600">
             Welcome! Let's get your restaurant registered on FoodFast.
           </p>
-          {user && (
-            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm text-left">
-              <p className="text-blue-800"><strong>Debug Info:</strong></p>
-              <p className="text-blue-700">User Email: {user.email}</p>
-              <p className="text-blue-700">Account ID: {user.accountId}</p>
-              <p className="text-blue-700">Role: {user.role}</p>
-              <button
-                type="button"
-                onClick={checkExistingRestaurants}
-                className="mt-2 px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
-              >
-                Check Existing Restaurants
-              </button>
-            </div>
-          )}
-          
-          {debugInfo && (
-            <div className="mt-4 p-3 bg-gray-800 text-green-400 rounded text-xs font-mono whitespace-pre-wrap max-h-40 overflow-y-auto">
-              {debugInfo}
-            </div>
-          )}
         </div>
 
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
-            {error}
-          </div>
-        )}
+
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
