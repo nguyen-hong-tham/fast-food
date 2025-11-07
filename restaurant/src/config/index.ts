@@ -7,6 +7,7 @@ export const config = {
     // Collections
     usersCollectionId: import.meta.env.VITE_APPWRITE_USERS_COLLECTION_ID || '',
     restaurantsCollectionId: import.meta.env.VITE_APPWRITE_RESTAURANTS_COLLECTION_ID || '',
+    categoriesCollectionId: import.meta.env.VITE_APPWRITE_CATEGORIES_COLLECTION_ID || 'categories',
     menuCollectionId: import.meta.env.VITE_APPWRITE_MENU_COLLECTION_ID || '',
     ordersCollectionId: import.meta.env.VITE_APPWRITE_ORDERS_COLLECTION_ID || '',
     orderItemsCollectionId: import.meta.env.VITE_APPWRITE_ORDER_ITEMS_COLLECTION_ID || '',

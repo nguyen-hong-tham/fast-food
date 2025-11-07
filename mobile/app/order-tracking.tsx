@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import * as Location from 'expo-location';
 
-import CustomHeader from '@/components/CustomHeader';
+import CustomHeader from '@/components/common/CustomHeader';
 import DeliveryMap from '@/components/tracking';
 
 // Define LatLng type locally to avoid web import issues

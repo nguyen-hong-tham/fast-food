@@ -199,10 +199,41 @@ export const getMenuById = async (menuId: string) => {
 
 export const getCategories = async () => {
     try {
-        // Categories collection doesn't exist, return empty array
-        return [];
+        // Get all categories (could add pagination if needed)
+        const response = await databases.listDocuments(
+            appwriteConfig.databaseId,
+            appwriteConfig.categoriesCollectionId,
+            [
+                Query.equal('isActive', true),
+                Query.orderAsc('displayOrder'),
+                Query.orderAsc('name'),
+                Query.limit(100)
+            ]
+        );
+        return response.documents;
     } catch (e) {
         console.log('Error fetching categories:', e);
+        return [];
+    }
+}
+
+// Get categories for a specific restaurant
+export const getRestaurantCategories = async (restaurantId: string) => {
+    try {
+        const response = await databases.listDocuments(
+            appwriteConfig.databaseId,
+            appwriteConfig.categoriesCollectionId,
+            [
+                Query.equal('restaurant', restaurantId),
+                Query.equal('isActive', true),
+                Query.orderAsc('displayOrder'),
+                Query.orderAsc('name'),
+                Query.limit(100)
+            ]
+        );
+        return response.documents;
+    } catch (e) {
+        console.log('Error fetching restaurant categories:', e);
         return [];
     }
 }

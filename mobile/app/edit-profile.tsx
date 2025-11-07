@@ -4,9 +4,9 @@ import { useState } from 'react';
 import { ActivityIndicator, Alert, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import CustomButton from '@/components/CustomButton';
-import CustomHeader from '@/components/CustomHeader';
-import CustomInput from '@/components/CustomInput';
+import CustomButton from '@/components/common/CustomButton';
+import CustomHeader from '@/components/common/CustomHeader';
+import CustomInput from '@/components/common/CustomInput';
 import { icons, images } from '@/constants';
 import { updateUser, uploadAvatar } from '@/lib/appwrite';
 import useAuthStore from '@/store/auth.store';

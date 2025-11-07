@@ -3,8 +3,8 @@ import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, FlatList, Image, Pressable, ScrollView, Text, TouchableOpacity, View, Platform } from "react-native";
 import { router } from 'expo-router';
 
-import RestaurantCard from "@/components/RestaurantCard";
-import WebContainer from "@/components/WebContainer";
+import RestaurantCard from "@/components/restaurant/RestaurantCard";
+import WebContainer from "@/components/common/WebContainer";
 import { icons, offers } from "@/constants";
 import useAuthStore from "@/store/auth.store";
 import { getRestaurants } from '@/lib/appwrite';

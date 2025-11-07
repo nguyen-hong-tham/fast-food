@@ -1,5 +1,5 @@
-import CustomButton from "@/components/CustomButton";
-import CustomHeader from "@/components/CustomHeader";
+import CustomButton from "@/components/common/CustomButton";
+import CustomHeader from "@/components/common/CustomHeader";
 import { getMenuById } from "@/lib/appwrite";
 import { useCartStore } from "@/store/cart.store";
 import { MenuItem } from "@/type";

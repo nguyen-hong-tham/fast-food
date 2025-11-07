@@ -3,12 +3,14 @@ import {
   UtensilsCrossed,
   ShoppingBag,
   BarChart3,
-  Settings
+  Settings,
+  FolderOpen
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', exact: true },
+  { to: '/dashboard/categories', icon: FolderOpen, label: 'Categories' },
   { to: '/dashboard/menu', icon: UtensilsCrossed, label: 'Menu' },
   { to: '/dashboard/orders', icon: ShoppingBag, label: 'Orders' },
   { to: '/dashboard/analytics', icon: BarChart3, label: 'Analytics' },

@@ -3,9 +3,9 @@ import { useState } from 'react';
 import { Alert, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import CustomButton from '@/components/CustomButton';
-import CustomHeader from '@/components/CustomHeader';
-import ProfileField from '@/components/ProfileField';
+import CustomButton from '@/components/common/CustomButton';
+import CustomHeader from '@/components/common/CustomHeader';
+import ProfileField from '@/components/common/ProfileField';
 import { icons, images } from '@/constants';
 import useAuthStore from '@/store/auth.store';
 

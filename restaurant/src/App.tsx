@@ -11,6 +11,7 @@ import RegisterPage from './pages/RegisterPage'
 import SetupRestaurantPage from './pages/SetupRestaurantPage'
 import DashboardPage from './pages/DashboardPage'
 import MenuPage from './pages/MenuPage'
+import CategoriesPage from './pages/CategoriesPage'
 import OrdersPage from './pages/OrdersPage'
 import AnalyticsPage from './pages/AnalyticsPage'
 import SettingsPage from './pages/SettingsPage'
@@ -93,6 +94,7 @@ function App() {
       >
         <Route index element={<DashboardPage />} />
         <Route path="menu" element={<MenuPage />} />
+        <Route path="categories" element={<CategoriesPage />} />
         <Route path="orders" element={<OrdersPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />
       </Route>

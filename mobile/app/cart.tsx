@@ -7,7 +7,7 @@ import useAuthStore from '@/store/auth.store';
 import { createOrderWithPayment, getRestaurantById } from '@/lib/appwrite';
 import { useDeliveryCalculation } from '@/hooks/useDeliveryCalculation';
 import cn from 'clsx';
-import CartItem from '@/components/CartItem';
+import CartItem from '@/components/cart/CartItem';
 
 const CartScreen = () => {
   const { 

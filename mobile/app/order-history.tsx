@@ -1,5 +1,5 @@
-import CustomHeader from '@/components/CustomHeader';
-import OrderCard from '@/components/OrderCard';
+import CustomHeader from '@/components/common/CustomHeader';
+import OrderCard from '@/components/common/OrderCard';
 import { icons } from '@/constants';
 import { getUserOrders } from '@/lib/appwrite';
 import useAuthStore from '@/store/auth.store';
