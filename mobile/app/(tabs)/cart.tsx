@@ -1,6 +1,6 @@
-import CartItem from "@/components/CartItem";
-import CustomButton from "@/components/CustomButton";
-import CustomHeader from "@/components/CustomHeader";
+import CartItem from "@/components/cart/CartItem";
+import CustomButton from "@/components/common/CustomButton";
+import CustomHeader from "@/components/common/CustomHeader";
 import useAuthStore from '@/store/auth.store';
 import { useCartStore } from "@/store/cart.store";
 import { useDeliveryCalculation } from '@/hooks/useDeliveryCalculation';

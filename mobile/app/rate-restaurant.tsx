@@ -1,8 +1,8 @@
 import React from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import RestaurantRatingInput from '@/components/RestaurantRatingInput';
-import CustomHeader from '@/components/CustomHeader';
+import RestaurantRatingInput from '@/components/rating/RestaurantRatingInput';
+import CustomHeader from '@/components/common/CustomHeader';
 
 const RateRestaurantScreen = () => {
   const params = useLocalSearchParams();

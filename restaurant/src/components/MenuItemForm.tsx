@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { MenuItem } from '@/types';
+import { getRestaurantCategories } from '@/lib/categories.ts';
+import { useAuthStore } from '@/store/authStore';
 
 interface MenuItemFormProps {
   /**
@@ -23,6 +25,7 @@ interface MenuItemFormProps {
  * handles persistence via the `onSubmit` callback.
  */
 export default function MenuItemForm({ initialData = {}, onSubmit, onCancel }: MenuItemFormProps) {
+  const { restaurant } = useAuthStore();
   const [name, setName] = useState(initialData.name || '');
   const [description, setDescription] = useState(initialData.description || '');
   const [price, setPrice] = useState<number>(initialData.price ?? 0);
@@ -30,7 +33,35 @@ export default function MenuItemForm({ initialData = {}, onSubmit, onCancel }: M
   const [calories, setCalories] = useState<number>(initialData.calories ?? 50);
   const [protein, setProtein] = useState<number>(initialData.protein ?? 100);
   const [isAvailable, setIsAvailable] = useState<boolean>(initialData.isAvailable ?? true);
+  const [categoryId, setCategoryId] = useState<string>(() => {
+    if (typeof initialData.categories === 'string') {
+      return initialData.categories;
+    }
+    if (initialData.categories && typeof initialData.categories === 'object') {
+      return (initialData.categories as any).$id || '';
+    }
+    return '';
+  });
+  const [categories, setCategories] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Fetch categories when component mounts
+  useEffect(() => {
+    if (restaurant?.$id) {
+      loadCategories();
+    }
+  }, [restaurant]);
+
+  const loadCategories = async () => {
+    if (!restaurant?.$id) return;
+    
+    try {
+      const data = await getRestaurantCategories(restaurant.$id, false);
+      setCategories(data);
+    } catch (error) {
+      console.error('Error loading categories:', error);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,6 +88,7 @@ export default function MenuItemForm({ initialData = {}, onSubmit, onCancel }: M
         calories: calories || undefined,
         protein: protein || undefined,
         isAvailable,
+        categories: categoryId || undefined, // ← Add category relationship
       });
     } finally {
       setIsSubmitting(false);
@@ -95,6 +127,32 @@ export default function MenuItemForm({ initialData = {}, onSubmit, onCancel }: M
               className="text-black bg-white w-full border border-gray-300 rounded-md px-3 py-2 h-24 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
               required
             />
+          </div>
+
+          {/* Category Selector */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="category">
+              Category {categories.length === 0 && <span className="text-xs text-gray-500">(Create categories first)</span>}
+            </label>
+            <select
+              id="category"
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              className="text-black bg-white w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              disabled={categories.length === 0}
+            >
+              <option value="">No Category (Uncategorized)</option>
+              {categories.map((category) => (
+                <option key={category.$id} value={category.$id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+            {categories.length === 0 && (
+              <p className="text-xs text-amber-600 mt-1">
+                💡 Tip: Create categories first to organize your menu better
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">

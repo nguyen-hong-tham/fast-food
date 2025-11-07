@@ -2,7 +2,7 @@ import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, RefreshContr
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import CustomHeader from '@/components/CustomHeader';
+import CustomHeader from '@/components/common/CustomHeader';
 import { getUserNotifications, markNotificationAsRead } from '@/lib/api-helpers';
 import useAuthStore from '@/store/auth.store';
 import useNotificationStore from '@/store/notification.store';

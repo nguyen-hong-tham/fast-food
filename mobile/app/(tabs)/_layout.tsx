@@ -10,9 +10,9 @@ import { Image, Text, View } from "react-native";
 const TabBarIcon = ({ focused, icon, title, badge }: TabBarIconProps & { badge?: number }) => (
     <View className="tab-icon relative">
         <Image source={icon} className="size-7" resizeMode="contain" tintColor={focused ? '#FE8C00' : '#5D5F6D'} />
-        {badge && badge > 0 && (
+        {badge !== undefined && badge > 0 && (
             <View className="absolute -top-1 -right-2 bg-red-500 rounded-full min-w-[18px] h-[18px] items-center justify-center px-1">
-                <Text className="text-white text-xs font-bold">{badge > 99 ? '99+' : badge}</Text>
+                <Text className="text-white text-xs font-bold">{badge > 99 ? '99+' : String(badge)}</Text>
             </View>
         )}
         <Text className={cn('text-sm font-bold', focused ? 'text-primary':'text-gray-200')}>

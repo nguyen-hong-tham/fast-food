@@ -1,4 +1,4 @@
-import CustomHeader from '@/components/CustomHeader';
+import CustomHeader from '@/components/common/CustomHeader';
 import { icons } from '@/constants';
 import { getOrderById } from '@/lib/appwrite';
 import { Order, OrderItem } from '@/type';

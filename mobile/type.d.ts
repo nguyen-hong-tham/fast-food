@@ -22,7 +22,29 @@ export interface MenuItem extends Models.Document {
 
 export interface Category extends Models.Document {
   name: string;
-  description: string;
+  description?: string;
+  restaurantId: string;
+  displayOrder: number;
+  isActive: boolean;
+}
+
+export interface CreateCategoryParams {
+  name: string;
+  description?: string;
+  restaurantId: string;
+  displayOrder?: number;
+  isActive?: boolean;
+}
+
+export interface UpdateCategoryParams {
+  name?: string;
+  description?: string;
+  displayOrder?: number;
+  isActive?: boolean;
+}
+
+export interface CategoryWithMenuCount extends Category {
+  menuCount: number;
 }
 
 // ===================== RESTAURANT =====================

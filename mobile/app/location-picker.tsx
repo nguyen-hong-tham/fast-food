@@ -7,7 +7,7 @@
 
 import React, { useCallback } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
-import LocationPicker from '@/components/LocationPicker';
+import LocationPicker from '@/components/common/LocationPicker';
 import { UserLocation } from '@/hooks/useCurrentLocation';
 import useAuthStore from '@/store/auth.store';
 import { databases, appwriteConfig } from '@/lib/appwrite';

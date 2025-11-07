@@ -1,5 +1,5 @@
-import CustomButton from "@/components/CustomButton";
-import CustomInput from "@/components/CustomInput";
+import CustomButton from "@/components/common/CustomButton";
+import CustomInput from "@/components/common/CustomInput";
 import { signIn } from "@/lib/appwrite";
 import useAuthStore from "@/store/auth.store";
 import * as Sentry from '@sentry/react-native';
