@@ -853,6 +853,11 @@ export const getRestaurants = async (filters?: RestaurantFilters, userLat?: numb
             let distance: number | undefined;
             if (userLat && userLng && restaurant.latitude && restaurant.longitude) {
                 distance = calculateDistance(userLat, userLng, restaurant.latitude, restaurant.longitude);
+            } else {
+                // Log missing coordinates for debugging
+                if (!restaurant.latitude || !restaurant.longitude) {
+                    console.warn(`⚠️ Restaurant "${restaurant.name}" missing coordinates`);
+                }
             }
 
             // Default values for missing fields based on actual database structure

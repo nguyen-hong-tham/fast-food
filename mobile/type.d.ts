@@ -271,9 +271,9 @@ export interface PaymentResult {
 // ===================== REVIEW =====================
 
 export interface Review extends Models.Document {
-  userId: string;
-  restaurantId: string;
-  orderId: string;
+  user: string | Models.Document; // Relationship field to User collection
+  restaurant: string | Models.Document; // Relationship field to restaurants collection
+  order: string | Models.Document; // Relationship field to orders collection
   overallRating: number; // 1-5
   foodQuality?: number; // 1-5
   deliverySpeed?: number; // 1-5
