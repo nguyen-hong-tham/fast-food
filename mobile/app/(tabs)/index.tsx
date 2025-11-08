@@ -26,12 +26,21 @@ export default function Index() {
 
   useEffect(() => {
     const loadPopularRestaurants = async () => {
+      // Don't load restaurants until we have a location (real or default)
+      if (locationLoading) {
+        return;
+      }
+      
       try {
+        const userLat = location?.latitude || 10.8231;
+        const userLng = location?.longitude || 106.6297;
+        
         const restaurants = await getRestaurants(
           { sortBy: 'rating' },
-          location?.latitude || 10.8231, // Use real location or HCM default
-          location?.longitude || 106.6297
+          userLat,
+          userLng
         );
+        
         setPopularRestaurants(restaurants.slice(0, 5)); // Top 5
       } catch (error) {
         console.error('Failed to load restaurants:', error);
@@ -41,7 +50,7 @@ export default function Index() {
     };
 
     loadPopularRestaurants();
-  }, [location]);
+  }, [location, locationLoading]);
 
   // Memoize render item cho offers
   const renderOfferItem = useCallback(({ item, index }: { item: typeof offers[0], index: number }) => {

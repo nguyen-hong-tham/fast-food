@@ -58,6 +58,11 @@ const RestaurantsScreen = () => {
 
   // Fetch restaurants
   const fetchRestaurants = async () => {
+    // Wait for location to be available
+    if (!userLocation) {
+      return;
+    }
+    
     try {
       setLoading(true);
       
@@ -65,16 +70,14 @@ const RestaurantsScreen = () => {
         sortBy
       };
 
-
-
       if (selectedDistance) {
         filters.distance = selectedDistance;
       }
 
       const data = await getRestaurants(
         filters,
-        userLocation?.latitude,
-        userLocation?.longitude
+        userLocation.latitude,
+        userLocation.longitude
       );
 
       let processedData = data as RestaurantWithDistance[];

@@ -101,7 +101,6 @@ const RestaurantHeader = ({ restaurant, showBackButton = true }: RestaurantHeade
 
         {/* Address */}
         <View className="flex-row items-start mt-3 py-3 border-t border-gray-200">
-          <Text className="text-base mr-2">📍</Text>
           <Text className="flex-1 text-sm text-gray-700">
             {restaurant.address}
           </Text>
@@ -111,7 +110,7 @@ const RestaurantHeader = ({ restaurant, showBackButton = true }: RestaurantHeade
         {restaurant.isActive === false && (
           <View className="mt-3 bg-red-50 border border-red-200 rounded-lg p-3">
             <Text className="text-red-600 text-sm text-center font-medium">
-              ⚠️ This restaurant is currently unavailable for orders
+              This restaurant is currently unavailable for orders
             </Text>
           </View>
         )}

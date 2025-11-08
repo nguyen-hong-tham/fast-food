@@ -52,9 +52,9 @@ export async function createRestaurantReview(
       appwriteConfig.reviewsCollectionId,
       'unique()',
       {
-        userId,
-        restaurantId,
-        orderId,
+        user: userId,           // Relationship field to User collection
+        restaurant: restaurantId, // Relationship field to restaurants collection
+        order: orderId,          // Relationship field to orders collection
         overallRating: data.overallRating,
         foodQuality: data.foodQuality || null,
         deliverySpeed: data.deliverySpeed || null,
@@ -93,7 +93,7 @@ export async function getRestaurantReviews(
       appwriteConfig.databaseId,
       appwriteConfig.reviewsCollectionId,
       [
-        Query.equal('restaurantId', restaurantId),
+        Query.equal('restaurant', restaurantId), // Relationship field name
         Query.equal('isVisible', true),
         Query.orderDesc('$createdAt'),
         Query.limit(limit),
@@ -101,7 +101,7 @@ export async function getRestaurantReviews(
       ]
     );
 
-    return response.documents as Review[];
+    return response.documents as unknown as Review[];
   } catch (error) {
     console.error('Error fetching restaurant reviews:', error);
     throw error;
@@ -124,10 +124,13 @@ export async function getRestaurantReviewsWithUserInfo(
     const reviewsWithUser = await Promise.all(
       reviews.map(async (review) => {
         try {
+          // Access user ID from relationship field
+          const userIdFromRelation = (review as any).user?.$id || (review as any).user;
+          
           const user = await databases.getDocument(
             appwriteConfig.databaseId,
             appwriteConfig.userCollectionId,
-            review.userId
+            userIdFromRelation
           );
 
           return {
@@ -168,13 +171,13 @@ export async function getUserReviewForOrder(userId: string, orderId: string) {
       appwriteConfig.databaseId,
       appwriteConfig.reviewsCollectionId,
       [
-        Query.equal('userId', userId),
-        Query.equal('orderId', orderId),
+        Query.equal('user', userId),   // Relationship field name
+        Query.equal('order', orderId), // Relationship field name
         Query.limit(1),
       ]
     );
 
-    return response.documents.length > 0 ? (response.documents[0] as Review) : null;
+    return response.documents.length > 0 ? (response.documents[0] as unknown as Review) : null;
   } catch (error) {
     console.error('Error fetching user review for order:', error);
     throw error;
@@ -296,13 +299,13 @@ export async function getRestaurantAverageRating(restaurantId: string) {
       appwriteConfig.databaseId,
       appwriteConfig.reviewsCollectionId,
       [
-        Query.equal('restaurantId', restaurantId),
+        Query.equal('restaurant', restaurantId), // Relationship field name
         Query.equal('isVisible', true),
         Query.limit(1000), // Maximum to calculate average
       ]
     );
 
-    const reviews = response.documents as Review[];
+    const reviews = response.documents as unknown as Review[];
 
     if (reviews.length === 0) {
       return {
@@ -416,7 +419,7 @@ export async function getFilteredRestaurantReviews(
 ) {
   try {
     const queries = [
-      Query.equal('restaurantId', restaurantId),
+      Query.equal('restaurant', restaurantId), // Relationship field name
       Query.equal('isVisible', true),
     ];
 
@@ -452,7 +455,7 @@ export async function getFilteredRestaurantReviews(
       queries
     );
 
-    const reviews = response.documents as Review[];
+    const reviews = response.documents as unknown as Review[];
 
     return reviews;
   } catch (error) {

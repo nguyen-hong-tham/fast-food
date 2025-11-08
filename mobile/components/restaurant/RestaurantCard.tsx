@@ -1,8 +1,11 @@
 import { View, Text, TouchableOpacity, Image, Platform } from 'react-native';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { Restaurant, RestaurantWithDistance } from '@/type';
 import { router } from 'expo-router';
 import cn from 'clsx';
+import { getRestaurantMenuItems } from '@/lib/api-helpers';
+import { databases, appwriteConfig } from '@/lib/appwrite';
+import { Query } from 'react-native-appwrite';
 
 interface RestaurantCardProps {
   restaurant: RestaurantWithDistance;
@@ -10,12 +13,74 @@ interface RestaurantCardProps {
 
 const RestaurantCard = React.memo(({ restaurant }: RestaurantCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
+  const [minPrice, setMinPrice] = useState<number | null>(null);
+  const [avgDeliveryTime, setAvgDeliveryTime] = useState<number | null>(null);
+  const [isLoadingStats, setIsLoadingStats] = useState(false);
   
   const handlePress = useCallback(() => {
     router.push({
       pathname: '/restaurant-detail' as any,
       params: { id: restaurant.$id }
     });
+  }, [restaurant.$id]);
+
+  // Fetch minimum price from menu items and average delivery time from orders
+  useEffect(() => {
+    let isMounted = true;
+    
+    const fetchRestaurantStats = async () => {
+      if (isLoadingStats) return; // Prevent duplicate calls
+      
+      try {
+        setIsLoadingStats(true);
+        
+        // Fetch menu items to get minimum price
+        const menuItems = await getRestaurantMenuItems(restaurant.$id);
+        
+        if (isMounted && menuItems && menuItems.length > 0) {
+          const prices = menuItems.map((item: any) => item.price).filter((price: number) => price > 0);
+          if (prices.length > 0) {
+            const min = Math.min(...prices);
+            setMinPrice(min);
+          }
+        }
+
+        // Fetch recent completed orders to calculate average delivery time
+        const ordersResponse = await databases.listDocuments(
+          appwriteConfig.databaseId,
+          appwriteConfig.ordersCollectionId,
+          [
+            Query.equal('restaurantId', restaurant.$id),
+            Query.equal('status', 'delivered'),
+            Query.orderDesc('$createdAt'),
+            Query.limit(10) // Get last 10 completed orders
+          ]
+        );
+
+        if (isMounted && ordersResponse.documents.length > 0) {
+          const deliveryTimes = ordersResponse.documents
+            .map((order: any) => order.estimatedDeliveryTime)
+            .filter((time: number) => time && time > 0);
+          
+          if (deliveryTimes.length > 0) {
+            const avgTime = Math.round(deliveryTimes.reduce((a: number, b: number) => a + b, 0) / deliveryTimes.length);
+            setAvgDeliveryTime(avgTime);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching restaurant stats:', error);
+      } finally {
+        if (isMounted) {
+          setIsLoadingStats(false);
+        }
+      }
+    };
+
+    fetchRestaurantStats();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [restaurant.$id]);
 
 
@@ -95,16 +160,11 @@ const RestaurantCard = React.memo(({ restaurant }: RestaurantCardProps) => {
             </Text>
             
             <View className="flex-row items-center">
-              {restaurant.cuisine && (
-                <>
-                  <Text className="text-sm text-gray-500">
-                    {restaurant.cuisine}
-                  </Text>
-                  <Text className="text-gray-400 mx-2">•</Text>
-                </>
-              )}
               <Text className="text-sm text-gray-500">
-                {restaurant.distance !== undefined ? `${restaurant.distance.toFixed(1)} km` : 'Distance N/A'}
+                {typeof restaurant.distance === 'number' 
+                  ? `${restaurant.distance.toFixed(1)} km` 
+                  : 'Calculating...'
+                }
               </Text>
             </View>
           </View>
@@ -134,20 +194,30 @@ const RestaurantCard = React.memo(({ restaurant }: RestaurantCardProps) => {
         <View className="flex-row items-center justify-between">
           {/* Delivery Time */}
           <View className="flex-row items-center">
-            <Text className="text-amber-500 text-base mr-1">🚁</Text>
+            <Text className="text-sm text-gray-600">Estimated time: </Text>
             <Text className="text-sm text-gray-600">
-              {restaurant.estimatedDeliveryTime || restaurant.estimatedTime || 30}-{(restaurant.estimatedDeliveryTime || restaurant.estimatedTime || 30) + 15} min
+              {isLoadingStats 
+                ? 'Calculating...' 
+                : (avgDeliveryTime 
+                    ? `${avgDeliveryTime}-${avgDeliveryTime + 15} min`
+                    : `${restaurant.estimatedDeliveryTime || restaurant.estimatedTime || 30}-${(restaurant.estimatedDeliveryTime || restaurant.estimatedTime || 30) + 15} min`
+                  )
+              }
             </Text>
           </View>
 
-          {/* Minimum Order */}
-          {restaurant.minimumOrder && (
-            <View className="flex-row items-center">
-              <Text className="text-sm text-gray-600">
-                Min: {restaurant.minimumOrder.toLocaleString('vi-VN')}₫
-              </Text>
-            </View>
-          )}
+          {/* Minimum Price */}
+          <View className="flex-row items-center">
+            <Text className="text-sm text-gray-600">
+              Min: {minPrice !== null 
+                ? `${minPrice.toLocaleString('vi-VN')}₫` 
+                : (restaurant.minimumOrder 
+                  ? `${restaurant.minimumOrder.toLocaleString('vi-VN')}₫` 
+                  : 'N/A'
+                )
+              }
+            </Text>
+          </View>
 
           {/* Status Indicator */}
           <View className={cn(
@@ -160,7 +230,7 @@ const RestaurantCard = React.memo(({ restaurant }: RestaurantCardProps) => {
         {restaurant.status === 'pending' && (
           <View className="mt-3 bg-yellow-50 border border-yellow-200 rounded-lg p-2">
             <Text className="text-yellow-700 text-sm text-center font-medium">
-              🕐 Approval Pending
+              Approval Pending
             </Text>
           </View>
         )}
@@ -168,7 +238,7 @@ const RestaurantCard = React.memo(({ restaurant }: RestaurantCardProps) => {
         {restaurant.status === 'suspended' && (
           <View className="mt-3 bg-red-50 border border-red-200 rounded-lg p-2">
             <Text className="text-red-600 text-sm text-center font-medium">
-              ⚠️ Temporarily Suspended
+              Temporarily Suspended
             </Text>
           </View>
         )}
@@ -176,7 +246,7 @@ const RestaurantCard = React.memo(({ restaurant }: RestaurantCardProps) => {
         {restaurant.status === 'inactive' && (
           <View className="mt-3 bg-gray-50 border border-gray-200 rounded-lg p-2">
             <Text className="text-gray-600 text-sm text-center font-medium">
-              💤 Currently Inactive
+              Currently Inactive
             </Text>
           </View>
         )}

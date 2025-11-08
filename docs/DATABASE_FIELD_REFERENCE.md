@@ -66,20 +66,20 @@ const uncategorized = await databases.listDocuments(
 ## ⚠️ Reviews Collection (`reviews`)
 
 ### Query Fields:
-- **`restaurantId`** - Manual string field (NOT a relationship)
-  - Use: `Query.equal('restaurantId', restaurantId)`
-  - Type: String
-  - Status: Legacy field, still in use
+- **`restaurant`** - Relationship field to restaurants collection
+  - Use: `Query.equal('restaurant', restaurantId)`
+  - Type: Relationship (many-to-one)
+  - Status: ✅ Active (migrated from restaurantId)
 
-- **`userId`** - Manual string field (NOT a relationship)
-  - Use: `Query.equal('userId', userId)`
-  - Type: String
-  - Status: Legacy field, still in use
+- **`user`** - Relationship field to User collection
+  - Use: `Query.equal('user', userId)`
+  - Type: Relationship (many-to-one)
+  - Status: ✅ Active (migrated from userId)
 
-- **`orderId`** - Manual string field (NOT a relationship)
-  - Use: `Query.equal('orderId', orderId)`
-  - Type: String
-  - Status: Legacy field, still in use
+- **`order`** - Relationship field to orders collection
+  - Use: `Query.equal('order', orderId)`
+  - Type: Relationship (one-to-one)
+  - Status: ✅ Active (migrated from orderId)
 
 ### Example:
 ```typescript
@@ -87,7 +87,7 @@ const reviews = await databases.listDocuments(
   databaseId,
   'reviews',
   [
-    Query.equal('restaurantId', restaurantId),  // ← Manual field
+    Query.equal('restaurant', restaurantId),  // ← Relationship field
     Query.equal('isVisible', true)
   ]
 );
