@@ -6,6 +6,7 @@ import * as Location from 'expo-location';
 
 import CustomHeader from '@/components/common/CustomHeader';
 import DeliveryMap from '@/components/tracking';
+import RealtimeStatus from '@/components/tracking/RealtimeStatus';
 
 // Define LatLng type locally to avoid web import issues
 interface LatLng {
@@ -58,6 +59,7 @@ const OrderTrackingScreen = () => {
   const [hasRealtimeProgress, setHasRealtimeProgress] = useState(false);
   const [currentPhase, setCurrentPhase] = useState<'to_restaurant' | 'to_customer' | 'idle'>('idle');
   const [phaseProgress, setPhaseProgress] = useState<number>(0);
+  const [realtimeConnected, setRealtimeConnected] = useState(false);
 
   // Delivery calculation hook
   const { 
@@ -159,6 +161,8 @@ const OrderTrackingScreen = () => {
       if (!isSubscribed) return;
       
       try {
+        console.log('📦 Order update received via realtime:', updated.status);
+        setRealtimeConnected(true); // Mark realtime as working
         setOrder((prev) => {
           const merged = { ...(prev || {}), ...updated } as Order;
           setItems(parseOrderItems(merged.items));
@@ -294,28 +298,54 @@ const OrderTrackingScreen = () => {
         setEtaMinutes(0);
       })
       .catch((err) => {
-        console.error('Drone simulation failed', err);
+        // Silently handle simulation errors - it's just for visualization
         if (!isMounted) return;
         setSimulationState('idle');
         setCountdownActive(false);
+        setEtaMinutes(undefined);
         
-        // Show error message but keep estimated time if available
-        if (order.estimatedDeliveryTime) {
-          const etaMs = new Date(order.estimatedDeliveryTime).getTime() - Date.now();
-          setEtaMinutes(Math.max(0, etaMs / 60000));
-        } else {
-          setEtaMinutes(undefined);
+        // Don't show error to user - simulation is optional
+        if (__DEV__) {
+          console.warn('Drone simulation could not start (network/backend issue)');
         }
       });
 
     return () => {
       isMounted = false;
     };
-  }, [order, restaurantCoords, customerCoords, simulationState, hasRealtimeProgress]);  useEffect(() => {
+  }, [order, restaurantCoords, customerCoords, simulationState, hasRealtimeProgress]);
+
+  // Auto-update countdown every 30 seconds for real-time ETA
+  useEffect(() => {
     if (!order?.estimatedDeliveryTime) return;
-    const etaMs = new Date(order.estimatedDeliveryTime).getTime() - Date.now();
-    setEtaMinutes(Math.max(0, etaMs / 60000));
-  }, [order?.estimatedDeliveryTime]);
+    
+    const estimatedTime = order.estimatedDeliveryTime;
+    
+    // Initial calculation
+    const updateETA = () => {
+      const etaMs = new Date(estimatedTime).getTime() - Date.now();
+      const minutes = Math.max(0, etaMs / 60000);
+      setEtaMinutes(minutes);
+      
+      // Stop countdown when delivered or cancelled
+      if (minutes <= 0 || order.status === 'delivered' || order.status === 'cancelled') {
+        return false; // Signal to stop interval
+      }
+      return true; // Continue countdown
+    };
+    
+    // Update immediately
+    if (!updateETA()) return;
+    
+    // Then update every 30 seconds for real-time countdown
+    const interval = setInterval(() => {
+      if (!updateETA()) {
+        clearInterval(interval);
+      }
+    }, 30000); // Update every 30 seconds
+    
+    return () => clearInterval(interval);
+  }, [order?.estimatedDeliveryTime, order?.status]);
 
   const handleCallRestaurant = () => {
     if (restaurant?.phone) {
@@ -370,36 +400,49 @@ const OrderTrackingScreen = () => {
     }
   };
 
-  // Calculate ETA text
+  // Calculate ETA text - using real estimated delivery time
   const getEtaText = () => {
-    if (etaMinutes && etaMinutes > 0) {
-      const minutes = Math.floor(etaMinutes);
-      return `${minutes} - ${minutes + 4} mins`;
+    // Priority 1: Use order's estimated delivery time
+    if (order?.estimatedDeliveryTime) {
+      const etaMs = new Date(order.estimatedDeliveryTime).getTime() - Date.now();
+      const minutes = Math.max(0, Math.floor(etaMs / 60000));
+      if (minutes > 0) {
+        return `${minutes} - ${minutes + 4} mins`;
+      }
     }
+    
+    // Priority 2: Use delivery calculation
     if (deliveryCalc?.estimatedTime) {
       const minutes = Math.floor(deliveryCalc.estimatedTime);
       return `${minutes} - ${minutes + 4} mins`;
     }
+    
+    // Fallback
     return '19 - 23 mins';
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
       <CustomHeader title="Order Tracking" />
       
       {/* Map - Full width at top */}
-      <View style={{ height: 350 }}>
+      <View style={{ height: 320 }} className="relative">
         <DeliveryMap
           restaurant={restaurantCoords}
           customer={customerCoords}
           drone={droneCoords}
           path={dronePath}
-          etaMinutes={etaMinutes}
         />
+        
+        {/* Map Gradient Overlay */}
+        <View className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-gray-50 to-transparent pointer-events-none" />
+        
+        {/* Realtime Connection Status */}
+        <RealtimeStatus isConnected={realtimeConnected} />
         
         {/* Debug Info Overlay (Remove in production) */}
         {__DEV__ && (
-          <View className="absolute top-2 left-2 bg-black/70 rounded-lg p-2">
+          <View className="absolute top-2 left-2 rounded-lg p-2" style={{ backgroundColor: 'rgba(0, 0, 0, 0.7)' }}>
             <Text className="text-white text-xs font-mono">
               Status: {order.status}
             </Text>
@@ -417,194 +460,196 @@ const OrderTrackingScreen = () => {
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 20 }} showsVerticalScrollIndicator={false}>
-        <View className="px-4 py-4 space-y-3">
+        <View className="px-5 py-5 space-y-4">
           
-          {/* ETA Card with Progress Bar */}
-          <View className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-            <View className="mb-3">
-              <Text className="text-lg font-quicksand-bold text-gray-900">
-                Your order will arrive in {getEtaText()}
-              </Text>
-            </View>
-            
-            {/* Progress Bar */}
-            <View className="bg-gray-200 rounded-full h-2 overflow-hidden mb-2">
-              <View 
-                className="bg-green-500 h-full rounded-full" 
-                style={{ 
-                  width: order.status === 'delivered' ? '100%' : 
-                         order.status === 'delivering' ? `${Math.min(phaseProgress, 100)}%` :
-                         order.status === 'ready' ? '50%' :
-                         order.status === 'preparing' ? '25%' : '10%'
-                }}
-              />
+          {/* Status Card - SIMPLE & SAFE */}
+          <View className="bg-white rounded-3xl shadow-2xl overflow-hidden">
+            <View className="bg-primary px-6 py-6 flex-row items-center justify-between">
+              <View className="flex-1">
+                <Text style={{ opacity: 0.8 }} className="text-white text-xs font-quicksand-semibold uppercase tracking-wider mb-2">
+                  Order Status
+                </Text>
+                <Text className="text-white text-2xl font-quicksand-bold">
+                  {getStatusText()}
+                </Text>
+                <Text style={{ opacity: 0.7 }} className="text-white text-sm font-quicksand-medium mt-2">
+                  {order.status === 'preparing' && 'Kitchen is preparing your order'}
+                  {order.status === 'ready' && 'Order is ready for drone pickup'}
+                  {order.status === 'delivering' && 'Drone is on the way to you'}
+                  {order.status === 'delivered' && 'Order has been delivered'}
+                  {order.status === 'cancelled' && 'Order was cancelled'}
+                </Text>
+              </View>
+              <View style={{ opacity: 0.3 }} className="w-16 h-16 bg-white rounded-full items-center justify-center ml-4">
+                <Text className="text-4xl">
+                  {order.status === 'delivering' ? '🚚' : 
+                   order.status === 'ready' ? '✅' : 
+                   order.status === 'preparing' ? '👨‍🍳' : 
+                   order.status === 'delivered' ? '🎉' : '⏱️'}
+                </Text>
+              </View>
             </View>
           </View>
 
-          {/* Drone Info Card */}
-          <View className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-            <Text className="text-base font-quicksand-bold text-gray-900 mb-4">
-              Delivery Drone Information
-            </Text>
-            
-            {order.droneId ? (
-              <>
-                <Text className="text-sm text-gray-600 font-quicksand-medium mb-3">
-                  {currentPhase === 'to_restaurant' && 'Drone is flying to restaurant'}
-                  {currentPhase === 'to_customer' && 'Drone is delivering to you'}
-                  {currentPhase === 'idle' && order.status === 'ready' && 'Drone is waiting at restaurant'}
-                  {currentPhase === 'idle' && order.status === 'preparing' && 'Preparing your food'}
-                  {currentPhase === 'idle' && order.status === 'pending' && 'Awaiting confirmation'}
-                </Text>
-                
-                <View className="flex-row items-center justify-between">
+          {/* Delivery Info Section - CLEAN LAYOUT */}
+          <View className="space-y-3">
+            {/* Drone Card */}
+            {order.droneId && (
+              <View className="bg-white rounded-2xl p-5 shadow-lg">
+                <View className="flex-row items-center justify-between mb-4">
                   <View className="flex-row items-center flex-1">
-                    {/* Drone Avatar */}
-                    <View className="w-12 h-12 rounded-full bg-blue-100 items-center justify-center mr-3">
-                      <Text className="text-2xl">🚁</Text>
+                    <View className="w-14 h-14 bg-blue-100 rounded-2xl items-center justify-center mr-4">
+                      <Text className="text-3xl">🚁</Text>
                     </View>
-                    
-                    {/* Drone Info */}
                     <View className="flex-1">
+                      <Text className="text-xs text-gray-500 font-quicksand-semibold uppercase mb-1">
+                        Delivery Drone
+                      </Text>
                       <Text className="text-base font-quicksand-bold text-gray-900">
-                        Drone #{order.droneId.slice(-4).toUpperCase()}
+                        #{order.droneId.slice(-4).toUpperCase()}
                       </Text>
                       <View className="flex-row items-center mt-1">
-                        <Text className="text-sm text-amber-500 font-quicksand-semibold mr-1">5.0</Text>
-                        <Text className="text-xl text-amber-400">★</Text>
+                        <Text className="text-xs text-amber-500 font-quicksand-bold">5.0 ⭐</Text>
                       </View>
-                      {/* Show current phase progress */}
-                      {currentPhase !== 'idle' && (
-                        <View className="mt-2">
-                          <View className="bg-gray-200 rounded-full h-1.5 w-32">
-                            <View 
-                              className="bg-blue-500 h-full rounded-full" 
-                              style={{ width: `${Math.min(phaseProgress, 100)}%` }}
-                            />
-                          </View>
-                          <Text className="text-xs text-gray-500 mt-1">
-                            {Math.round(phaseProgress)}% completed
-                          </Text>
-                        </View>
-                      )}
                     </View>
                   </View>
-                  
-                  {/* Action Buttons */}
-                  <View className="flex-row space-x-2">
-                    {restaurant?.phone && (
-                      <TouchableOpacity
-                        className="w-12 h-12 rounded-full bg-gray-100 items-center justify-center"
-                        activeOpacity={0.7}
-                        onPress={handleCallRestaurant}
-                      >
-                        <Image source={icons.phone} className="w-6 h-6" tintColor="#1F2937" />
-                      </TouchableOpacity>
-                    )}
-                  </View>
+                  {restaurant?.phone && (
+                    <TouchableOpacity
+                      className="w-11 h-11 bg-primary rounded-full items-center justify-center"
+                      activeOpacity={0.7}
+                      onPress={handleCallRestaurant}
+                    >
+                      <Image source={icons.phone} className="w-5 h-5" tintColor="#FFFFFF" />
+                    </TouchableOpacity>
+                  )}
                 </View>
-              </>
-            ) : (
-              <View className="items-center py-4">
-                <Text className="text-2xl mb-2">🔍</Text>
-                <Text className="text-sm text-gray-500 font-quicksand-medium text-center">
-                  Looking for available drone...
-                </Text>
               </View>
             )}
-          </View>
 
-          {/* Delivery Address Card */}
-          <View className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-            <View className="flex-row items-start">
-              <View className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center mr-3">
-                <Text className="text-lg">📍</Text>
-              </View>
-              
-              <View className="flex-1">
-                <Text className="text-base font-quicksand-bold text-gray-900 mb-1">
-                  Delivery Address
-                </Text>
-                <Text className="text-sm text-gray-600 font-quicksand-medium leading-5">
-                  {order.deliveryAddress}
-                </Text>
-                {order.phone && (
-                  <View className="flex-row items-center mt-2">
-                    <Text className="text-sm text-gray-500 font-quicksand-medium">
-                      {order.phone}
-                    </Text>
-                  </View>
-                )}
-              </View>
-            </View>
-          </View>
-
-          {/* Order Status Card */}
-          <View className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-            <Text className="text-base font-quicksand-bold text-gray-900 mb-3">
-              Order Status
-            </Text>
-            <View className="bg-green-50 rounded-xl px-4 py-3">
-              <Text className="text-sm font-quicksand-semibold text-green-700">
-                {getStatusText()}
-              </Text>
-            </View>
-          </View>
-
-          {/* Restaurant Info Card */}
-          {restaurant && (
-            <View className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-              <View className="flex-row items-center">
-                <View className="w-10 h-10 rounded-full bg-amber-100 items-center justify-center mr-3">
-                  <Text className="text-lg">🍽️</Text>
+            {/* Delivery Address */}
+            <View className="bg-white rounded-2xl p-5 shadow-lg">
+              <View className="flex-row items-start">
+                <View className="w-12 h-12 bg-green-100 rounded-xl items-center justify-center mr-4">
+                  <Text className="text-2xl">📍</Text>
                 </View>
                 <View className="flex-1">
-                  <Text className="text-base font-quicksand-bold text-gray-900">
-                    {restaurant.name}
+                  <Text className="text-xs text-gray-500 font-quicksand-semibold uppercase mb-1">
+                    Delivery To
                   </Text>
-                  {deliveryCalc && (
-                    <Text className="text-sm text-gray-600 font-quicksand-medium mt-1">
-                      {deliveryCalc.formattedDistance} • {deliveryCalc.formattedTime}
+                  <Text className="text-sm text-gray-900 font-quicksand-bold leading-relaxed mb-2">
+                    {order.deliveryAddress}
+                  </Text>
+                  {order.phone && (
+                    <Text className="text-sm text-gray-600 font-quicksand-semibold">
+                      📞 {order.phone}
                     </Text>
                   )}
                 </View>
               </View>
             </View>
-          )}
 
-          {/* Order Items */}
-          {items.length > 0 && (
-            <View className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-              <Text className="text-base font-quicksand-bold text-gray-900 mb-3">
-                Order Details
-              </Text>
-              {items.map((item, index) => (
-                <View key={`${item.menuItemId}-${index}`} className="mb-3 last:mb-0">
-                  <View className="flex-row justify-between items-start">
-                    <View className="flex-1">
-                      <Text className="text-sm font-quicksand-semibold text-gray-900">
-                        {item.quantity}x {item.name}
-                      </Text>
-                      {item.notes && (
-                        <Text className="text-xs text-gray-500 font-quicksand-regular mt-1">
-                          {item.notes}
-                        </Text>
-                      )}
+            {/* Restaurant Info */}
+            {restaurant && (
+              <View className="bg-white rounded-2xl p-5 shadow-lg">
+                <View className="flex-row items-center">
+                  {restaurant.logo ? (
+                    <Image 
+                      source={{ uri: restaurant.logo }}
+                      className="w-14 h-14 rounded-xl mr-4"
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View className="w-14 h-14 bg-orange-100 rounded-xl items-center justify-center mr-4">
+                      <Text className="text-2xl">🍽️</Text>
                     </View>
-                    <Text className="text-sm font-quicksand-bold text-gray-900 ml-3">
-                      {(item.price * item.quantity).toLocaleString('vi-VN')}₫
+                  )}
+                  <View className="flex-1">
+                    <Text className="text-xs text-gray-500 font-quicksand-semibold uppercase mb-1">
+                      Restaurant
                     </Text>
+                    <Text className="text-sm text-gray-900 font-quicksand-bold mb-1">
+                      {restaurant.name}
+                    </Text>
+                    {deliveryCalc && (
+                      <Text className="text-xs text-gray-600 font-quicksand-semibold">
+                        {deliveryCalc.formattedDistance} • {deliveryCalc.formattedTime}
+                      </Text>
+                    )}
                   </View>
                 </View>
-              ))}
+              </View>
+            )}
+          </View>
+
+          {/* Order Items - CLEAN DESIGN */}
+          {items.length > 0 && (
+            <View className="bg-white rounded-2xl shadow-lg overflow-hidden">
+              {/* Header */}
+              <View className="bg-gray-50 px-5 py-4 flex-row items-center justify-between border-b border-gray-200">
+                <Text className="text-base font-quicksand-bold text-gray-900">
+                  Order Details
+                </Text>
+                <View className="bg-primary px-3 py-1 rounded-full">
+                  <Text className="text-xs text-white font-quicksand-bold">
+                    {items.length} {items.length === 1 ? 'item' : 'items'}
+                  </Text>
+                </View>
+              </View>
+              
+              {/* Items List */}
+              <View className="px-5 py-3">
+                {items.map((item, index) => (
+                  <View key={`${item.menuItemId}-${index}`} className="py-3">
+                    <View className="flex-row items-start justify-between">
+                      <View className="flex-1 flex-row items-start">
+                        <View style={{ backgroundColor: 'rgba(254, 140, 0, 0.1)' }} className="w-8 h-8 rounded-lg items-center justify-center mr-3">
+                          <Text className="text-sm font-quicksand-bold text-primary">
+                            {item.quantity}x
+                          </Text>
+                        </View>
+                        <View className="flex-1">
+                          <Text className="text-sm font-quicksand-bold text-gray-900">
+                            {item.name}
+                          </Text>
+                          {item.notes && (
+                            <Text className="text-xs text-gray-500 font-quicksand-medium mt-1">
+                              Note: {item.notes}
+                            </Text>
+                          )}
+                        </View>
+                      </View>
+                      <Text className="text-sm font-quicksand-bold text-gray-900 ml-2">
+                        {(item.price * item.quantity).toLocaleString('vi-VN')}₫
+                      </Text>
+                    </View>
+                    {index < items.length - 1 && (
+                      <View className="h-px bg-gray-100 mt-3" />
+                    )}
+                  </View>
+                ))}
+              </View>
+              
+              {/* Total */}
+              <View style={{ backgroundColor: 'rgba(254, 140, 0, 0.05)', borderTopWidth: 2, borderTopColor: 'rgba(254, 140, 0, 0.2)' }} className="px-5 py-4">
+                <View className="flex-row justify-between items-center">
+                  <Text className="text-base font-quicksand-bold text-gray-900">
+                    Total
+                  </Text>
+                  <Text className="text-xl font-quicksand-bold text-primary">
+                    {order.total.toLocaleString('vi-VN')}₫
+                  </Text>
+                </View>
+              </View>
             </View>
           )}
 
-          {/* Order ID */}
-          <View className="items-center py-2">
-            <Text className="text-xs text-gray-400 font-quicksand-medium">
-              Order ID: #{order.$id.slice(-8).toUpperCase()}
-            </Text>
+          {/* Order ID - REDESIGNED */}
+          <View className="items-center py-4 mb-2">
+            <View className="bg-gray-200 px-6 py-3 rounded-full border-2 border-gray-300">
+              <Text className="text-sm text-gray-900 font-quicksand-bold">
+                Order ID: #{order.$id.slice(-8).toUpperCase()}
+              </Text>
+            </View>
           </View>
         </View>
       </ScrollView>

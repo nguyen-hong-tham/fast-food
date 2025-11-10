@@ -1,6 +1,6 @@
-import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, Platform, Modal } from 'react-native';
 import React, { useEffect, useState, useRef } from 'react';
-import { useLocalSearchParams, router } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { getRestaurantById, getRestaurantMenu, getRestaurantCategories } from '@/lib/appwrite';
 import { Restaurant, MenuItem } from '@/type';
 import RestaurantHeader from '@/components/restaurant/RestaurantHeader';
@@ -18,19 +18,23 @@ interface GroupedMenu {
 }
 
 const RestaurantDetailScreen = () => {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{ id: string }>();
+  const id = params?.id;
+  const { isDesktop } = useResponsive();
+  
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'menu' | 'reviews'>('menu');
-  const { isDesktop } = useResponsive();
   const scrollViewRef = useRef<ScrollView>(null);
   const sectionRefs = useRef<{ [key: string]: number }>({});
+  const [navigationReady, setNavigationReady] = useState(false);
   
   // Menu data
   const [categories, setCategories] = useState<any[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [groupedMenu, setGroupedMenu] = useState<GroupedMenu[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   
   // Reviews state
   const [reviews, setReviews] = useState<any[]>([]);
@@ -40,6 +44,15 @@ const RestaurantDetailScreen = () => {
     distribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
     averageByCategory: { foodQuality: 0, deliverySpeed: 0, service: 0 },
   });
+
+  // Initialize navigation ready state after first render
+  useEffect(() => {
+    // Small delay to ensure navigation context is ready
+    const timer = setTimeout(() => {
+      setNavigationReady(true);
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Fetch restaurant details
   useEffect(() => {
@@ -63,11 +76,14 @@ const RestaurantDetailScreen = () => {
     (async () => {
       try {
         const data = await getRestaurantCategories(id);
-        console.log('📂 Categories loaded:', data);
         setCategories(data as any);
       } catch (error) {
-        console.error('Error fetching categories:', error);
+        // Silently handle - categories collection may not exist
+        // Will use auto-categorization instead
         setCategories([]);
+        if (__DEV__) {
+          console.log('ℹ️ No categories collection - using auto-categorization');
+        }
       }
     })();
   }, [id]);
@@ -78,7 +94,6 @@ const RestaurantDetailScreen = () => {
     (async () => {
       try {
         const data = await getRestaurantMenu(id);
-        console.log('🍽️ Menu items loaded:', data);
         setMenuItems(data as any as MenuItem[]);
       } catch (error) {
         console.error('Error fetching menu:', error);
@@ -87,7 +102,7 @@ const RestaurantDetailScreen = () => {
     })();
   }, [id]);
 
-  // Group menu items by category
+  // Group menu items by category - ALWAYS include categories for dropdown
   useEffect(() => {
     if (menuItems.length === 0) {
       setGroupedMenu([]);
@@ -96,16 +111,65 @@ const RestaurantDetailScreen = () => {
 
     const grouped: GroupedMenu[] = [];
     
-    // Group items by categories
+    // If no categories, create fake categories by analyzing menu items
+    if (categories.length === 0) {
+      // Try to auto-categorize by item name patterns
+      const pizzas = menuItems.filter((item: any) => 
+        item.name.toLowerCase().includes('pizza')
+      );
+      const pastas = menuItems.filter((item: any) => 
+        item.name.toLowerCase().includes('pasta') || 
+        item.name.toLowerCase().includes('spaghetti')
+      );
+      const others = menuItems.filter((item: any) => 
+        !item.name.toLowerCase().includes('pizza') &&
+        !item.name.toLowerCase().includes('pasta') &&
+        !item.name.toLowerCase().includes('spaghetti')
+      );
+
+      if (pizzas.length > 0) {
+        grouped.push({
+          categoryId: 'auto-pizza',
+          categoryName: 'Pizza',
+          items: pizzas,
+        });
+      }
+      if (pastas.length > 0) {
+        grouped.push({
+          categoryId: 'auto-pasta',
+          categoryName: 'Pasta & Spaghetti',
+          items: pastas,
+        });
+      }
+      if (others.length > 0) {
+        grouped.push({
+          categoryId: 'auto-others',
+          categoryName: 'Other Items',
+          items: others,
+        });
+      }
+      
+      // If still no categories, just create one "All Items"
+      if (grouped.length === 0) {
+        grouped.push({
+          categoryId: 'all',
+          categoryName: 'All Items',
+          items: menuItems,
+        });
+      }
+      
+      setGroupedMenu(grouped);
+      setSelectedCategory('all');
+      return;
+    }
+    
+    // Has categories - group by them
     categories.forEach((category) => {
       const items = menuItems.filter((item: any) => {
         if (!item.categories) return false;
-        
-        // Handle both string ID and object
         const categoryId = typeof item.categories === 'string' 
           ? item.categories 
           : item.categories.$id;
-        
         return categoryId === category.$id;
       });
 
@@ -118,18 +182,21 @@ const RestaurantDetailScreen = () => {
       }
     });
 
-    // Add uncategorized items
-    const uncategorized = menuItems.filter((item: any) => !item.categories);
+    const categorizedItemIds = new Set(grouped.flatMap(g => g.items.map(i => i.$id)));
+    const uncategorized = menuItems.filter((item: any) => !categorizedItemIds.has(item.$id));
+    
     if (uncategorized.length > 0) {
       grouped.push({
         categoryId: 'uncategorized',
-        categoryName: 'Uncategorized',
+        categoryName: 'Other Items',
         items: uncategorized,
       });
     }
 
-    console.log('📦 Grouped menu:', grouped);
     setGroupedMenu(grouped);
+    if (__DEV__ && grouped.length > 0) {
+      console.log('📋 Categories:', grouped.map(g => `${g.categoryName} (${g.items.length})`).join(', '));
+    }
   }, [menuItems, categories]);
 
   // Fetch reviews
@@ -153,21 +220,71 @@ const RestaurantDetailScreen = () => {
     }
   };
 
-  // Scroll to category section
   const scrollToCategory = (categoryId: string) => {
     setSelectedCategory(categoryId);
-    
-    if (categoryId === 'all') {
-      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-      return;
-    }
+    setTimeout(() => {
+      const yOffset = sectionRefs.current[categoryId];
+      if (yOffset !== undefined) {
+        const headerOffset = isDesktop ? 200 : 250;
+        scrollViewRef.current?.scrollTo({ 
+          y: Math.max(0, yOffset - headerOffset), 
+          animated: true 
+        });
+      }
+    }, 100);
+  };
 
-    const yOffset = sectionRefs.current[categoryId];
-    if (yOffset !== undefined) {
-      // Offset for header and tabs
-      scrollViewRef.current?.scrollTo({ y: yOffset - 100, animated: true });
+  // Get category icon based on name
+  const getCategoryIcon = (categoryId: string) => {
+    const category = groupedMenu.find(g => g?.categoryId === categoryId);
+    if (!category) return '🍽️';
+    
+    const name = category.categoryName.toLowerCase();
+    if (name.includes('pizza')) return '🍕';
+    if (name.includes('pasta') || name.includes('spaghetti')) return '🍝';
+    if (name.includes('burger') || name.includes('sandwich')) return '🍔';
+    if (name.includes('drink') || name.includes('beverage')) return '🥤';
+    if (name.includes('dessert') || name.includes('cake')) return '🍰';
+    if (name.includes('salad')) return '🥗';
+    if (name.includes('soup')) return '🍲';
+    if (name.includes('meat') || name.includes('steak')) return '🥩';
+    if (name.includes('chicken')) return '🍗';
+    if (name.includes('fish') || name.includes('seafood')) return '🐟';
+    if (name.includes('coffee')) return '☕';
+    if (name.includes('ice cream')) return '🍦';
+    return '🍽️';
+  };
+
+  // Safe navigation handler
+  const handleGoBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      window.history.back();
+    } else {
+      // Fallback: Navigate to home
+      if (typeof window !== 'undefined') {
+        window.location.href = '/';
+      }
     }
   };
+
+  // Early return if no ID
+  if (!id) {
+    return (
+      <View className="flex-1 bg-white items-center justify-center">
+        <Text className="text-xl text-gray-600">Invalid restaurant</Text>
+      </View>
+    );
+  }
+
+  // Wait for navigation context to be ready
+  if (!navigationReady) {
+    return (
+      <View className="flex-1 bg-white items-center justify-center">
+        <ActivityIndicator size="large" color="#f59e0b" />
+        <Text className="mt-4 text-gray-600">Initializing...</Text>
+      </View>
+    );
+  }
 
   if (loading) {
     return (
@@ -184,7 +301,7 @@ const RestaurantDetailScreen = () => {
         <Text className="text-xl text-gray-600">Restaurant not found</Text>
         <TouchableOpacity 
           className="mt-4 px-6 py-3 bg-amber-500 rounded-full"
-          onPress={() => router.back()}
+          onPress={handleGoBack}
         >
           <Text className="text-white font-semibold">Go Back</Text>
         </TouchableOpacity>
@@ -194,156 +311,467 @@ const RestaurantDetailScreen = () => {
 
   const totalMenuCount = menuItems.length;
 
+  // Filter menu based on selected category - with safety checks
+  const displayedMenu = (selectedCategory === 'all' || !selectedCategory
+    ? groupedMenu
+    : groupedMenu.filter(g => g?.categoryId === selectedCategory)
+  ).filter(Boolean); // Remove any null/undefined items
+  
+  // Safe grouped menu with validation
+  const safeGroupedMenu = groupedMenu.filter(g => 
+    g && 
+    g.categoryId && 
+    g.categoryName && 
+    Array.isArray(g.items) &&
+    g.items.length > 0
+  );
+
   return (
     <View className="flex-1 bg-gray-50">
       <ScrollView 
         ref={scrollViewRef}
         showsVerticalScrollIndicator={false}
-        stickyHeaderIndices={[1]} // Make category tabs sticky
+        contentContainerStyle={isDesktop ? { maxWidth: 1200, alignSelf: 'center', width: '100%' } : {}}
       >
         {/* Restaurant Header */}
         <RestaurantHeader restaurant={restaurant} />
 
-        {/* Tabs (Menu / Reviews) */}
-        <View className="flex-row bg-white shadow-sm px-4">
-          <TouchableOpacity
-            className={cn(
-              'flex-1 py-4 items-center border-b-3',
-              activeTab === 'menu' ? 'border-amber-500' : 'border-transparent'
-            )}
-            onPress={() => setActiveTab('menu')}
-          >
-            <Text className={cn(
-              'font-bold text-base',
-              activeTab === 'menu' ? 'text-amber-500' : 'text-gray-400'
-            )}>
-              Our Menu ({totalMenuCount})
-            </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            className={cn(
-              'flex-1 py-4 items-center border-b-3',
-              activeTab === 'reviews' ? 'border-amber-500' : 'border-transparent'
-            )}
-            onPress={() => setActiveTab('reviews')}
-          >
-            <Text className={cn(
-              'font-bold text-base',
-              activeTab === 'reviews' ? 'text-amber-500' : 'text-gray-400'
-            )}>
-              Reviews ({reviews.length})
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {activeTab === 'menu' ? (
-          <View className="bg-gray-50">
-            {/* Category Filter Tabs */}
-            {categories.length > 0 && (
-              <View className="bg-white py-4">
-                <ScrollView 
-                  horizontal 
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerClassName="px-4 gap-2"
-                >
-                  {/* All Items Tab */}
-                  <TouchableOpacity
-                    onPress={() => scrollToCategory('all')}
-                    className={cn(
-                      'px-4 py-2 rounded-full border',
-                      selectedCategory === 'all' 
-                        ? 'bg-amber-500 border-amber-500' 
-                        : 'bg-white border-gray-300'
-                    )}
-                  >
-                    <Text className={cn(
-                      'font-semibold text-sm',
-                      selectedCategory === 'all' ? 'text-white' : 'text-gray-700'
-                    )}>
-                      All Items
-                    </Text>
-                  </TouchableOpacity>
-
-                  {/* Category Tabs */}
-                  {groupedMenu.map((group) => (
+        {/* Desktop: 2 Column Layout | Mobile: Full Width */}
+        <View className={cn(
+          "bg-gray-50",
+          isDesktop ? "flex-row gap-6 px-8 pb-8" : "pb-4"
+        )}>
+          {/* LEFT SIDEBAR - Categories (Desktop Only) */}
+          {isDesktop && safeGroupedMenu.length > 1 && (
+            <View className="w-72 shrink-0">
+              {/* Sticky Categories Sidebar */}
+              <View className="sticky top-4">
+                <View className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+                  <Text className="text-lg font-bold text-gray-900 mb-4 px-2">Categories</Text>
+                  
+                  <View className="space-y-1">
+                    {/* All Items Option */}
                     <TouchableOpacity
-                      key={group.categoryId}
-                      onPress={() => scrollToCategory(group.categoryId)}
+                      onPress={() => {
+                        setSelectedCategory('all');
+                        scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+                      }}
                       className={cn(
-                        'px-4 py-2 rounded-full border',
-                        selectedCategory === group.categoryId 
-                          ? 'bg-amber-500 border-amber-500' 
-                          : 'bg-white border-gray-300'
+                        'px-4 py-3 rounded-xl transition-all',
+                        selectedCategory === 'all' 
+                          ? 'bg-amber-50 border-2 border-amber-500' 
+                          : 'bg-gray-50 border-2 border-transparent hover:bg-gray-100'
                       )}
+                      activeOpacity={0.7}
                     >
-                      <Text className={cn(
-                        'font-semibold text-sm',
-                        selectedCategory === group.categoryId ? 'text-white' : 'text-gray-700'
-                      )}>
-                        {group.categoryName} ({group.items.length})
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
-
-            {/* Grouped Menu Items */}
-            <View className="px-4 py-4">
-              {groupedMenu.length > 0 ? (
-                groupedMenu.map((group) => (
-                  <View 
-                    key={group.categoryId}
-                    onLayout={(event) => {
-                      const layout = event.nativeEvent.layout;
-                      sectionRefs.current[group.categoryId] = layout.y;
-                    }}
-                    className="mb-8"
-                  >
-                    {/* Category Title */}
-                    <Text className="text-2xl font-bold text-gray-900 mb-4">
-                      {group.categoryName}
-                    </Text>
-
-                    {/* Menu Items in this category */}
-                    <View className="flex-row flex-wrap justify-between">
-                      {group.items.map((item) => (
-                        <View key={item.$id} className="w-[48%] mb-4">
-                          <MenuCard item={item} restaurantId={restaurant.$id} />
+                      <View className="flex-row items-center justify-between">
+                        <View>
+                          <Text className={cn(
+                            'text-base font-semibold mb-1',
+                            selectedCategory === 'all' ? 'text-amber-600' : 'text-gray-700'
+                          )}>
+                            All Menu Items
+                          </Text>
+                          <Text className="text-xs text-gray-500">
+                            {totalMenuCount} items
+                          </Text>
                         </View>
-                      ))}
-                    </View>
+                        {selectedCategory === 'all' && (
+                          <View className="w-5 h-5 bg-amber-500 rounded-full items-center justify-center">
+                            <Text className="text-white text-xs font-bold">✓</Text>
+                          </View>
+                        )}
+                      </View>
+                    </TouchableOpacity>
+
+                    {/* Category List */}
+                    {safeGroupedMenu.map((group) => {
+                      const isSelected = selectedCategory === group.categoryId;
+                      return (
+                        <TouchableOpacity
+                          key={group.categoryId}
+                          onPress={() => scrollToCategory(group.categoryId)}
+                          style={{
+                            paddingHorizontal: 16,
+                            paddingVertical: 12,
+                            borderRadius: 12,
+                            backgroundColor: isSelected ? '#fffbeb' : '#f9fafb',
+                            borderWidth: 2,
+                            borderColor: isSelected ? '#f59e0b' : 'transparent',
+                            marginBottom: 4,
+                          }}
+                          activeOpacity={0.7}
+                        >
+                          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <View>
+                              <Text style={{
+                                fontSize: 16,
+                                fontWeight: '600',
+                                marginBottom: 4,
+                                color: isSelected ? '#d97706' : '#374151'
+                              }}>
+                                {group.categoryName}
+                              </Text>
+                              <Text style={{ fontSize: 12, color: '#6b7280' }}>
+                                {group.items.length} items
+                              </Text>
+                            </View>
+                            {isSelected && (
+                              <View style={{ 
+                                width: 20, 
+                                height: 20, 
+                                backgroundColor: '#f59e0b', 
+                                borderRadius: 10, 
+                                alignItems: 'center', 
+                                justifyContent: 'center' 
+                              }}>
+                                <Text style={{ color: 'white', fontSize: 12, fontWeight: 'bold' }}>✓</Text>
+                              </View>
+                            )}
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    })}
                   </View>
-                ))
-              ) : (
-                <View className="items-center justify-center py-16 bg-white rounded-2xl">
-                  <Text className="text-6xl mb-4">🍽️</Text>
-                  <Text className="text-lg font-semibold text-gray-700 mb-2">
-                    No Menu Items
-                  </Text>
-                  <Text className="text-sm text-gray-500 text-center px-8">
-                    This restaurant hasn't added any menu items yet.
-                  </Text>
                 </View>
-              )}
+              </View>
             </View>
-          </View>
-        ) : (
-          /* Reviews Section */
-          <View className="px-4 py-4">
-            {reviews.length > 0 ? (
-              reviews.map((review) => (
-                <ReviewCard key={review.$id} review={review} />
-              ))
+          )}
+
+          {/* MAIN CONTENT AREA */}
+          <View className="flex-1">
+            {/* Tabs */}
+            <View className={cn(
+              "flex-row bg-white shadow-sm border-b border-gray-200",
+              isDesktop ? "rounded-t-2xl" : "px-4"
+            )}>
+              <TouchableOpacity
+                className={cn(
+                  'flex-1 py-4 items-center border-b-3 transition-all',
+                  activeTab === 'menu' ? 'border-amber-500' : 'border-transparent'
+                )}
+                onPress={() => setActiveTab('menu')}
+              >
+                <Text className={cn(
+                  'font-bold text-base',
+                  activeTab === 'menu' ? 'text-amber-500' : 'text-gray-400'
+                )}>
+                  Our Menu ({totalMenuCount})
+                </Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                className={cn(
+                  'flex-1 py-4 items-center border-b-3 transition-all',
+                  activeTab === 'reviews' ? 'border-amber-500' : 'border-transparent'
+                )}
+                onPress={() => setActiveTab('reviews')}
+              >
+                <Text className={cn(
+                  'font-bold text-base',
+                  activeTab === 'reviews' ? 'text-amber-500' : 'text-gray-400'
+                )}>
+                  Reviews ({reviews.length})
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {activeTab === 'menu' ? (
+              <View className={cn(
+                "bg-white",
+                isDesktop ? "rounded-b-2xl shadow-sm border border-t-0 border-gray-100" : ""
+              )}>
+                {/* Mobile Category Dropdown - ALWAYS SHOW */}
+                {!isDesktop && safeGroupedMenu.length > 0 && (
+                  <View className="px-4 py-4 bg-gradient-to-b from-white to-gray-50">
+                    <TouchableOpacity
+                      onPress={() => setShowCategoryPicker(true)}
+                      className="flex-row items-center justify-between bg-white px-5 py-4 rounded-2xl shadow-lg border-2 border-amber-200"
+                      activeOpacity={0.7}
+                      style={{ elevation: 4 }}
+                    >
+                      <View className="flex-row items-center flex-1">
+                        <View className="w-10 h-10 bg-gradient-to-br from-amber-400 to-amber-600 rounded-xl items-center justify-center mr-4 shadow-sm">
+                          <Text className="text-xl">
+                            {selectedCategory === 'all' ? '🍽️' : getCategoryIcon(selectedCategory)}
+                          </Text>
+                        </View>
+                        <View className="flex-1">
+                          <Text className="text-xs text-gray-500 font-quicksand-semibold mb-1 uppercase tracking-wide">
+                            Category
+                          </Text>
+                          <Text className="text-base font-quicksand-bold text-gray-900">
+                            {selectedCategory === 'all' 
+                              ? 'All Menu Items'
+                              : safeGroupedMenu.find(g => g?.categoryId === selectedCategory)?.categoryName || 'All Items'
+                            }
+                          </Text>
+                          <Text className="text-xs text-gray-500 font-quicksand-medium mt-0.5">
+                            {selectedCategory === 'all'
+                              ? `${totalMenuCount} items`
+                              : `${safeGroupedMenu.find(g => g?.categoryId === selectedCategory)?.items.length || 0} items`
+                            }
+                          </Text>
+                        </View>
+                      </View>
+                      <View className="w-8 h-8 bg-amber-100 rounded-lg items-center justify-center">
+                        <Text className="text-amber-600 text-lg font-bold">▼</Text>
+                      </View>
+                    </TouchableOpacity>
+                  </View>
+                )}
+
+                {/* Category Picker Modal - REDESIGNED */}
+                <Modal
+                  visible={showCategoryPicker}
+                  transparent={true}
+                  animationType="slide"
+                  onRequestClose={() => setShowCategoryPicker(false)}
+                >
+                  <TouchableOpacity 
+                    className="flex-1 bg-black/60 justify-end"
+                    activeOpacity={1}
+                    onPress={() => setShowCategoryPicker(false)}
+                  >
+                    <View className="bg-white rounded-t-3xl shadow-2xl" style={{ maxHeight: '75%' }}>
+                      {/* Modal Header */}
+                      <View className="px-6 py-5 border-b-2 border-gray-100 bg-gradient-to-r from-amber-50 to-orange-50">
+                        <View className="flex-row items-center justify-between">
+                          <View>
+                            <Text className="text-xl font-quicksand-bold text-gray-900">Select Category</Text>
+                            <Text className="text-sm text-gray-600 font-quicksand-medium mt-1">
+                              Choose a category to browse
+                            </Text>
+                          </View>
+                          <TouchableOpacity 
+                            onPress={() => setShowCategoryPicker(false)}
+                            className="w-10 h-10 items-center justify-center bg-white rounded-xl shadow-sm border border-gray-200"
+                            activeOpacity={0.7}
+                          >
+                            <Text className="text-gray-600 text-xl font-bold">✕</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+
+                      <ScrollView className="px-4 py-3" showsVerticalScrollIndicator={false}>
+                        {/* All Items Option */}
+                        <TouchableOpacity
+                          onPress={() => {
+                            setSelectedCategory('all');
+                            setShowCategoryPicker(false);
+                            scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+                          }}
+                          style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: 16,
+                            marginBottom: 8,
+                            borderRadius: 16,
+                            backgroundColor: selectedCategory === 'all' ? '#fef3c7' : '#f9fafb',
+                            borderWidth: 2,
+                            borderColor: selectedCategory === 'all' ? '#f59e0b' : '#e5e7eb',
+                          }}
+                          activeOpacity={0.7}
+                        >
+                          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                            <View style={{
+                              width: 48,
+                              height: 48,
+                              borderRadius: 12,
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              marginRight: 16,
+                              backgroundColor: selectedCategory === 'all' ? '#fbbf24' : '#d1d5db',
+                            }}>
+                              <Text style={{ fontSize: 24 }}>🍽️</Text>
+                            </View>
+                            <View style={{ flex: 1 }}>
+                              <Text style={{
+                                fontSize: 16,
+                                fontWeight: 'bold',
+                                marginBottom: 4,
+                                color: selectedCategory === 'all' ? '#b45309' : '#111827'
+                              }}>
+                                All Menu Items
+                              </Text>
+                              <Text style={{ fontSize: 12, color: '#4b5563', fontWeight: '600' }}>
+                                {totalMenuCount} items available
+                              </Text>
+                            </View>
+                          </View>
+                          {selectedCategory === 'all' && (
+                            <View style={{
+                              width: 32,
+                              height: 32,
+                              backgroundColor: '#f59e0b',
+                              borderRadius: 16,
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}>
+                              <Text style={{ color: 'white', fontSize: 14, fontWeight: 'bold' }}>✓</Text>
+                            </View>
+                          )}
+                        </TouchableOpacity>
+
+                        {/* Category Options */}
+                        {safeGroupedMenu.map((group, index) => {
+                          const isSelected = selectedCategory === group.categoryId;
+                          return (
+                            <TouchableOpacity
+                              key={group.categoryId}
+                              onPress={() => {
+                                scrollToCategory(group.categoryId);
+                                setShowCategoryPicker(false);
+                              }}
+                              style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: 16,
+                                marginBottom: 8,
+                                borderRadius: 16,
+                                backgroundColor: isSelected ? '#fef3c7' : '#f9fafb',
+                                borderWidth: 2,
+                                borderColor: isSelected ? '#f59e0b' : '#e5e7eb',
+                              }}
+                              activeOpacity={0.7}
+                            >
+                              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                                <View style={{
+                                  width: 48,
+                                  height: 48,
+                                  borderRadius: 12,
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  marginRight: 16,
+                                  backgroundColor: isSelected ? '#fbbf24' : '#d1d5db',
+                                }}>
+                                  <Text style={{ fontSize: 24 }}>{getCategoryIcon(group.categoryId)}</Text>
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                  <Text style={{
+                                    fontSize: 16,
+                                    fontWeight: 'bold',
+                                    marginBottom: 4,
+                                    color: isSelected ? '#b45309' : '#111827'
+                                  }}>
+                                    {group.categoryName}
+                                  </Text>
+                                  <Text style={{ fontSize: 12, color: '#4b5563', fontWeight: '600' }}>
+                                    {group.items.length} items available
+                                  </Text>
+                                </View>
+                              </View>
+                              {isSelected && (
+                                <View style={{
+                                  width: 32,
+                                  height: 32,
+                                  backgroundColor: '#f59e0b',
+                                  borderRadius: 16,
+                                  alignItems: 'center',
+                                  justifyContent: 'center'
+                                }}>
+                                  <Text style={{ color: 'white', fontSize: 14, fontWeight: 'bold' }}>✓</Text>
+                                </View>
+                              )}
+                            </TouchableOpacity>
+                          );
+                        })}
+                        
+                        {/* Bottom Spacing */}
+                        <View className="h-4" />
+                      </ScrollView>
+                    </View>
+                  </TouchableOpacity>
+                </Modal>
+
+                {/* Menu Items Grid */}
+                <View className="p-4">
+                  {displayedMenu.length > 0 ? (
+                    displayedMenu.map((group) => (
+                      <View 
+                        key={group.categoryId}
+                        onLayout={(event) => {
+                          const layout = event.nativeEvent.layout;
+                          sectionRefs.current[group.categoryId] = layout.y;
+                        }}
+                        className="mb-8"
+                      >
+                        {/* Category Header - REDESIGNED */}
+                        <View className="mb-5 pb-3 border-b-2 border-amber-200">
+                          <View className="flex-row items-center">
+                            <View className="w-12 h-12 bg-gradient-to-br from-amber-400 to-amber-600 rounded-2xl items-center justify-center mr-4 shadow-md">
+                              <Text className="text-2xl">{getCategoryIcon(group.categoryId)}</Text>
+                            </View>
+                            <View className="flex-1">
+                              <Text className="text-2xl font-quicksand-bold text-gray-900 mb-1">
+                                {group.categoryName}
+                              </Text>
+                              <Text className="text-sm text-gray-600 font-quicksand-semibold">
+                                {group.items.length} item{group.items.length > 1 ? 's' : ''} available
+                              </Text>
+                            </View>
+                          </View>
+                        </View>
+
+                        {/* Grid Layout: 2 cols mobile, 3-4 cols desktop */}
+                        <View style={{ 
+                          flexDirection: 'row', 
+                          flexWrap: 'wrap',
+                          gap: isDesktop ? 16 : 12
+                        }}>
+                          {group.items.map((item) => (
+                            <View 
+                              key={item.$id} 
+                              style={{
+                                width: isDesktop 
+                                  ? 'calc(33.333% - 11px)' 
+                                  : 'calc(50% - 6px)',
+                                marginBottom: isDesktop ? 20 : 16
+                              }}
+                            >
+                              <MenuCard item={item} restaurantId={restaurant.$id} />
+                            </View>
+                          ))}
+                        </View>
+                      </View>
+                    ))
+                  ) : (
+                    <View className="items-center justify-center py-16">
+                      <Text className="text-6xl mb-4">🍽️</Text>
+                      <Text className="text-lg font-semibold text-gray-700 mb-2">
+                        No Menu Items
+                      </Text>
+                      <Text className="text-sm text-gray-500 text-center px-8">
+                        This restaurant hasn't added any menu items yet.
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </View>
             ) : (
-              <View className="items-center py-16 bg-white rounded-2xl">
-                <Text className="text-4xl mb-3">💬</Text>
-                <Text className="text-gray-600">No reviews yet</Text>
+              /* Reviews Section */
+              <View className={cn(
+                "p-4",
+                isDesktop ? "bg-white rounded-b-2xl shadow-sm border border-t-0 border-gray-100" : ""
+              )}>
+                {reviews.length > 0 ? (
+                  <View className={isDesktop ? "space-y-4" : ""}>
+                    {reviews.map((review) => (
+                      <ReviewCard key={review.$id} review={review} />
+                    ))}
+                  </View>
+                ) : (
+                  <View className="items-center py-16">
+                    <Text className="text-4xl mb-3">💬</Text>
+                    <Text className="text-gray-600">No reviews yet</Text>
+                  </View>
+                )}
               </View>
             )}
           </View>
-        )}
+        </View>
       </ScrollView>
     </View>
   );

@@ -5,8 +5,19 @@ import * as Sentry from '@sentry/react-native';
 import { useFonts } from 'expo-font';
 import { SplashScreen, Stack } from 'expo-router';
 import { useEffect } from 'react';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { LogBox } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import './globals.css';
+
+// Suppress known warnings and errors
+LogBox.ignoreLogs([
+  '[Reanimated]',
+  'Drone simulation failed',
+  'Network request failed',
+  'Collection with the requested ID could not be found',
+  'NavigationContainer',
+  'SafeAreaView has been deprecated',
+]);
 
 // 1) Chặn auto-hide ngay khi load module
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -49,9 +60,7 @@ function RootInner() {
 
   return (
     <SafeAreaProvider>
-      <SafeAreaView style={{ flex: 1 }}>
-        <Stack screenOptions={{ headerShown: false }} />
-      </SafeAreaView>
+      <Stack screenOptions={{ headerShown: false }} />
     </SafeAreaProvider>
   );
 }

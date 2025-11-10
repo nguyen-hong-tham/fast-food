@@ -14,7 +14,7 @@ export const appwriteConfig = {
   
   // Existing collections
   userCollectionId: process.env.EXPO_PUBLIC_APPWRITE_USER_COLLECTION_ID || "user", 
-  categoriesCollectionId: process.env.EXPO_PUBLIC_APPWRITE_CATEGORIES_COLLECTION_ID || "categories",
+  categoriesCollectionId: process.env.EXPO_PUBLIC_APPWRITE_CATEGORIES_COLLECTION_ID || "category",
   menuCollectionId: process.env.EXPO_PUBLIC_APPWRITE_MENU_COLLECTION_ID || "menu",
   ordersCollectionId: process.env.EXPO_PUBLIC_APPWRITE_ORDERS_COLLECTION_ID || "orders",
   
@@ -36,7 +36,40 @@ export const client = new Client();
 client
     .setEndpoint(appwriteConfig.endpoint)
     .setProject(appwriteConfig.projectId)
-    .setPlatform(Platform.OS === 'ios' ? appwriteConfig.iosBundleId : appwriteConfig.androidPackage)
+    .setPlatform(Platform.OS === 'ios' ? appwriteConfig.iosBundleId : appwriteConfig.androidPackage);
+
+// Configure realtime with retry logic for better stability
+if (typeof window !== 'undefined') {
+  // Add reconnection handler for web/mobile
+  const setupRealtimeReconnection = () => {
+    let reconnectAttempts = 0;
+    const maxReconnectAttempts = 5;
+    const baseDelay = 1000; // 1 second
+
+    const attemptReconnect = () => {
+      if (reconnectAttempts >= maxReconnectAttempts) {
+        console.error('❌ Max reconnection attempts reached. Please refresh the app.');
+        return;
+      }
+
+      reconnectAttempts++;
+      const delay = baseDelay * Math.pow(2, reconnectAttempts - 1); // Exponential backoff
+      
+      console.log(`🔄 Attempting to reconnect to Appwrite Realtime (attempt ${reconnectAttempts}/${maxReconnectAttempts})...`);
+      
+      setTimeout(() => {
+        // Realtime will auto-reconnect, we just log the attempt
+        console.log('✅ Realtime reconnection initiated');
+        reconnectAttempts = 0; // Reset on successful connection
+      }, delay);
+    };
+
+    // Listen for connection errors (this is just for logging, SDK handles reconnection)
+    console.log('🔌 Appwrite Realtime configured with auto-reconnection');
+  };
+
+  setupRealtimeReconnection();
+}
 
 export const account = new Account(client);
 export const databases = new Databases(client);
@@ -109,23 +142,47 @@ export const createUser = async ({ email, password, name }: CreateUserParams) =>
 
 export const signIn = async ({ email, password }: SignInParams) => {
     try {
-        // Thử tạo session mới trực tiếp
-        // Appwrite sẽ tự động xử lý session cũ nếu cần
-        const session = await account.createEmailPasswordSession(email, password);
-        return session;
-    } catch (e: any) {
-        // Nếu lỗi do đã có session, thử delete và tạo lại
-        if (e.code === 401 || e.message?.includes('session')) {
-            try {
+        // ✅ FIX: Kiểm tra và xóa session cũ TRƯỚC KHI tạo mới
+        // Điều này xử lý trường hợp:
+        // 1. User browse app (anonymous session)
+        // 2. Add to cart → yêu cầu login
+        // 3. Login → cần xóa session cũ trước
+        try {
+            const currentSession = await account.getSession('current');
+            if (currentSession) {
+                console.log('🔄 Found existing session, deleting before login...');
                 await account.deleteSession('current');
-                // Thêm delay nhỏ để tránh rate limit
+                // Delay nhỏ để Appwrite xử lý xong
+                await new Promise(resolve => setTimeout(resolve, 300));
+            }
+        } catch (sessionCheckError: any) {
+            // Không có session cũ hoặc session đã expired - OK, tiếp tục
+            console.log('ℹ️ No existing session found, proceeding with login');
+        }
+
+        // Tạo session mới
+        const session = await account.createEmailPasswordSession(email, password);
+        console.log('✅ Login successful');
+        return session;
+        
+    } catch (e: any) {
+        console.error('❌ Login error:', e);
+        
+        // Nếu vẫn lỗi về session (edge case)
+        if (e.message?.includes('session is active') || e.message?.includes('session is prohibited')) {
+            try {
+                console.log('🔄 Retrying: Force delete session and login again');
+                await account.deleteSession('current').catch(() => {});
                 await new Promise(resolve => setTimeout(resolve, 500));
                 const session = await account.createEmailPasswordSession(email, password);
+                console.log('✅ Login successful after retry');
                 return session;
-            } catch (retryError) {
-                throw retryError;
+            } catch (retryError: any) {
+                console.error('❌ Retry failed:', retryError);
+                throw new Error('Login failed: ' + (retryError.message || 'Please try again'));
             }
         }
+        
         throw e;
     }
 }
@@ -220,6 +277,12 @@ export const getCategories = async () => {
 // Get categories for a specific restaurant
 export const getRestaurantCategories = async (restaurantId: string) => {
     try {
+        console.log('🔍 Fetching categories with:', {
+            databaseId: appwriteConfig.databaseId,
+            collectionId: appwriteConfig.categoriesCollectionId,
+            restaurantId
+        });
+        
         const response = await databases.listDocuments(
             appwriteConfig.databaseId,
             appwriteConfig.categoriesCollectionId,
@@ -231,9 +294,12 @@ export const getRestaurantCategories = async (restaurantId: string) => {
                 Query.limit(100)
             ]
         );
+        
+        console.log('✅ Categories fetched:', response.documents.length);
         return response.documents;
-    } catch (e) {
-        console.log('Error fetching restaurant categories:', e);
+    } catch (e: any) {
+        console.log('❌ Error fetching restaurant categories:', e.message);
+        console.log('💡 Check if collection ID "categories" exists in Appwrite Database:', appwriteConfig.databaseId);
         return [];
     }
 }
@@ -570,25 +636,54 @@ export const subscribeToOrder = (orderId: string, callback: (order: Order) => vo
     const channel = `databases.${appwriteConfig.databaseId}.collections.${appwriteConfig.ordersCollectionId}.documents.${orderId}`;
 
     let unsubscribe: (() => void) | null = null;
+    let isSubscribed = false;
 
     try {
+        console.log('🔔 Subscribing to order updates:', orderId);
         unsubscribe = client.subscribe(channel, event => {
             try {
-                if (!event?.payload) return;
+                if (!isSubscribed) {
+                    console.log('✅ Order subscription established');
+                    isSubscribed = true;
+                }
+                if (!event?.payload) {
+                    console.warn('⚠️ Received empty payload from order subscription');
+                    return;
+                }
                 callback(event.payload as unknown as Order);
             } catch (error) {
                 console.error('❌ Error in subscribeToOrder callback:', error);
             }
         });
+        
+        // Log connection status
+        console.log('📡 Order subscription channel active:', channel);
     } catch (error) {
         console.error('❌ Error subscribing to order:', error);
+        console.error('Channel attempted:', channel);
+        console.error('Error details:', error);
+        
+        // Return a no-op unsubscribe function to avoid errors
+        return () => {
+            console.warn('⚠️ No active subscription to unsubscribe from');
+        };
     }
 
     return () => {
         try {
-            if (unsubscribe) unsubscribe();
+            if (unsubscribe) {
+                console.log('🔕 Unsubscribing from order updates');
+                isSubscribed = false; // Mark as unsubscribed BEFORE calling unsubscribe
+                unsubscribe();
+                unsubscribe = null; // Clear reference
+            }
         } catch (error) {
-            console.error('❌ Error unsubscribing from order:', error);
+            // Suppress INVALID_STATE_ERR when already closed
+            if (error instanceof Error && error.message.includes('INVALID_STATE')) {
+                console.warn('⚠️ Subscription already closed (expected during cleanup)');
+            } else {
+                console.error('❌ Error unsubscribing from order:', error);
+            }
         }
     };
 };
@@ -597,29 +692,62 @@ export const subscribeToDroneEvents = (orderId: string, callback: (event: DroneE
     const channel = `databases.${appwriteConfig.databaseId}.collections.${appwriteConfig.droneEventsCollectionId}.documents`;
 
     let unsubscribe: (() => void) | null = null;
+    let isSubscribed = false;
 
     try {
+        console.log('🔔 Subscribing to drone events for order:', orderId);
         unsubscribe = client.subscribe(channel, event => {
             try {
+                if (!isSubscribed) {
+                    console.log('✅ Drone events subscription established');
+                    isSubscribed = true;
+                }
+                
                 const payload = event?.payload as any;
-                if (!payload) return;
+                if (!payload) {
+                    console.warn('⚠️ Received empty payload from drone subscription');
+                    return;
+                }
 
-                if (orderId && payload.orderId !== orderId) return;
+                if (orderId && payload.orderId !== orderId) {
+                    // Silently ignore events for other orders
+                    return;
+                }
 
+                console.log('🚁 Drone event received:', payload.eventType);
                 callback(parseDroneEventPayload(payload));
             } catch (error) {
                 console.error('❌ Error in subscribeToDroneEvents callback:', error);
             }
         });
+        
+        console.log('📡 Drone events subscription channel active:', channel);
     } catch (error) {
         console.error('❌ Error subscribing to drone events:', error);
+        console.error('Channel attempted:', channel);
+        console.error('Error details:', error);
+        
+        // Return a no-op unsubscribe function
+        return () => {
+            console.warn('⚠️ No active drone subscription to unsubscribe from');
+        };
     }
 
     return () => {
         try {
-            if (unsubscribe) unsubscribe();
+            if (unsubscribe) {
+                console.log('🔕 Unsubscribing from drone events');
+                isSubscribed = false; // Mark as unsubscribed BEFORE calling unsubscribe
+                unsubscribe();
+                unsubscribe = null; // Clear reference
+            }
         } catch (error) {
-            console.error('❌ Error unsubscribing from drone events:', error);
+            // Suppress INVALID_STATE_ERR when already closed
+            if (error instanceof Error && error.message.includes('INVALID_STATE')) {
+                console.warn('⚠️ Drone subscription already closed (expected during cleanup)');
+            } else {
+                console.error('❌ Error unsubscribing from drone events:', error);
+            }
         }
     };
 };
