@@ -11,6 +11,10 @@ interface ExtendedHeaderProps extends CustomHeaderProps {
     centered?: boolean;
 }
 
+
+
+
+
 const CustomHeader = ({ 
     title, 
     showBackButton = true, 
