@@ -37,9 +37,35 @@ This is the migrated version of the restaurant portal, rebuilt with **Vite + Rea
 ## 📦 Installation
 
 ```bash
-cd restaurant-portal-react
+cd restaurant
 npm install
 ```
+
+## ⚙️ Environment Setup
+
+**IMPORTANT:** You must create a `.env` file before running the app!
+
+```bash
+# Copy the example file
+cp .env.example .env
+
+# Then edit .env with your Appwrite credentials
+```
+
+Or manually create `restaurant/.env`:
+```properties
+VITE_APPWRITE_ENDPOINT=https://nyc.cloud.appwrite.io/v1
+VITE_APPWRITE_PROJECT_ID=your_project_id
+VITE_APPWRITE_DATABASE_ID=your_database_id
+VITE_APPWRITE_USERS_COLLECTION_ID=user
+VITE_APPWRITE_RESTAURANTS_COLLECTION_ID=restaurants
+# ... (see .env.example for full list)
+```
+
+**⚠️ Note:** 
+- All env vars MUST start with `VITE_` prefix (Vite requirement)
+- Without `.env`, you'll get "Route not found" error when logging in
+- See `docs/RESTAURANT_PORTAL_LOGIN_FIX.md` for troubleshooting
 
 ## 🛠️ Development
 
@@ -47,7 +73,7 @@ npm install
 npm run dev
 ```
 
-Server will start on: http://localhost:3001
+Server will start on: http://localhost:3001 (or 3002 if 3001 is in use)
 
 ## 🏗️ Build
 

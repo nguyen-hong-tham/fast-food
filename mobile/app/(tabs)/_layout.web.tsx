@@ -14,7 +14,8 @@ export default function WebTabLayout() {
     const pathname = usePathname();
     const [hoveredTab, setHoveredTab] = useState<string | null>(null);
 
-    if(!isAuthenticated) return <Redirect href="/(auth)/sign-in" />
+    // ✅ Allow browsing without login - user can view restaurants and menu
+    // Authentication will be required only for cart/checkout actions
 
     const navItems = [
         { name: 'index', label: 'Home', icon: icons.home, href: '/' },

@@ -1,11 +1,12 @@
 import { View, Text, TouchableOpacity, Image, Platform } from 'react-native';
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect, useMemo } from 'react';
 import { Restaurant, RestaurantWithDistance } from '@/type';
 import { router } from 'expo-router';
 import cn from 'clsx';
 import { getRestaurantMenuItems } from '@/lib/api-helpers';
 import { databases, appwriteConfig } from '@/lib/appwrite';
 import { Query } from 'react-native-appwrite';
+import { useCurrentLocation } from '@/hooks/useCurrentLocation';
 
 interface RestaurantCardProps {
   restaurant: RestaurantWithDistance;
@@ -14,8 +15,8 @@ interface RestaurantCardProps {
 const RestaurantCard = React.memo(({ restaurant }: RestaurantCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const [minPrice, setMinPrice] = useState<number | null>(null);
-  const [avgDeliveryTime, setAvgDeliveryTime] = useState<number | null>(null);
   const [isLoadingStats, setIsLoadingStats] = useState(false);
+  const { location: currentLocation } = useCurrentLocation();
   
   const handlePress = useCallback(() => {
     router.push({
@@ -24,7 +25,43 @@ const RestaurantCard = React.memo(({ restaurant }: RestaurantCardProps) => {
     });
   }, [restaurant.$id]);
 
-  // Fetch minimum price from menu items and average delivery time from orders
+  // Calculate estimated delivery time based on distance
+  const estimatedTime = useMemo(() => {
+    // If we have restaurant distance (from search results)
+    if (restaurant.distance !== undefined) {
+      // Base preparation time (15 min) + travel time (3 min per km)
+      const baseTime = 15;
+      const travelTime = Math.round(restaurant.distance * 3);
+      return baseTime + travelTime;
+    }
+    
+    // If we have coordinates and current location, calculate distance
+    if (currentLocation && restaurant.latitude && restaurant.longitude) {
+      const toRad = (value: number) => (value * Math.PI) / 180;
+      const R = 6371; // Earth's radius in km
+      
+      const dLat = toRad(restaurant.latitude - currentLocation.latitude);
+      const dLon = toRad(restaurant.longitude - currentLocation.longitude);
+      
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRad(currentLocation.latitude)) *
+        Math.cos(toRad(restaurant.latitude)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const distance = R * c;
+      
+      const baseTime = 15;
+      const travelTime = Math.round(distance * 3);
+      return baseTime + travelTime;
+    }
+    
+    // Fallback to restaurant's estimated time or default
+    return restaurant.estimatedDeliveryTime || 30;
+  }, [restaurant.distance, restaurant.latitude, restaurant.longitude, restaurant.estimatedDeliveryTime, currentLocation]);
+
+  // Fetch minimum price from menu items
   useEffect(() => {
     let isMounted = true;
     
@@ -37,38 +74,24 @@ const RestaurantCard = React.memo(({ restaurant }: RestaurantCardProps) => {
         // Fetch menu items to get minimum price
         const menuItems = await getRestaurantMenuItems(restaurant.$id);
         
-        if (isMounted && menuItems && menuItems.length > 0) {
-          const prices = menuItems.map((item: any) => item.price).filter((price: number) => price > 0);
-          if (prices.length > 0) {
-            const min = Math.min(...prices);
-            setMinPrice(min);
-          }
-        }
-
-        // Fetch recent completed orders to calculate average delivery time
-        const ordersResponse = await databases.listDocuments(
-          appwriteConfig.databaseId,
-          appwriteConfig.ordersCollectionId,
-          [
-            Query.equal('restaurantId', restaurant.$id),
-            Query.equal('status', 'delivered'),
-            Query.orderDesc('$createdAt'),
-            Query.limit(10) // Get last 10 completed orders
-          ]
-        );
-
-        if (isMounted && ordersResponse.documents.length > 0) {
-          const deliveryTimes = ordersResponse.documents
-            .map((order: any) => order.estimatedDeliveryTime)
-            .filter((time: number) => time && time > 0);
-          
-          if (deliveryTimes.length > 0) {
-            const avgTime = Math.round(deliveryTimes.reduce((a: number, b: number) => a + b, 0) / deliveryTimes.length);
-            setAvgDeliveryTime(avgTime);
+        if (isMounted) {
+          if (menuItems && menuItems.length > 0) {
+            const prices = menuItems.map((item: any) => item.price).filter((price: number) => price > 0);
+            if (prices.length > 0) {
+              const min = Math.min(...prices);
+              setMinPrice(min);
+            } else {
+              setMinPrice(null); // No valid prices found
+            }
+          } else {
+            setMinPrice(null); // No menu items, will show N/A
           }
         }
       } catch (error) {
         console.error('Error fetching restaurant stats:', error);
+        if (isMounted) {
+          setMinPrice(null);
+        }
       } finally {
         if (isMounted) {
           setIsLoadingStats(false);
@@ -196,13 +219,7 @@ const RestaurantCard = React.memo(({ restaurant }: RestaurantCardProps) => {
           <View className="flex-row items-center">
             <Text className="text-sm text-gray-600">Estimated time: </Text>
             <Text className="text-sm text-gray-600">
-              {isLoadingStats 
-                ? 'Calculating...' 
-                : (avgDeliveryTime 
-                    ? `${avgDeliveryTime}-${avgDeliveryTime + 15} min`
-                    : `${restaurant.estimatedDeliveryTime || restaurant.estimatedTime || 30}-${(restaurant.estimatedDeliveryTime || restaurant.estimatedTime || 30) + 15} min`
-                  )
-              }
+              {`${estimatedTime}-${estimatedTime + 10} min`}
             </Text>
           </View>
 

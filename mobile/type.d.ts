@@ -16,6 +16,8 @@ export interface MenuItem extends Models.Document {
   restaurantId?: string;
   isAvailable?: boolean;
   stock?: number;
+  soldCount?: number; // Number of times this item has been sold
+  categories?: string | Category; // Can be category ID or category object
 }
 
 // ===================== CATEGORY =====================

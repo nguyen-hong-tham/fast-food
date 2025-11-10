@@ -26,7 +26,8 @@ export default function TabLayout() {
     const { getTotalItems } = useCartStore();
     const cartItemCount = getTotalItems();
 
-    if(!isAuthenticated) return <Redirect href="/(auth)/sign-in" />
+    // ✅ Allow browsing without login - user can view restaurants and menu
+    // Authentication will be required only for cart/checkout actions
 
     return (
         <Tabs screenOptions={{

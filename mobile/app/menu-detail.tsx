@@ -2,11 +2,14 @@ import CustomButton from "@/components/common/CustomButton";
 import CustomHeader from "@/components/common/CustomHeader";
 import { getMenuById } from "@/lib/appwrite";
 import { useCartStore } from "@/store/cart.store";
+import useAuthStore from "@/store/auth.store";
 import { MenuItem } from "@/type";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Image, ScrollView, Text, TextInput, TouchableOpacity, View, Platform, Dimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Toast, ConfirmDialog } from "@/components/common/WebNotification";
+import { useToast } from "@/hooks/useToast";
 
 // Stable wrapper for desktop centered content to avoid remounting children on each render
 const DesktopContentWrapper = ({ children, isDesktop }: { children: React.ReactNode; isDesktop: boolean }) => {
@@ -30,6 +33,8 @@ const MenuDetail = () => {
     const [quantity, setQuantity] = useState(1);
     const [notes, setNotes] = useState<string>('');
     const { addItem } = useCartStore();
+    const { user } = useAuthStore();
+    const { toast, showToast, hideToast, dialog, showConfirm, hideConfirm } = useToast();
 
     const isWeb = Platform.OS === 'web';
     const screenWidth = Dimensions.get('window').width;
@@ -45,7 +50,11 @@ const MenuDetail = () => {
                 setMenuItem(item as unknown as MenuItem);
             } catch (error) {
                 console.error('Error fetching menu item:', error);
-                Alert.alert('Error', 'Failed to load menu item details. Please try again.');
+                if (isWeb) {
+                    showToast('Failed to load menu item details. Please try again.', 'error');
+                } else {
+                    Alert.alert('Error', 'Failed to load menu item details. Please try again.');
+                }
             } finally {
                 setLoading(false);
             }
@@ -62,24 +71,58 @@ const MenuDetail = () => {
     const handleAddToCart = () => {
         if (!menuItem || !restaurantId) return;
 
+        // Check if user is logged in
+        if (!user) {
+            if (isWeb) {
+                showConfirm(
+                    'Login Required',
+                    'Please login to add items to cart.',
+                    () => router.push('/(auth)/sign-in'),
+                    { confirmText: 'Login', cancelText: 'Cancel' }
+                );
+            } else {
+                Alert.alert(
+                    'Login Required',
+                    'Please login to add items to cart.',
+                    [
+                        { text: 'Cancel', style: 'cancel' },
+                        { text: 'Login', onPress: () => router.push('/(auth)/sign-in') }
+                    ]
+                );
+            }
+            return;
+        }
+
         const currentRestaurantId = useCartStore.getState().restaurantId;
         
         if (currentRestaurantId && currentRestaurantId !== restaurantId) {
-            Alert.alert(
-                'Different Restaurant',
-                'Cart contains items from another restaurant. Do you want to clear cart and add this item?',
-                [
-                    { text: 'Cancel', style: 'cancel' },
-                    { 
-                        text: 'Clear & Add', 
-                        style: 'destructive',
-                        onPress: () => {
-                            useCartStore.getState().clearCart();
-                            addItemAndShowSuccess();
+            if (isWeb) {
+                showConfirm(
+                    'Different Restaurant',
+                    'Cart contains items from another restaurant. Do you want to clear cart and add this item?',
+                    () => {
+                        useCartStore.getState().clearCart();
+                        addItemAndShowSuccess();
+                    },
+                    { confirmText: 'Clear & Add', cancelText: 'Cancel', confirmColor: '#ef4444' }
+                );
+            } else {
+                Alert.alert(
+                    'Different Restaurant',
+                    'Cart contains items from another restaurant. Do you want to clear cart and add this item?',
+                    [
+                        { text: 'Cancel', style: 'cancel' },
+                        { 
+                            text: 'Clear & Add', 
+                            style: 'destructive',
+                            onPress: () => {
+                                useCartStore.getState().clearCart();
+                                addItemAndShowSuccess();
+                            }
                         }
-                    }
-                ]
-            );
+                    ]
+                );
+            }
             return;
         }
 
@@ -102,30 +145,31 @@ const MenuDetail = () => {
             quantity
         );
 
-        // On web, show a native browser confirm (OK = Continue shopping, Cancel = Checkout)
+        // On web, show custom dialog
         if (isWeb) {
-            const message = `${quantity}x ${menuItem.name} has been added to cart.\n\nPress OK to continue shopping or Cancel to go to checkout.`;
-            const continueShopping = globalThis.confirm(message);
-
-            if (continueShopping) {
-                // Navigate back to restaurant detail
-                // If we have restaurantId, go to restaurant-detail explicitly
-                if (restaurantId) {
-                    router.push({ pathname: '/restaurant-detail' as any, params: { id: restaurantId } });
-                } else {
-                    router.back();
+            showToast(`${quantity}x ${menuItem.name} added to cart!`, 'success');
+            
+            showConfirm(
+                'Added to Cart',
+                'What would you like to do next?',
+                () => {
+                    // Checkout Now
+                    const cartData = useCartStore.getState().getCartForCheckout();
+                    router.push({
+                        pathname: '/checkout' as any,
+                        params: {
+                            restaurantId: cartData.restaurantId,
+                            totalAmount: cartData.totalAmount.toString(),
+                            itemCount: cartData.totalItems.toString()
+                        }
+                    });
+                },
+                { 
+                    confirmText: 'Checkout Now', 
+                    cancelText: 'Continue Shopping',
+                    confirmColor: '#10b981'
                 }
-            } else {
-                const cartData = useCartStore.getState().getCartForCheckout();
-                router.push({
-                    pathname: '/checkout' as any,
-                    params: {
-                        restaurantId: cartData.restaurantId,
-                        totalAmount: cartData.totalAmount.toString(),
-                        itemCount: cartData.totalItems.toString()
-                    }
-                });
-            }
+            );
 
             return;
         }
@@ -193,6 +237,28 @@ const MenuDetail = () => {
     return (
         <SafeAreaView className="flex-1 bg-white" style={{ flex: 1 }}>
             <CustomHeader title={menuItem.name} />
+            
+            {/* Toast and Dialog for Web */}
+            {isWeb && (
+                <>
+                    <Toast
+                        visible={toast.visible}
+                        message={toast.message}
+                        type={toast.type}
+                        onHide={hideToast}
+                    />
+                    <ConfirmDialog
+                        visible={dialog.visible}
+                        title={dialog.title}
+                        message={dialog.message}
+                        confirmText={dialog.confirmText}
+                        cancelText={dialog.cancelText}
+                        confirmColor={dialog.confirmColor}
+                        onConfirm={dialog.onConfirm}
+                        onCancel={hideConfirm}
+                    />
+                </>
+            )}
             
             <ScrollView 
                 className="flex-1" 
