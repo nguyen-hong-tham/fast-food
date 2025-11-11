@@ -122,8 +122,9 @@ export interface CartItemType {
   id: string; // menu item id
   name: string;
   price: number;
-  image_url: string;
+  image: string;
   quantity: number;
+  restaurantId: string;
   customizations?: CartCustomization[];
   notes?: string; // Special instructions from customer
 }

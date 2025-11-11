@@ -1,6 +1,7 @@
-import type { Category, Drone, MenuItem, Order, User } from '@/types';
+import type { Category, Drone, DroneHub, MenuItem, Order, User } from '@/types';
 import { ID, Query } from 'appwrite';
 import { account, appwriteConfig, databases } from './appwrite';
+import { DEFAULT_HUB_ID, getDefaultHubLocation } from './hub-setup';
 
 // ===================== AUTH =====================
 
@@ -275,7 +276,7 @@ export const getAllDrones = async (limit: number = 100): Promise<Drone[]> => {
 };
 
 /**
- * Create new drone
+ * Create new drone - Auto-assigns to default hub
  */
 export const createDrone = async (data: {
   code: string;
@@ -288,6 +289,8 @@ export const createDrone = async (data: {
   maxRange?: number;
 }): Promise<Drone> => {
   try {
+    const hubLocation = getDefaultHubLocation();
+    
     const drone = await databases.createDocument(
       appwriteConfig.databaseId,
       appwriteConfig.dronesCollectionId,
@@ -305,6 +308,12 @@ export const createDrone = async (data: {
         maxRange: data.maxRange || 10,
         totalDistance: 0,
         isActive: true,
+        // Set drone at hub location
+        currentLatitude: hubLocation.latitude,
+        currentLongitude: hubLocation.longitude,
+        homeLatitude: hubLocation.latitude,
+        homeLongitude: hubLocation.longitude,
+        droneHub: DEFAULT_HUB_ID,
       }
     );
     
@@ -344,6 +353,81 @@ export const deleteDrone = async (droneId: string): Promise<void> => {
     );
   } catch (error: any) {
     throw new Error(error.message || 'Failed to delete drone');
+  }
+};
+
+// ===================== DRONE HUBS =====================
+
+/**
+ * Get all drone hubs
+ */
+export const getAllDroneHubs = async (): Promise<DroneHub[]> => {
+  try {
+    const response = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      appwriteConfig.droneHubsCollectionId,
+      [Query.orderDesc('$createdAt')]
+    );
+    
+    return response.documents as DroneHub[];
+  } catch (error: any) {
+    throw new Error(error.message || 'Failed to fetch drone hubs');
+  }
+};
+
+/**
+ * Create new drone hub
+ */
+export const createDroneHub = async (data: {
+  name: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+}): Promise<DroneHub> => {
+  try {
+    const hub = await databases.createDocument(
+      appwriteConfig.databaseId,
+      appwriteConfig.droneHubsCollectionId,
+      ID.unique(),
+      data
+    );
+    
+    return hub as DroneHub;
+  } catch (error: any) {
+    throw new Error(error.message || 'Failed to create drone hub');
+  }
+};
+
+/**
+ * Update drone hub
+ */
+export const updateDroneHub = async (hubId: string, data: Partial<DroneHub>): Promise<DroneHub> => {
+  try {
+    const updatedHub = await databases.updateDocument(
+      appwriteConfig.databaseId,
+      appwriteConfig.droneHubsCollectionId,
+      hubId,
+      data
+    );
+    
+    return updatedHub as DroneHub;
+  } catch (error: any) {
+    throw new Error(error.message || 'Failed to update drone hub');
+  }
+};
+
+/**
+ * Delete drone hub
+ */
+export const deleteDroneHub = async (hubId: string): Promise<void> => {
+  try {
+    await databases.deleteDocument(
+      appwriteConfig.databaseId,
+      appwriteConfig.droneHubsCollectionId,
+      hubId
+    );
+  } catch (error: any) {
+    throw new Error(error.message || 'Failed to delete drone hub');
   }
 };
 

@@ -45,22 +45,14 @@ export const calculateWaypoints = (
 };
 
 const ensureDrone = async (orderId: string, preferredDroneId?: string): Promise<Drone> => {
+  // If order already has a drone assigned, use that drone
   if (preferredDroneId) {
     const existing = await getDroneById(preferredDroneId);
-    if (existing.assignedOrderId !== orderId) {
-      const updated = await assignDroneToOrder(existing.$id, orderId);
-      return updated;
-    }
     return existing;
   }
 
-  const available = await getAvailableDrone();
-  if (!available) {
-    throw new Error('No drone available for delivery');
-  }
-
-  const updated = await assignDroneToOrder(available.$id, orderId);
-  return updated;
+  // If no drone assigned yet, throw error - admin must assign manually
+  throw new Error('No drone assigned to this order yet. Admin must assign a drone first.');
 };
 
 export const simulateDroneFlight = async ({
@@ -90,14 +82,14 @@ export const simulateDroneFlight = async ({
   
   console.log('🚁 PHASE 1: Drone flying to restaurant...');
   
-  // Just assign drone, don't change order status
+  // Drone already assigned by admin, just update status to delivering
   await databases.updateDocument(
     appwriteConfig.databaseId,
     appwriteConfig.ordersCollectionId,
     orderId,
     {
-      droneId: drone.$id,
-      assignedAt: new Date().toISOString(),
+      status: 'delivering',
+      deliveryStartedAt: new Date().toISOString(),
     }
   );
 
@@ -127,33 +119,23 @@ export const simulateDroneFlight = async ({
   // Drone arrived at restaurant
   // ========================================
   console.log('✅ Drone arrived at restaurant!');
-  await databases.updateDocument(
-    appwriteConfig.databaseId,
-    appwriteConfig.ordersCollectionId,
-    orderId,
-    {
-      status: 'ready',
-      readyAt: new Date().toISOString(),
-    }
-  );
   
   // Wait for restaurant to prepare food (simulate)
-  console.log('⏳ Waiting for restaurant to prepare food...');
-  await sleep(5000); // 5 seconds preparation time
+  console.log('⏳ Waiting for restaurant to load food onto drone...');
+  await sleep(5000); // 5 seconds loading time
   
   // ========================================
   // PHASE 2: Drone picks up and flies to customer (70%)
   // ========================================
-  console.log('📦 Drone picking up order...');
+  console.log('📦 Drone picked up order, flying to customer...');
   
-  // Update to delivering status
+  // Update estimated delivery time
   const phase2Duration = duration * 0.7;
   await databases.updateDocument(
     appwriteConfig.databaseId,
     appwriteConfig.ordersCollectionId,
     orderId,
     {
-      status: 'delivering',
       estimatedDeliveryTime: new Date(Date.now() + phase2Duration).toISOString(),
     }
   );

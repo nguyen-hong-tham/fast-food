@@ -118,7 +118,7 @@ const CheckoutScreen = () => {
           name: item.name,
           price: item.price,
           quantity: item.quantity,
-          image_url: item.image_url,
+          image_url: item.image || '',
           customizations: item.customizations,
           notes: item.notes
         })),
@@ -242,7 +242,7 @@ const CheckoutScreen = () => {
               <View className="mb-3 pb-3 border-b border-gray-200">
                 {items.map((it) => (
                   <View key={`${it.id}-${it.notes || ''}`} className="flex-row items-center mb-2">
-                    <Image source={{ uri: it.image_url }} className="size-10 rounded-lg mr-2" />
+                    <Image source={{ uri: it.image || '' }} className="size-10 rounded-lg mr-2 bg-gray-100" />
                     <View className="flex-1">
                       <Text className="text-sm font-semibold text-gray-800">{it.name} x{it.quantity}</Text>
                     </View>

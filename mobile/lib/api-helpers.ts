@@ -536,35 +536,54 @@ export const updateDroneLocation = async (
 };
 
 export const completeDroneDelivery = async (droneId: string): Promise<void> => {
-    const drone = await databases.getDocument(
-        databaseId,
-        appwriteConfig.dronesCollectionId,
-        droneId
-    ) as unknown as Drone;
-    
-    // Update drone status back to available (remove updatedAt)
-    await databases.updateDocument(
-        databaseId,
-        appwriteConfig.dronesCollectionId,
-        droneId,
-        {
-            status: 'available', // Match enum in Appwrite
-            assignedOrderId: null,
-            totalFlights: drone.totalFlights + 1,
-        }
-    );
-    
-    // Create landing event
-    await databases.createDocument(
-        databaseId,
-        appwriteConfig.droneEventsCollectionId,
-        ID.unique(),
-        {
+    try {
+        console.log('🎯 Completing drone delivery for drone:', droneId);
+        
+        const drone = await databases.getDocument(
+            databaseId,
+            appwriteConfig.dronesCollectionId,
+            droneId
+        ) as unknown as Drone;
+        
+        console.log('📦 Current drone status:', drone.status);
+        console.log('📦 Total flights before:', drone.totalFlights);
+        
+        // Update drone status back to available
+        await databases.updateDocument(
+            databaseId,
+            appwriteConfig.dronesCollectionId,
             droneId,
-            orderId: drone.assignedOrderId,
-            eventType: 'landing',
+            {
+                status: 'available',
+                assignedOrderId: null,
+                totalFlights: (drone.totalFlights || 0) + 1,
+            }
+        );
+        
+        console.log('✅ Drone updated to available, total flights:', (drone.totalFlights || 0) + 1);
+        
+        // Create landing event if collection exists
+        if (appwriteConfig.droneEventsCollectionId) {
+            try {
+                await databases.createDocument(
+                    databaseId,
+                    appwriteConfig.droneEventsCollectionId,
+                    ID.unique(),
+                    {
+                        droneId,
+                        orderId: drone.assignedOrderId,
+                        eventType: 'landing',
+                    }
+                );
+                console.log('📝 Landing event created');
+            } catch (eventError) {
+                console.warn('⚠️ Failed to create landing event (non-critical):', eventError);
+            }
         }
-    );
+    } catch (error) {
+        console.error('❌ Error completing drone delivery:', error);
+        throw error;
+    }
 };
 
 // ===================== PROMOTIONS =====================

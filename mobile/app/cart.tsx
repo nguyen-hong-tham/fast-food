@@ -139,7 +139,7 @@ const CartScreen = () => {
           name: item.name,
           price: item.price,
           quantity: item.quantity,
-          image_url: item.image_url,
+          image_url: item.image || '',
           customizations: item.customizations || [],
           notes: item.notes
         })),
@@ -249,8 +249,8 @@ const CartScreen = () => {
                   <View className="flex-row">
                     {/* Item Image */}
                     <Image
-                      source={{ uri: item.image_url }}
-                      className="w-16 h-16 rounded-lg mr-4"
+                      source={{ uri: item.image || '' }}
+                      className="w-16 h-16 rounded-lg mr-4 bg-gray-100"
                       resizeMode="cover"
                     />
 
@@ -324,28 +324,48 @@ const CartScreen = () => {
             
             <View className="space-y-2">
               <View className="flex-row justify-between">
-                <Text className="text-gray-600">Subtotal ({itemCount} items):</Text>
+                <Text className="text-gray-600">Distance</Text>
+                {isCalculating ? (
+                  <ActivityIndicator size="small" color="#FF7A00" />
+                ) : deliveryCalc?.formattedDistance ? (
+                  <Text className="font-semibold text-gray-800">
+                    {deliveryCalc.formattedDistance}
+                  </Text>
+                ) : (
+                  <Text className="text-gray-500">N/A</Text>
+                )}
+              </View>
+
+              <View className="flex-row justify-between">
+                <Text className="text-gray-600">Estimated Time</Text>
+                {isCalculating ? (
+                  <ActivityIndicator size="small" color="#FF7A00" />
+                ) : deliveryCalc?.formattedTime ? (
+                  <Text className="font-semibold text-gray-800">
+                    {deliveryCalc.formattedTime}
+                  </Text>
+                ) : (
+                  <Text className="text-gray-500">N/A</Text>
+                )}
+              </View>
+
+              <View className="flex-row justify-between">
+                <Text className="text-gray-600">Subtotal ({itemCount} items)</Text>
                 <Text className="font-semibold">{total.toLocaleString('vi-VN')}₫</Text>
               </View>
               
               <View className="flex-row justify-between">
-                <Text className="text-gray-600">Delivery Fee:</Text>
+                <Text className="text-gray-600">Delivery Fee</Text>
                 {isCalculating ? (
                   <ActivityIndicator size="small" color="#FF7A00" />
-                ) : (
+                ) : shippingFee > 0 ? (
                   <Text className="font-semibold text-gray-800">
-                    {shippingFee > 0 ? `${shippingFee.toLocaleString('vi-VN')}₫` : 'Calculating...'}
+                    {shippingFee.toLocaleString('vi-VN')}₫
                   </Text>
+                ) : (
+                  <Text className="text-gray-500">0₫</Text>
                 )}
               </View>
-
-              {deliveryCalc && (
-                <View className="bg-amber-50 p-2 rounded-lg mt-2">
-                  <Text className="text-xs text-gray-600">
-                    📍 Distance: {deliveryCalc.formattedDistance} • ⏱️ {deliveryCalc.formattedTime}
-                  </Text>
-                </View>
-              )}
               
               <View className="h-px bg-gray-200 my-2" />
               

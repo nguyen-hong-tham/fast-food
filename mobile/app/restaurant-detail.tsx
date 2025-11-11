@@ -1,15 +1,17 @@
-import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, Platform, Modal } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, Platform, Modal, TextInput, Image } from 'react-native';
 import React, { useEffect, useState, useRef } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { getRestaurantById, getRestaurantMenu, getRestaurantCategories } from '@/lib/appwrite';
 import { Restaurant, MenuItem } from '@/type';
 import RestaurantHeader from '@/components/restaurant/RestaurantHeader';
-import MenuCard from '@/components/restaurant/MenuCard';
+import MenuListItem from '../components/restaurant/MenuListItem';
 import WebContainer from '@/components/common/WebContainer';
 import { useResponsive } from '@/lib/responsive';
 import cn from 'clsx';
 import { getRestaurantReviewsWithUserInfo, getRestaurantAverageRating } from '@/lib/restaurant-reviews';
 import ReviewCard from '@/components/rating/ReviewCard';
+import { icons } from '../constants';
+
 
 interface GroupedMenu {
   categoryId: string;
@@ -35,6 +37,10 @@ const RestaurantDetailScreen = () => {
   const [groupedMenu, setGroupedMenu] = useState<GroupedMenu[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+  
+  // Search state
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
   
   // Reviews state
   const [reviews, setReviews] = useState<any[]>([]);
@@ -312,7 +318,7 @@ const RestaurantDetailScreen = () => {
   const totalMenuCount = menuItems.length;
 
   // Filter menu based on selected category - with safety checks
-  const displayedMenu = (selectedCategory === 'all' || !selectedCategory
+  const categoryFilteredMenu = (selectedCategory === 'all' || !selectedCategory
     ? groupedMenu
     : groupedMenu.filter(g => g?.categoryId === selectedCategory)
   ).filter(Boolean); // Remove any null/undefined items
@@ -325,6 +331,20 @@ const RestaurantDetailScreen = () => {
     Array.isArray(g.items) &&
     g.items.length > 0
   );
+
+  // Filter by search term - apply to category filtered menu
+  const searchFilteredMenu = searchTerm.trim()
+    ? categoryFilteredMenu.map(group => ({
+        ...group,
+        items: group.items.filter(item => 
+          item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase()))
+        )
+      })).filter(group => group.items.length > 0)
+    : categoryFilteredMenu;
+
+  // Final displayed menu
+  const displayedMenu = searchFilteredMenu;
 
   return (
     <View className="flex-1 bg-gray-50">
@@ -481,43 +501,59 @@ const RestaurantDetailScreen = () => {
                 "bg-white",
                 isDesktop ? "rounded-b-2xl shadow-sm border border-t-0 border-gray-100" : ""
               )}>
-                {/* Mobile Category Dropdown - ALWAYS SHOW */}
+                {/* Mobile Category Dropdown + Search - Clean Design */}
                 {!isDesktop && safeGroupedMenu.length > 0 && (
-                  <View className="px-4 py-4 bg-gradient-to-b from-white to-gray-50">
-                    <TouchableOpacity
-                      onPress={() => setShowCategoryPicker(true)}
-                      className="flex-row items-center justify-between bg-white px-5 py-4 rounded-2xl shadow-lg border-2 border-amber-200"
-                      activeOpacity={0.7}
-                      style={{ elevation: 4 }}
-                    >
-                      <View className="flex-row items-center flex-1">
-                        <View className="w-10 h-10 bg-gradient-to-br from-amber-400 to-amber-600 rounded-xl items-center justify-center mr-4 shadow-sm">
-                          <Text className="text-xl">
-                            {selectedCategory === 'all' ? '🍽️' : getCategoryIcon(selectedCategory)}
-                          </Text>
+                  <View className="px-4 py-4 bg-white border-b border-gray-100">
+                    <View className="flex-row gap-2">
+                      {/* Category Picker Button */}
+                      <TouchableOpacity
+                        onPress={() => setShowCategoryPicker(true)}
+                        className="flex-1 bg-white rounded-2xl p-4 border-2 border-gray-900"
+                        activeOpacity={0.7}
+                        style={{ elevation: 2 }}
+                      >
+                        <View className="flex-row items-center justify-between">
+                          <View className="flex-1">
+                            <Text className="text-xs text-gray-600 font-quicksand-bold mb-1 uppercase tracking-wider">
+                              CATEGORY
+                            </Text>
+                            <Text className="text-base font-quicksand-bold text-gray-900" numberOfLines={1}>
+                              All Menu
+                            </Text>
+                          </View>
+                          <View className="w-8 h-8 bg-gray-100 rounded-xl items-center justify-center shadow-sm">
+                            <Text className="text-gray-900 text-sm font-bold">▼</Text>
+                          </View>
                         </View>
-                        <View className="flex-1">
-                          <Text className="text-xs text-gray-500 font-quicksand-semibold mb-1 uppercase tracking-wide">
-                            Category
-                          </Text>
-                          <Text className="text-base font-quicksand-bold text-gray-900">
-                            {selectedCategory === 'all' 
-                              ? 'All Menu Items'
-                              : safeGroupedMenu.find(g => g?.categoryId === selectedCategory)?.categoryName || 'All Items'
-                            }
-                          </Text>
-                          <Text className="text-xs text-gray-500 font-quicksand-medium mt-0.5">
-                            {selectedCategory === 'all'
-                              ? `${totalMenuCount} items`
-                              : `${safeGroupedMenu.find(g => g?.categoryId === selectedCategory)?.items.length || 0} items`
-                            }
-                          </Text>
-                        </View>
+                      </TouchableOpacity>
+
+                      {/* Search Button */}
+                      <TouchableOpacity
+                        onPress={() => setShowSearch(!showSearch)}
+                        className="w-16 h-16 rounded-2xl items-center justify-center border-2 border-gray-900"
+                        activeOpacity={0.7}
+                        style={{ elevation: 2 }}
+                      >
+                        <Image
+                          source={icons.search}
+                          style={{ width: 28, height: 28, tintColor: 'black' }}
+                          resizeMode="contain"
+                        />
+                      </TouchableOpacity>
+                    </View>
+
+                    {/* Search Input */}
+                    {showSearch && (
+                      <View className="mt-3">
+                        <TextInput
+                          value={searchTerm}
+                          onChangeText={setSearchTerm}
+                          placeholder="Finding cuisine..."
+                          className="bg-gray-50 rounded-xl px-4 py-3 border-2 border-gray-200 font-quicksand-semibold text-base"
+                          placeholderTextColor="#9ca3af"
+                        />
                       </View>
-                      <View className="w-8 h-8 bg-amber-100 rounded-lg items-center justify-center">
-                        <Text className="text-amber-600 text-lg font-bold">▼</Text>
-                      </View>
-                    </TouchableOpacity>
+                    )}
                   </View>
                 )}
 
@@ -568,56 +604,39 @@ const RestaurantDetailScreen = () => {
                             padding: 16,
                             marginBottom: 8,
                             borderRadius: 16,
-                            backgroundColor: selectedCategory === 'all' ? '#fef3c7' : '#f9fafb',
+                            backgroundColor: '#f9fafb',
                             borderWidth: 2,
-                            borderColor: selectedCategory === 'all' ? '#f59e0b' : '#e5e7eb',
+                            borderColor: '#e5e7eb',
                           }}
                           activeOpacity={0.7}
                         >
-                          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                            <View style={{
-                              width: 48,
-                              height: 48,
-                              borderRadius: 12,
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              marginRight: 16,
-                              backgroundColor: selectedCategory === 'all' ? '#fbbf24' : '#d1d5db',
+                          <View style={{ flex: 1 }}>
+                            <Text style={{
+                              fontSize: 16,
+                              fontWeight: 'bold',
+                              marginBottom: 4,
+                              color: '#111827'
                             }}>
-                              <Text style={{ fontSize: 24 }}>🍽️</Text>
-                            </View>
-                            <View style={{ flex: 1 }}>
-                              <Text style={{
-                                fontSize: 16,
-                                fontWeight: 'bold',
-                                marginBottom: 4,
-                                color: selectedCategory === 'all' ? '#b45309' : '#111827'
-                              }}>
-                                All Menu Items
-                              </Text>
-                              <Text style={{ fontSize: 12, color: '#4b5563', fontWeight: '600' }}>
-                                {totalMenuCount} items available
-                              </Text>
-                            </View>
+                              All Menu Items
+                            </Text>
+                            <Text style={{ fontSize: 12, color: '#4b5563', fontWeight: '600' }}>
+                              {totalMenuCount} items available
+                            </Text>
                           </View>
-                          {selectedCategory === 'all' && (
-                            <View style={{
-                              width: 32,
-                              height: 32,
-                              backgroundColor: '#f59e0b',
-                              borderRadius: 16,
-                              alignItems: 'center',
-                              justifyContent: 'center'
-                            }}>
-                              <Text style={{ color: 'white', fontSize: 14, fontWeight: 'bold' }}>✓</Text>
-                            </View>
-                          )}
+                          <View style={{
+                            width: 32,
+                            height: 32,
+                            backgroundColor: '#f59e0b',
+                            borderRadius: 16,
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}>
+                            <Text style={{ color: 'white', fontSize: 14, fontWeight: 'bold' }}>↑</Text>
+                          </View>
                         </TouchableOpacity>
 
                         {/* Category Options */}
-                        {safeGroupedMenu.map((group, index) => {
-                          const isSelected = selectedCategory === group.categoryId;
-                          return (
+                        {safeGroupedMenu.map((group) => (
                             <TouchableOpacity
                               key={group.categoryId}
                               onPress={() => {
@@ -631,56 +650,37 @@ const RestaurantDetailScreen = () => {
                                 padding: 16,
                                 marginBottom: 8,
                                 borderRadius: 16,
-                                backgroundColor: isSelected ? '#fef3c7' : '#f9fafb',
+                                backgroundColor: '#f9fafb',
                                 borderWidth: 2,
-                                borderColor: isSelected ? '#f59e0b' : '#e5e7eb',
+                                borderColor: '#e5e7eb',
                               }}
                               activeOpacity={0.7}
                             >
-                              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                                <View style={{
-                                  width: 48,
-                                  height: 48,
-                                  borderRadius: 12,
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  marginRight: 16,
-                                  backgroundColor: isSelected ? '#fbbf24' : '#d1d5db',
+                              <View style={{ flex: 1 }}>
+                                <Text style={{
+                                  fontSize: 16,
+                                  fontWeight: 'bold',
+                                  marginBottom: 4,
+                                  color: '#111827'
                                 }}>
-                                  <Text style={{ fontSize: 24 }}>{getCategoryIcon(group.categoryId)}</Text>
-                                </View>
-                                <View style={{ flex: 1 }}>
-                                  <Text style={{
-                                    fontSize: 16,
-                                    fontWeight: 'bold',
-                                    marginBottom: 4,
-                                    color: isSelected ? '#b45309' : '#111827'
-                                  }}>
-                                    {group.categoryName}
-                                  </Text>
-                                  <Text style={{ fontSize: 12, color: '#4b5563', fontWeight: '600' }}>
-                                    {group.items.length} items available
-                                  </Text>
-                                </View>
+                                  {group.categoryName}
+                                </Text>
+                                <Text style={{ fontSize: 12, color: '#4b5563', fontWeight: '600' }}>
+                                  {group.items.length} items available
+                                </Text>
                               </View>
-                              {isSelected && (
-                                <View style={{
-                                  width: 32,
-                                  height: 32,
-                                  backgroundColor: '#f59e0b',
-                                  borderRadius: 16,
-                                  alignItems: 'center',
-                                  justifyContent: 'center'
-                                }}>
-                                  <Text style={{ color: 'white', fontSize: 14, fontWeight: 'bold' }}>✓</Text>
-                                </View>
-                              )}
+                              <View style={{
+                                width: 32,
+                                height: 32,
+                                backgroundColor: '#f59e0b',
+                                borderRadius: 16,
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                              }}>
+                                <Text style={{ color: 'white', fontSize: 14, fontWeight: 'bold' }}>→</Text>
+                              </View>
                             </TouchableOpacity>
-                          );
-                        })}
-                        
-                        {/* Bottom Spacing */}
-                        <View className="h-4" />
+                        ))}
                       </ScrollView>
                     </View>
                   </TouchableOpacity>
@@ -698,41 +698,25 @@ const RestaurantDetailScreen = () => {
                         }}
                         className="mb-8"
                       >
-                        {/* Category Header - REDESIGNED */}
-                        <View className="mb-5 pb-3 border-b-2 border-amber-200">
-                          <View className="flex-row items-center">
-                            <View className="w-12 h-12 bg-gradient-to-br from-amber-400 to-amber-600 rounded-2xl items-center justify-center mr-4 shadow-md">
-                              <Text className="text-2xl">{getCategoryIcon(group.categoryId)}</Text>
-                            </View>
-                            <View className="flex-1">
-                              <Text className="text-2xl font-quicksand-bold text-gray-900 mb-1">
-                                {group.categoryName}
-                              </Text>
-                              <Text className="text-sm text-gray-600 font-quicksand-semibold">
-                                {group.items.length} item{group.items.length > 1 ? 's' : ''} available
-                              </Text>
-                            </View>
-                          </View>
+                        {/* Category Header - Clean */}
+                        <View className="mb-4 pb-3 border-b-2 border-amber-200">
+                          <Text className="text-2xl font-quicksand-bold text-gray-900 mb-1">
+                            {group.categoryName}
+                          </Text>
+                          <Text className="text-sm text-gray-600 font-quicksand-semibold">
+                            {group.items.length} item{group.items.length > 1 ? 's' : ''} available
+                          </Text>
                         </View>
 
-                        {/* Grid Layout: 2 cols mobile, 3-4 cols desktop */}
-                        <View style={{ 
-                          flexDirection: 'row', 
-                          flexWrap: 'wrap',
-                          gap: isDesktop ? 16 : 12
-                        }}>
+                        {/* List Layout */}
+                        <View>
                           {group.items.map((item) => (
-                            <View 
+                            <MenuListItem 
                               key={item.$id} 
-                              style={{
-                                width: isDesktop 
-                                  ? 'calc(33.333% - 11px)' 
-                                  : 'calc(50% - 6px)',
-                                marginBottom: isDesktop ? 20 : 16
-                              }}
-                            >
-                              <MenuCard item={item} restaurantId={restaurant.$id} />
-                            </View>
+                              item={item} 
+                              restaurantId={restaurant.$id}
+                              searchTerm={searchTerm}
+                            />
                           ))}
                         </View>
                       </View>

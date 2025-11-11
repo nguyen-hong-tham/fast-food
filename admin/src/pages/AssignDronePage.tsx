@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { databases, client } from '../lib/appwrite';
 import { Query } from 'appwrite';
-import { Plane, Battery, MapPin, Clock, Package, Zap, RefreshCw } from 'lucide-react';
+import { Plane, Battery, MapPin, Clock, Package, RefreshCw } from 'lucide-react';
+import { startDeliverySimulation } from '../lib/drone-delivery-simulator';
 
 interface Order {
   $id: string;
@@ -145,22 +146,32 @@ export default function AssignDronePage() {
       if (!dronesCollectionId) {
         throw new Error('VITE_APPWRITE_DRONES_COLLECTION_ID is not defined in .env file');
       }
+
+      console.log('🔍 Fetching drones from collection:', dronesCollectionId);
       
       const response = await databases.listDocuments(
         import.meta.env.VITE_APPWRITE_DATABASE_ID,
         dronesCollectionId,
         [
           Query.equal('status', 'available'),
-          Query.equal('isActive', true),
           Query.greaterThanEqual('batteryLevel', 30),
           Query.limit(50)
         ]
       );
       
+      console.log('✅ Fetched drones:', response.documents.length);
       setAvailableDrones(response.documents as any);
     } catch (error: any) {
-      console.error('Error fetching drones:', error);
-      setError(`Failed to fetch drones: ${error.message || 'Unknown error'}`);
+      console.error('❌ Error fetching drones:', error);
+      
+      // More detailed error message
+      if (error.code === 401) {
+        setError('Authentication required. Please sign in again.');
+      } else if (error.code === 403) {
+        setError('Permission denied. Check collection permissions in Appwrite Console.');
+      } else {
+        setError(`Failed to fetch drones: ${error.message || 'Unknown error'}`);
+      }
     }
   };
 
@@ -243,19 +254,6 @@ export default function AssignDronePage() {
     }).sort((a, b) => b.score - a.score); // Sort by best score first
   };
 
-  // Auto assign best drone
-  const handleAutoAssign = async (order: Order) => {
-    const dronesForOrder = getDronesForOrder(order);
-    
-    if (dronesForOrder.length === 0) {
-      alert('No available drones found!');
-      return;
-    }
-
-    const bestDrone = dronesForOrder[0];
-    await assignDrone(order.$id, bestDrone.$id, 'auto');
-  };
-
   // Manual assign selected drone
   const handleManualAssign = async (orderId: string, droneId: string) => {
     await assignDrone(orderId, droneId, 'manual');
@@ -271,7 +269,20 @@ export default function AssignDronePage() {
     try {
       console.log(`🚁 Assigning drone ${droneId} to order ${orderId} (${type})`);
 
-      // 1. Update order
+      // Get order details for simulation
+      const order = readyOrders.find(o => o.$id === orderId);
+      if (!order) {
+        throw new Error('Order not found');
+      }
+
+      const restaurantLat = typeof order.restaurantId === 'object' 
+        ? order.restaurantId.latitude 
+        : 10.762622;
+      const restaurantLng = typeof order.restaurantId === 'object'
+        ? order.restaurantId.longitude
+        : 106.660172;
+
+      // 1. Update order - assign drone and change status to delivering
       await databases.updateDocument(
         import.meta.env.VITE_APPWRITE_DATABASE_ID,
         import.meta.env.VITE_APPWRITE_ORDERS_COLLECTION_ID,
@@ -280,7 +291,7 @@ export default function AssignDronePage() {
           droneId: droneId,
           assignedAt: new Date().toISOString(),
           assignmentType: type,
-          status: 'delivering'
+          status: 'delivering' // Change to delivering when admin assigns drone
         }
       );
 
@@ -291,7 +302,9 @@ export default function AssignDronePage() {
         droneId,
         {
           assignedOrderId: orderId,
-          status: 'busy'
+          status: 'busy',
+          currentLatitude: restaurantLat, // Set drone location to restaurant
+          currentLongitude: restaurantLng
         }
       );
 
@@ -316,7 +329,26 @@ export default function AssignDronePage() {
         }
       }
 
-      alert(`Drone assigned successfully! (${type})`);
+      // 4. 🚀 Start delivery simulation automatically
+      console.log('🚀 Starting delivery simulation...');
+      startDeliverySimulation(
+        orderId,
+        droneId,
+        restaurantLat,
+        restaurantLng,
+        order.deliveryLatitude,
+        order.deliveryLongitude,
+        10.762622, // Default hub lat
+        106.660172, // Default hub lng
+        (simulation) => {
+          console.log(`📍 Drone ${simulation.phase} - Progress: ${simulation.progress.toFixed(0)}%`);
+        },
+        () => {
+          console.log('✅ Delivery completed!');
+        }
+      );
+
+      alert(`✅ Drone ${type === 'manual' ? 'manually' : 'automatically'} assigned successfully!\n\n🚁 Drone is now flying to restaurant.\nYou can track it on the Drones page.`);
       
       // Refresh lists
       await fetchReadyOrders();
@@ -362,7 +394,7 @@ export default function AssignDronePage() {
                 Assign Delivery Drones
               </h1>
               <p className="text-gray-600 mt-2">
-                Orders ready for delivery • Auto or manual assignment
+                Orders ready for delivery • Select drone manually for each order
               </p>
             </div>
             <div className="flex items-center gap-4">
@@ -379,13 +411,13 @@ export default function AssignDronePage() {
                 <span className="text-2xl font-bold text-orange-500">
                   {readyOrders.length}
                 </span>
-                <span className="text-sm text-gray-600 ml-2">Ready</span>
+                <span className="text-sm text-gray-600 ml-2">Ready Orders</span>
               </div>
               <div className="bg-white px-4 py-2 rounded-lg shadow">
                 <span className="text-2xl font-bold text-green-500">
                   {availableDrones.length}
                 </span>
-                <span className="text-sm text-gray-600 ml-2">Drones</span>
+                <span className="text-sm text-gray-600 ml-2">Available Drones</span>
               </div>
             </div>
           </div>
@@ -403,6 +435,20 @@ export default function AssignDronePage() {
               <div className="flex-1">
                 <h3 className="text-sm font-medium text-red-800">Error</h3>
                 <p className="mt-1 text-sm text-red-700">{error}</p>
+                
+                {error.includes('Permission denied') && (
+                  <div className="mt-3 p-3 bg-red-100 rounded text-xs text-red-800">
+                    <p className="font-semibold mb-2">🔧 How to fix permissions:</p>
+                    <ol className="list-decimal ml-4 space-y-1">
+                      <li>Go to Appwrite Console → Databases → Your Database</li>
+                      <li>Click on "drones" collection → Settings → Permissions</li>
+                      <li>Add permission: Role: Any → Read ✓, Create ✓, Update ✓, Delete ✓</li>
+                      <li>Or add role "users" with full permissions</li>
+                      <li>Save and refresh this page</li>
+                    </ol>
+                  </div>
+                )}
+                
                 <button
                   onClick={handleRefresh}
                   className="mt-2 text-sm font-medium text-red-600 hover:text-red-500"
@@ -504,19 +550,11 @@ export default function AssignDronePage() {
                     {/* Action Buttons */}
                     <div className="flex gap-3">
                       <button
-                        onClick={() => handleAutoAssign(order)}
-                        disabled={isAssigning || dronesForOrder.length === 0}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg hover:from-orange-600 hover:to-red-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                      >
-                        <Zap className="w-5 h-5" />
-                        Auto Assign Best Drone
-                      </button>
-                      
-                      <button
                         onClick={() => setSelectedOrder(isExpanded ? null : order)}
-                        className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                        className="flex-1 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium flex items-center justify-center gap-2"
                       >
-                        {isExpanded ? 'Hide' : 'Manual Select'}
+                        <Plane className="w-5 h-5" />
+                        {isExpanded ? 'Hide Drones' : 'Select Drone to Assign'}
                       </button>
                     </div>
 
@@ -524,8 +562,11 @@ export default function AssignDronePage() {
                     {isExpanded && (
                       <div className="mt-6 pt-6 border-t border-gray-200">
                         <h4 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                          <Plane className="w-5 h-5" />
+                          <Plane className="w-5 h-5 text-primary" />
                           Available Drones ({dronesForOrder.length})
+                          <span className="text-sm font-normal text-gray-500 ml-2">
+                            - Sorted by best match (distance, battery, payload)
+                          </span>
                         </h4>
 
                         {dronesForOrder.length === 0 ? (
@@ -567,11 +608,16 @@ export default function AssignDronePage() {
                                 </div>
 
                                 <button
-                                  onClick={() => handleManualAssign(order.$id, drone.$id)}
+                                  onClick={() => {
+                                    if (confirm(`Assign drone ${drone.code} to this order?\n\nDrone: ${drone.name}\nDistance: ${drone.distance.toFixed(1)}km\nBattery: ${drone.batteryLevel}%`)) {
+                                      handleManualAssign(order.$id, drone.$id);
+                                    }
+                                  }}
                                   disabled={isAssigning}
-                                  className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50 font-medium"
+                                  className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 font-medium flex items-center gap-2"
                                 >
-                                  Assign
+                                  <Plane className="w-4 h-4" />
+                                  Assign This Drone
                                 </button>
                               </div>
                             ))}

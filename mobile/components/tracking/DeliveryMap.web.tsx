@@ -19,7 +19,6 @@ const DeliveryMapWeb: React.FC<DeliveryMapProps> = ({
   return (
     <View className="h-64 bg-gray-100 rounded-xl justify-center items-center border border-gray-200">
       <View className="items-center">
-        <Text className="text-2xl mb-2">🗺️</Text>
         <Text className="text-lg font-semibold text-gray-800 mb-1">Delivery Map</Text>
         <Text className="text-sm text-gray-600 text-center px-4">
           Map view is not available on web. Please use the mobile app for real-time tracking.
