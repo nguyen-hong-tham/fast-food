@@ -66,19 +66,39 @@ export const simulateDroneFlight = async ({
 }: SimulationOptions) => {
   const drone = await ensureDrone(orderId, droneId);
   
+  // Get drone's hub location as starting point
+  let droneStartCoords: Coordinate;
+  
+  if (drone.droneHub && typeof drone.droneHub === 'object' && 'latitude' in drone.droneHub) {
+    // Drone hub is populated with full object
+    droneStartCoords = {
+      latitude: (drone.droneHub as any).latitude,
+      longitude: (drone.droneHub as any).longitude,
+    };
+    console.log('🏠 Drone starting from hub:', droneStartCoords);
+  } else if (drone.currentLatitude && drone.currentLongitude) {
+    // Use drone's current position
+    droneStartCoords = {
+      latitude: drone.currentLatitude,
+      longitude: drone.currentLongitude,
+    };
+    console.log('📍 Drone starting from current position:', droneStartCoords);
+  } else {
+    // Fallback: start near restaurant
+    droneStartCoords = {
+      latitude: restaurantCoords.latitude + 0.005,
+      longitude: restaurantCoords.longitude + 0.005,
+    };
+    console.log('⚠️ Using fallback start position near restaurant');
+  }
+  
   // ========================================
   // PHASE 1: Drone flies to restaurant (30%)
   // ========================================
   const phase1Duration = duration * 0.3;
   const phase1Steps = Math.max(15, Math.floor(phase1Duration / 1500)); // Increased steps, reduced interval to 1.5s
   
-  // Drone starts from base location (nearby restaurant)
-  const droneBaseCoords: Coordinate = {
-    latitude: restaurantCoords.latitude + 0.005, // ~500m away
-    longitude: restaurantCoords.longitude + 0.005,
-  };
-  
-  const waypointsToRestaurant = calculateWaypoints(droneBaseCoords, restaurantCoords, phase1Steps);
+  const waypointsToRestaurant = calculateWaypoints(droneStartCoords, restaurantCoords, phase1Steps);
   
   console.log('🚁 PHASE 1: Drone flying to restaurant...');
   

@@ -202,6 +202,8 @@ export interface OrderItemDocument extends Models.Document {
   name: string;
   price: number;
   quantity: number;
+  imageUrl?: string; // ✅ Thêm imageUrl
+  notes?: string; // ✅ Thêm notes
   customizations?: Record<string, any>;
   subtotal: number;
 }

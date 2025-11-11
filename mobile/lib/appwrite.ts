@@ -418,14 +418,13 @@ export const createOrderWithPayment = async (orderData: {
         });
 
         // ✅ Tạo đơn hàng chính
-        // Chỉ lưu thông tin cần thiết trong items (bao gồm notes cho tracking)
+
+        // ✅ Tạo items field với dữ liệu tối thiểu (không có image_url, notes để tránh vượt 1000 chars)
         const itemsForOrder = orderData.items.map(item => ({
-            menuItemId: item.menuItemId,
-            name: item.name,
+            id: item.menuItemId,
+            name: item.name.substring(0, 40), // Giới hạn tên
             price: item.price,
-            quantity: item.quantity,
-            notes: item.notes,
-            image_url: item.image_url // Giữ lại image_url để hiển thị trong tracking
+            qty: item.quantity
         }));
 
         const orderPayload: any = {
@@ -434,7 +433,7 @@ export const createOrderWithPayment = async (orderData: {
             total: orderData.total,
             deliveryAddress: orderData.deliveryAddress,
             phone: orderData.phone,
-            items: JSON.stringify(itemsForOrder),
+            items: JSON.stringify(itemsForOrder), // ✅ Required field với minimal data
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
         };
@@ -480,10 +479,10 @@ export const createOrderWithPayment = async (orderData: {
                         name: item.name,
                         price: item.price,
                         quantity: item.quantity,
-                        imageUrl: item.image_url, // ✅ camelCase để khớp schema
+                        imageUrl: item.image_url,
+                        notes: item.notes, // ✅ Lưu notes
                         subtotal: subtotal,
-                        $createdAt: new Date().toISOString(),
-                        $updatedAt: new Date().toISOString(),
+                        // ✅ Không cần $createdAt, $updatedAt - Appwrite tự động tạo
                     }
                 );
             })
@@ -562,12 +561,14 @@ export const getOrderItems = async (orderId: string) => {
             appwriteConfig.orderItemsCollectionId,
             [
                 Query.equal('orderId', orderId),
-                Query.orderAsc('createdAt')
+                Query.orderAsc('$createdAt') // ✅ Appwrite system field
             ]
         );
 
+        console.log('📦 getOrderItems result:', orderItems.documents.length, 'items');
         return orderItems.documents;
     } catch (e) {
+        console.error('❌ getOrderItems error:', e);
         throw new Error(e as string);
     }
 }
