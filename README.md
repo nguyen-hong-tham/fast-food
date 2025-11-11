@@ -768,7 +768,8 @@ orders (1) ──── (1) drones
 ### Phase 2: Advanced Features 🔄 (In Progress)
 - [x] Real-time order tracking
 - [x] Push notifications
-- [x] Drone delivery simulation
+- [ ] Drone delivery simulation (customer can see drone on map)
+- [ ] Admin real-time tracking drone fleet on map
 - [ ] Payment gateway integration (Stripe/PayPal)
 - [ ] Rating & review system
 - [ ] Advanced analytics
@@ -786,7 +787,6 @@ orders (1) ──── (1) drones
 - [ ] Real drone integration
 - [ ] AI-powered recommendations
 - [ ] Chat support
-- [ ] Video call with restaurant
 - [ ] Social features
 
 ---
