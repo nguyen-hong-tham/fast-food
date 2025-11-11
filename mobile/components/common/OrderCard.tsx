@@ -59,18 +59,26 @@ const OrderCard = React.memo(({ order }: OrderCardProps) => {
         checkReview();
     }, [order.$id, order.status, user?.$id]);
     
-    // Parse items from JSON string - use useMemo
-    const items = useMemo(() => 
-        typeof order.items === 'string' 
-            ? JSON.parse(order.items) 
-            : order.items,
-        [order.items]
-    );
-    
-    const itemCount = useMemo(() => 
-        items.reduce((sum: number, item: any) => sum + item.quantity, 0),
-        [items]
-    );
+    // Get item count - prefer itemCount field (new orders) over parsing items (old orders)
+    const itemCount = useMemo(() => {
+        // New orders have itemCount field
+        if (order.itemCount && typeof order.itemCount === 'number') {
+            return order.itemCount;
+        }
+        
+        // Old orders need to parse items field
+        if (!order.items) return 0;
+        
+        try {
+            const items = typeof order.items === 'string' 
+                ? JSON.parse(order.items) 
+                : order.items;
+            return items.reduce((sum: number, item: any) => sum + item.quantity, 0);
+        } catch (error) {
+            console.warn('Failed to parse order items:', error);
+            return 0;
+        }
+    }, [order.items, order.itemCount]);
     
     // Format date - use useMemo
     const orderDate = useMemo(() => 

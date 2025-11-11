@@ -1,6 +1,6 @@
 import CustomHeader from '@/components/common/CustomHeader';
 import { icons } from '@/constants';
-import { getOrderById } from '@/lib/appwrite';
+import { getOrderById, getOrderItems } from '@/lib/appwrite';
 import { Order, OrderItem } from '@/type';
 import { useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -30,6 +30,7 @@ const STATUS_LABELS = {
 const OrderDetail = () => {
     const { orderId } = useLocalSearchParams();
     const [order, setOrder] = useState<Order | null>(null);
+    const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -40,6 +41,27 @@ const OrderDetail = () => {
                 setLoading(true);
                 const fetchedOrder = await getOrderById(orderId);
                 setOrder(fetchedOrder as unknown as Order);
+                
+                // Fetch order items from orderItems collection
+                try {
+                    const itemsData = await getOrderItems(orderId);
+                    console.log('📦 Order detail - fetched items:', itemsData.length);
+                    setOrderItems(itemsData as unknown as OrderItem[]);
+                } catch (itemsError) {
+                    console.warn('Failed to fetch order items:', itemsError);
+                    // Fallback to parsing items from order.items field (for old orders)
+                    if (fetchedOrder.items) {
+                        try {
+                            const parsedItems = typeof fetchedOrder.items === 'string' 
+                                ? JSON.parse(fetchedOrder.items) 
+                                : fetchedOrder.items;
+                            setOrderItems(parsedItems);
+                        } catch (parseError) {
+                            console.error('Failed to parse order items:', parseError);
+                            setOrderItems([]);
+                        }
+                    }
+                }
             } catch (error) {
                 console.error('Error fetching order:', error);
             } finally {
@@ -92,9 +114,8 @@ const OrderDetail = () => {
         );
     }
 
-    const items: OrderItem[] = typeof order.items === 'string' 
-        ? JSON.parse(order.items) 
-        : order.items;
+    // Use orderItems state instead of parsing from order.items
+    const items = orderItems;
     
     const statusColor = STATUS_COLORS[order.status];
     const statusLabel = STATUS_LABELS[order.status];

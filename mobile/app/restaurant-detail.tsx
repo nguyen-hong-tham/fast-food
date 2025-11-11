@@ -508,21 +508,21 @@ const RestaurantDetailScreen = () => {
                       {/* Category Picker Button */}
                       <TouchableOpacity
                         onPress={() => setShowCategoryPicker(true)}
-                        className="flex-1 bg-white rounded-2xl p-4 border-2 border-gray-900"
+                        className="flex-1 rounded-2xl p-4 border border-gray"
                         activeOpacity={0.7}
                         style={{ elevation: 2 }}
                       >
                         <View className="flex-row items-center justify-between">
                           <View className="flex-1">
-                            <Text className="text-xs text-gray-600 font-quicksand-bold mb-1 uppercase tracking-wider">
+                            <Text className="text-xs text-black-400 font-quicksand-bold mb-1 uppercase tracking-wider">
                               CATEGORY
                             </Text>
-                            <Text className="text-base font-quicksand-bold text-gray-900" numberOfLines={1}>
+                            <Text className="text-base font-quicksand-bold text-black" numberOfLines={1}>
                               All Menu
                             </Text>
                           </View>
-                          <View className="w-8 h-8 bg-gray-100 rounded-xl items-center justify-center shadow-sm">
-                            <Text className="text-gray-900 text-sm font-bold">▼</Text>
+                          <View className="w-8 h-8 bg-white/20 rounded-xl items-center justify-center">
+                            <Text className="text-black text-lg font-bold">▼</Text>
                           </View>
                         </View>
                       </TouchableOpacity>
@@ -530,7 +530,7 @@ const RestaurantDetailScreen = () => {
                       {/* Search Button */}
                       <TouchableOpacity
                         onPress={() => setShowSearch(!showSearch)}
-                        className="w-16 h-16 rounded-2xl items-center justify-center border-2 border-gray-900"
+                        className="w-16 h-16 rounded-2xl items-center justify-center border border-gray"
                         activeOpacity={0.7}
                         style={{ elevation: 2 }}
                       >
@@ -571,20 +571,20 @@ const RestaurantDetailScreen = () => {
                   >
                     <View className="bg-white rounded-t-3xl shadow-2xl" style={{ maxHeight: '75%' }}>
                       {/* Modal Header */}
-                      <View className="px-6 py-5 border-b-2 border-gray-100 bg-gradient-to-r from-amber-50 to-orange-50">
+                      <View className="px-6 py-5 border-b border-gray-200 bg-gray-900">
                         <View className="flex-row items-center justify-between">
                           <View>
-                            <Text className="text-xl font-quicksand-bold text-gray-900">Select Category</Text>
-                            <Text className="text-sm text-gray-600 font-quicksand-medium mt-1">
-                              Choose a category to browse
+                            <Text className="text-xl font-quicksand-bold text-white">Select Category</Text>
+                            <Text className="text-sm text-gray-400 font-quicksand-medium mt-1">
+                              Browse menu by category
                             </Text>
                           </View>
                           <TouchableOpacity 
                             onPress={() => setShowCategoryPicker(false)}
-                            className="w-10 h-10 items-center justify-center bg-white rounded-xl shadow-sm border border-gray-200"
+                            className="w-10 h-10 items-center justify-center bg-white/20 rounded-xl"
                             activeOpacity={0.7}
                           >
-                            <Text className="text-gray-600 text-xl font-bold">✕</Text>
+                            <Text className="text-white text-xl font-bold">✕</Text>
                           </TouchableOpacity>
                         </View>
                       </View>
@@ -597,41 +597,21 @@ const RestaurantDetailScreen = () => {
                             setShowCategoryPicker(false);
                             scrollViewRef.current?.scrollTo({ y: 0, animated: true });
                           }}
-                          style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: 16,
-                            marginBottom: 8,
-                            borderRadius: 16,
-                            backgroundColor: '#f9fafb',
-                            borderWidth: 2,
-                            borderColor: '#e5e7eb',
-                          }}
+                          className="bg-white rounded-2xl p-4 mb-3 border-2 border-gray-900"
                           activeOpacity={0.7}
                         >
-                          <View style={{ flex: 1 }}>
-                            <Text style={{
-                              fontSize: 16,
-                              fontWeight: 'bold',
-                              marginBottom: 4,
-                              color: '#111827'
-                            }}>
-                              All Menu Items
-                            </Text>
-                            <Text style={{ fontSize: 12, color: '#4b5563', fontWeight: '600' }}>
-                              {totalMenuCount} items available
-                            </Text>
-                          </View>
-                          <View style={{
-                            width: 32,
-                            height: 32,
-                            backgroundColor: '#f59e0b',
-                            borderRadius: 16,
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}>
-                            <Text style={{ color: 'white', fontSize: 14, fontWeight: 'bold' }}>↑</Text>
+                          <View className="flex-row items-center justify-between">
+                            <View className="flex-1">
+                              <Text className="text-lg font-quicksand-bold text-gray-900 mb-1">
+                                All Menu Items
+                              </Text>
+                              <Text className="text-sm text-gray-600 font-quicksand-semibold">
+                                {totalMenuCount} items available
+                              </Text>
+                            </View>
+                            <View className="w-10 h-10 bg-gray-900 rounded-full items-center justify-center">
+                              <Text className="text-white text-lg font-bold">↑</Text>
+                            </View>
                           </View>
                         </TouchableOpacity>
 
@@ -643,41 +623,21 @@ const RestaurantDetailScreen = () => {
                                 scrollToCategory(group.categoryId);
                                 setShowCategoryPicker(false);
                               }}
-                              style={{
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                padding: 16,
-                                marginBottom: 8,
-                                borderRadius: 16,
-                                backgroundColor: '#f9fafb',
-                                borderWidth: 2,
-                                borderColor: '#e5e7eb',
-                              }}
+                              className="bg-white rounded-2xl p-4 mb-3 border border-gray-200"
                               activeOpacity={0.7}
                             >
-                              <View style={{ flex: 1 }}>
-                                <Text style={{
-                                  fontSize: 16,
-                                  fontWeight: 'bold',
-                                  marginBottom: 4,
-                                  color: '#111827'
-                                }}>
-                                  {group.categoryName}
-                                </Text>
-                                <Text style={{ fontSize: 12, color: '#4b5563', fontWeight: '600' }}>
-                                  {group.items.length} items available
-                                </Text>
-                              </View>
-                              <View style={{
-                                width: 32,
-                                height: 32,
-                                backgroundColor: '#f59e0b',
-                                borderRadius: 16,
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                              }}>
-                                <Text style={{ color: 'white', fontSize: 14, fontWeight: 'bold' }}>→</Text>
+                              <View className="flex-row items-center justify-between">
+                                <View className="flex-1">
+                                  <Text className="text-lg font-quicksand-bold text-gray-900 mb-1">
+                                    {group.categoryName}
+                                  </Text>
+                                  <Text className="text-sm text-gray-600 font-quicksand-semibold">
+                                    {group.items.length} items available
+                                  </Text>
+                                </View>
+                                <View className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center">
+                                  <Text className="text-gray-900 text-lg font-bold">→</Text>
+                                </View>
                               </View>
                             </TouchableOpacity>
                         ))}

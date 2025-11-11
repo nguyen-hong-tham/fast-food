@@ -1,5 +1,6 @@
 import { View, Text, FlatList, ActivityIndicator, TouchableOpacity, ScrollView, RefreshControl, Platform, TextInput, Image } from 'react-native';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 import { getRestaurants } from '@/lib/appwrite';
 import { RestaurantWithDistance, RestaurantFilters } from '@/type';
@@ -11,6 +12,7 @@ import { icons } from '@/constants';
 import { useResponsive } from '@/lib/responsive';
 
 const RestaurantsScreen = () => {
+  const insets = useSafeAreaInsets();
   const [restaurants, setRestaurants] = useState<RestaurantWithDistance[]>([]);
   const [filteredRestaurants, setFilteredRestaurants] = useState<RestaurantWithDistance[]>([]);
   const [loading, setLoading] = useState(true);
@@ -179,6 +181,9 @@ const RestaurantsScreen = () => {
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholderTextColor="#9CA3AF"
+          returnKeyType="search"
+          blurOnSubmit={false}
+          autoCorrect={false}
         />
         {searchQuery.length > 0 && (
           <TouchableOpacity onPress={handleClearSearch}>
@@ -295,7 +300,10 @@ const RestaurantsScreen = () => {
     return (
       <View className="flex-1 bg-gray-50">
         {/* Header */}
-        <View className="px-4 pt-4 pb-2 bg-white border-b border-gray-200">
+        <View 
+          className="pb-2 bg-white border-b border-gray-200 px-4"
+          style={{ paddingTop: insets.top + 16 }}
+        >
           <Text className="text-2xl font-bold text-gray-800">Restaurants</Text>
           <Text className="text-sm text-gray-600 mt-1">
             Discovering amazing food...
@@ -310,12 +318,14 @@ const RestaurantsScreen = () => {
     <View className="flex-1 bg-gray-50">
       {/* Header - Better styling */}
       <View className={cn(
-        "pt-4 pb-3 bg-white border-b border-gray-200",
+        "pb-3 bg-white border-b border-gray-200",
         isDesktop ? "px-20" : "px-4"
-      )}>
+      )}
+      style={{ paddingTop: isDesktop ? 16 : insets.top + 16 }}
+      >
         <Text className={cn(
           "font-bold text-gray-800",
-          isDesktop ? "text-3xl" : "text-2xl"
+          isDesktop ? "text-3xl" : "text-xl"
         )}>
           Restaurants
         </Text>
@@ -376,7 +386,7 @@ const RestaurantsScreen = () => {
             keyExtractor={keyExtractor}
             ListHeaderComponent={renderHeader}
             renderItem={renderRestaurantItem}
-            contentContainerClassName="px-4 pt-4"
+            contentContainerClassName="px-4 pt-4 pb-24"
             showsVerticalScrollIndicator={false}
             removeClippedSubviews={true}
             maxToRenderPerBatch={10}

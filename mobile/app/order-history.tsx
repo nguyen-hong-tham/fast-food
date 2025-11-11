@@ -15,7 +15,7 @@ const ORDER_FILTERS = [
     { id: 'pending', label: 'Pending' },
     { id: 'preparing', label: 'Preparing' },
     { id: 'delivering', label: 'Delivering' },
-    { id: 'completed', label: 'Completed' },
+    { id: 'delivered', label: 'Completed' },
     { id: 'cancelled', label: 'Cancelled' },
 ];
 
@@ -33,6 +33,8 @@ const OrderHistory = () => {
         try {
             setLoading(true);
             const fetchedOrders = await getUserOrders(user.$id);
+            console.log('📦 Fetched orders:', fetchedOrders.length);
+            console.log('📦 Order statuses:', fetchedOrders.map((o: any) => o.status));
             setOrders(fetchedOrders as unknown as Order[]);
             filterOrders(fetchedOrders as unknown as Order[], selectedFilter);
         } catch (error) {
@@ -53,6 +55,7 @@ const OrderHistory = () => {
             setFilteredOrders(orderList);
         } else {
             const filtered = orderList.filter(order => order.status === filter);
+            console.log(`🔍 Filter "${filter}":`, filtered.length, 'orders found');
             setFilteredOrders(filtered);
         }
     };

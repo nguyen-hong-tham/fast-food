@@ -155,8 +155,8 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
           {showMapButton && (
             <TouchableOpacity
               onPress={() => {
-                // Navigate to map view (implement later)
-                console.log('Open map view');
+                // Navigate to location-picker page with map mode
+                router.push('/location-picker?mode=map' as any);
               }}
               className="px-3 py-1"
             >
@@ -179,7 +179,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
           />
           <TextInput
             className="flex-1 text-base text-gray-900"
-            placeholder="Tìm kiếm địa chỉ, tòa nhà, địa danh..."
+            placeholder="Enter location..."
             value={query}
             onChangeText={setQuery}
             placeholderTextColor="#9CA3AF"
@@ -245,12 +245,12 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
           <View className="items-center justify-center py-20">
             <Text className="text-4xl mb-3">🔍</Text>
             <Text className="text-base font-semibold text-gray-800 mb-1">
-              {query.length >= 3 ? 'Không tìm thấy kết quả' : 'Nhập địa chỉ để tìm kiếm'}
+              {query.length >= 3 ? "Can't find results" : 'Enter location to search'}
             </Text>
             <Text className="text-sm text-gray-500 text-center px-8">
               {query.length >= 3 
-                ? 'Thử tìm kiếm với từ khóa khác'
-                : 'Nhập tên đường, tòa nhà hoặc địa danh'
+                ? 'Try searching with different keywords'
+                : 'Enter street name, building, or landmark'
               }
             </Text>
           </View>
@@ -265,7 +265,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
       {/* Current Selected Location (Bottom) */}
       {currentLocation && (
         <View className="px-4 py-3 bg-gray-50 border-t border-gray-200">
-          <Text className="text-xs text-gray-500 mb-1">Vị trí hiện tại:</Text>
+          <Text className="text-xs text-gray-500 mb-1">Current Location:</Text>
           <View className="flex-row items-start">
             <Text className="text-sm text-gray-900 flex-1">
               {currentLocation.address}

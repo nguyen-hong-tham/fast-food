@@ -1,6 +1,7 @@
 import cn from 'clsx';
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, FlatList, Image, Pressable, ScrollView, Text, TouchableOpacity, View, Platform } from "react-native";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 
 import RestaurantCard from "@/components/restaurant/RestaurantCard";
@@ -13,6 +14,7 @@ import { useCurrentLocation } from '@/hooks/useCurrentLocation';
 import { useResponsive } from '@/lib/responsive';
 
 export default function Index() {
+  const insets = useSafeAreaInsets();
   const { user } = useAuthStore();
   const [popularRestaurants, setPopularRestaurants] = useState<RestaurantWithDistance[]>([]);
   const [loading, setLoading] = useState(true);
@@ -124,9 +126,12 @@ export default function Index() {
               )}
 
               {/* Header - Responsive spacing */}
-              <View className="flex-between flex-row w-full px-5 mt-5 mb-4 lg:px-20 lg:mt-0 lg:mb-6">
+              <View 
+                className="flex-between flex-row w-full px-5 mb-4 lg:px-20 lg:mt-0 lg:mb-6"
+                style={{ marginTop: isDesktop ? 0 : insets.top + 20 }}
+              >
                   <View className="flex-start flex-1">
-                      <Text className="small-bold text-primary">DELIVER TO</Text>
+                      <Text className="text-xs font-semibold text-primary">DELIVER TO</Text>
                       <TouchableOpacity 
                         className="flex-center flex-row gap-x-1 mt-0.5 max-w-full"
                         onPress={() => router.push('/location-picker')}
