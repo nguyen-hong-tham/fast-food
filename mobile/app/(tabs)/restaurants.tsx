@@ -168,7 +168,7 @@ const RestaurantsScreen = () => {
         )}
       >
         <Image
-          source={icons.search}
+          source={require('@/assets/icons/search.png')}
           className={cn("mr-3", isDesktop ? "w-6 h-6" : "w-5 h-5")}
           resizeMode="contain"
           tintColor="#9CA3AF"

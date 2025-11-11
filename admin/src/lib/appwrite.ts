@@ -22,6 +22,7 @@ export const appwriteConfig = {
   reviewsCollectionId: import.meta.env.VITE_APPWRITE_REVIEWS_COLLECTION_ID || 'reviews',
   notificationsCollectionId: import.meta.env.VITE_APPWRITE_NOTIFICATIONS_COLLECTION_ID || 'notifications',
   dronesCollectionId: import.meta.env.VITE_APPWRITE_DRONES_COLLECTION_ID || 'drones',
+  droneHubsCollectionId: import.meta.env.VITE_APPWRITE_DRONE_HUBS_COLLECTION_ID || 'drone_hub',
   droneEventsCollectionId: import.meta.env.VITE_APPWRITE_DRONE_EVENTS_COLLECTION_ID || 'drone_events',
   promotionsCollectionId: import.meta.env.VITE_APPWRITE_PROMOTIONS_COLLECTION_ID || 'promotions',
   userVouchersCollectionId: import.meta.env.VITE_APPWRITE_USER_VOUCHERS_COLLECTION_ID || 'user_vouchers',

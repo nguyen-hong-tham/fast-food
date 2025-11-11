@@ -236,10 +236,21 @@ const OrderTrackingScreen = () => {
       return;
     }
 
+    // Check if drone is assigned
+    if (!order.droneId) {
+      console.log('⏸️ No drone assigned yet. Waiting for admin to assign drone...');
+      setSimulationState('idle');
+      // Don't set errorMessage here - this is a normal state, not an error
+      return;
+    }
+
+    // Clear error message if drone is now assigned
+    setErrorMessage(null);
+
     console.log('🚁 Starting drone simulation:');
     console.log('  - Order ID:', order.$id);
     console.log('  - Status:', order.status);
-    console.log('  - Drone ID:', order.droneId || 'Not assigned yet');
+    console.log('  - Drone ID:', order.droneId);
     console.log('  - Restaurant:', restaurantCoords);
     console.log('  - Customer:', customerCoords);
 
@@ -474,7 +485,8 @@ const OrderTrackingScreen = () => {
                 </Text>
                 <Text style={{ opacity: 0.7 }} className="text-white text-sm font-quicksand-medium mt-2">
                   {order.status === 'preparing' && 'Kitchen is preparing your order'}
-                  {order.status === 'ready' && 'Order is ready for drone pickup'}
+                  {order.status === 'ready' && !order.droneId && 'Waiting for admin to assign delivery drone...'}
+                  {order.status === 'ready' && order.droneId && 'Order is ready for drone pickup'}
                   {order.status === 'delivering' && 'Drone is on the way to you'}
                   {order.status === 'delivered' && 'Order has been delivered'}
                   {order.status === 'cancelled' && 'Order was cancelled'}

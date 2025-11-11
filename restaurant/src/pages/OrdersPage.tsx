@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 
 import { useAuthStore } from '@/store/authStore';
-import { databases, Query } from '@/lib/appwrite';
+import { databases, Query, client } from '@/lib/appwrite';
 import { config } from '@/config';
 import { Order } from '@/types';
-import { Clock, CheckCircle, XCircle, Package, Truck, MapPin, X } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, Package, Truck, MapPin, X, Plane } from 'lucide-react';
 
 interface OrderItem {
   $id: string;
@@ -20,9 +20,20 @@ interface OrderItem {
   $updatedAt: string;
 }
 
+interface Drone {
+  $id: string;
+  code: string;
+  name: string;
+  deliveryPhase?: string;
+  currentLatitude?: number;
+  currentLongitude?: number;
+  batteryLevel: number;
+}
+
 export default function OrdersPage() {
   const { restaurant } = useAuthStore();
   const [orders, setOrders] = useState<Order[]>([]);
+  const [drones, setDrones] = useState<Map<string, Drone>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'pending' | 'preparing' | 'ready' | 'delivering' | 'delivered'>('all');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -42,6 +53,79 @@ export default function OrdersPage() {
   const newOrderCount = orders.filter(order => 
     isNewOrder(order) && order.status === 'pending'
   ).length;
+
+  useEffect(() => {
+    if (restaurant?.$id) {
+      fetchOrders();
+      fetchDrones();
+      subscribeToOrders();
+      subscribeToDrones();
+    }
+
+    return () => {
+      // Cleanup subscriptions
+    };
+  }, [restaurant]);
+
+  // Fetch drones for active orders
+  const fetchDrones = async () => {
+    try {
+      const response = await databases.listDocuments(
+        config.appwrite.databaseId,
+        config.appwrite.dronesCollectionId,
+        [Query.limit(100)]
+      );
+      
+      const dronesMap = new Map<string, Drone>();
+      response.documents.forEach((drone: any) => {
+        dronesMap.set(drone.$id, drone);
+      });
+      setDrones(dronesMap);
+    } catch (error) {
+      console.error('Error fetching drones:', error);
+    }
+  };
+
+  // Subscribe to order updates
+  const subscribeToOrders = () => {
+    const channel = `databases.${config.appwrite.databaseId}.collections.${config.appwrite.ordersCollectionId}.documents`;
+    
+    client.subscribe(channel, (response) => {
+      const payload = response.payload as any;
+      
+      // Update order in list if it belongs to this restaurant
+      const restaurantId = typeof payload.restaurantId === 'string'
+        ? payload.restaurantId
+        : payload.restaurantId?.$id;
+        
+      if (restaurantId === restaurant?.$id) {
+        setOrders(prev => {
+          const index = prev.findIndex(o => o.$id === payload.$id);
+          if (index >= 0) {
+            const newOrders = [...prev];
+            newOrders[index] = payload;
+            return newOrders;
+          }
+          return prev;
+        });
+      }
+    });
+  };
+
+  // Subscribe to drone updates
+  const subscribeToDrones = () => {
+    const channel = `databases.${config.appwrite.databaseId}.collections.${config.appwrite.dronesCollectionId}.documents`;
+    
+    client.subscribe(channel, (response) => {
+      const payload = response.payload as any;
+      
+      setDrones(prev => {
+        const newMap = new Map(prev);
+        newMap.set(payload.$id, payload);
+        return newMap;
+      });
+    });
+  };
 
   useEffect(() => {
     if (restaurant?.$id) {
@@ -466,10 +550,102 @@ export default function OrdersPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-start text-sm text-gray-600">
+                  <div className="flex items-start text-sm text-gray-600 mb-3">
                     <MapPin className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
                     <span>{order.deliveryAddress}</span>
                   </div>
+
+                  {/* Drone Status Info */}
+                  {order.droneId && (order.status === 'picked_up' || order.status === 'delivering') && (() => {
+                    const drone = drones.get(order.droneId);
+                    
+                    if (!drone) return null;
+                    
+                    const getPhaseInfo = (phase?: string) => {
+                      switch (phase) {
+                        case 'to_restaurant':
+                          return { 
+                            label: 'Drone đang bay đến nhà hàng', 
+                            icon: '✈️', 
+                            bgColor: 'bg-blue-50', 
+                            borderColor: 'border-blue-200',
+                            progressColor: 'bg-blue-500',
+                            eta: '~20s' 
+                          };
+                        case 'picking_up':
+                          return { 
+                            label: 'Drone đang lấy hàng', 
+                            icon: '📦', 
+                            bgColor: 'bg-yellow-50', 
+                            borderColor: 'border-yellow-200',
+                            progressColor: 'bg-yellow-500',
+                            eta: '~5s' 
+                          };
+                        case 'to_customer':
+                          return { 
+                            label: 'Drone đang giao hàng cho khách', 
+                            icon: '🚚', 
+                            bgColor: 'bg-purple-50', 
+                            borderColor: 'border-purple-200',
+                            progressColor: 'bg-purple-500',
+                            eta: '~30s' 
+                          };
+                        case 'delivering':
+                          return { 
+                            label: 'Drone đang giao hàng', 
+                            icon: '📍', 
+                            bgColor: 'bg-green-50', 
+                            borderColor: 'border-green-200',
+                            progressColor: 'bg-green-500',
+                            eta: '~3s' 
+                          };
+                        default:
+                          return { 
+                            label: 'Drone đang di chuyển', 
+                            icon: '🚁', 
+                            bgColor: 'bg-gray-50', 
+                            borderColor: 'border-gray-200',
+                            progressColor: 'bg-gray-500',
+                            eta: '-' 
+                          };
+                      }
+                    };
+                    
+                    const phaseInfo = getPhaseInfo(drone.deliveryPhase);
+                    
+                    return (
+                      <div className={`mt-3 p-3 ${phaseInfo.bgColor} border ${phaseInfo.borderColor} rounded-lg`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl animate-bounce">{phaseInfo.icon}</span>
+                            <div>
+                              <p className="text-sm font-semibold text-gray-900">
+                                {phaseInfo.label}
+                              </p>
+                              <p className="text-xs text-gray-600">
+                                Drone: {drone.code} • {drone.name}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-gray-500">ETA</p>
+                            <p className="text-sm font-bold text-gray-900">{phaseInfo.eta}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1">
+                            <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                              <div 
+                                className={`h-full ${phaseInfo.progressColor} transition-all animate-pulse`}
+                                style={{ width: '60%' }}
+                              />
+                            </div>
+                          </div>
+                          <Plane className="w-4 h-4 text-gray-500" />
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   {order.notes && (
                     <div className="mt-3 p-3 bg-gray-50 rounded-lg">
@@ -501,25 +677,20 @@ export default function OrdersPage() {
                         disabled={isUpdating}
                         className="px-4 py-2 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors text-sm font-medium disabled:opacity-50"
                       >
-                        Mark Ready (Start Delivery)
+                        Mark Ready (Gọi Drone)
                       </button>
                     )}
                     {order.status === 'delivering' && (
-                      <button 
-                        onClick={() => updateOrderStatus(order.$id, 'delivered')}
-                        disabled={isUpdating}
-                        className="px-4 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors text-sm font-medium disabled:opacity-50"
-                      >
-                        Mark as Delivered
-                      </button>
+                      <div className="flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-600 rounded-lg">
+                        <span className="animate-pulse">🚁</span>
+                        <span className="text-sm font-medium">Drone đang giao hàng...</span>
+                      </div>
                     )}
                     {(order.status === 'ready' || order.status === 'picked_up') && (
-                      <button 
-                        disabled={true}
-                        className="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg transition-colors text-sm font-medium opacity-50 cursor-not-allowed"
-                      >
-                        🚁 Drone in Transit...
-                      </button>
+                      <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg">
+                        <span className="animate-bounce">🚁</span>
+                        <span className="text-sm font-medium">Đang chờ drone lấy hàng...</span>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -678,24 +849,25 @@ export default function OrdersPage() {
                       disabled={isUpdating}
                       className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium disabled:opacity-50"
                     >
-                      Mark Ready (Start Delivery)
+                      Mark Ready (Gọi Drone)
                     </button>
                   )}
                   {selectedOrder.status === 'delivering' && (
-                    <button
-                      onClick={() => {
-                        updateOrderStatus(selectedOrder.$id, 'delivered');
-                        closeModal();
-                      }}
-                      disabled={isUpdating}
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50"
-                    >
-                      Mark as Delivered
-                    </button>
+                    <div className="flex items-center gap-2 px-4 py-2 bg-purple-50 border border-purple-200 rounded-lg">
+                      <span className="animate-pulse text-xl">🚁</span>
+                      <div>
+                        <p className="text-sm font-medium text-purple-900">Drone đang giao hàng</p>
+                        <p className="text-xs text-purple-600">Đơn hàng sẽ tự động hoàn thành khi drone giao xong</p>
+                      </div>
+                    </div>
                   )}
                   {(selectedOrder.status === 'ready' || selectedOrder.status === 'picked_up') && (
-                    <div className="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg font-medium">
-                      Drone is delivering your order...
+                    <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg">
+                      <span className="animate-bounce text-xl">🚁</span>
+                      <div>
+                        <p className="text-sm font-medium text-blue-900">Đang chờ drone lấy hàng</p>
+                        <p className="text-xs text-blue-600">Admin sẽ assign drone để giao hàng</p>
+                      </div>
                     </div>
                   )}
                   <button

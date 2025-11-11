@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 import { useAuthStore } from '@/store/authStore';
 import { databases, Query, ID } from '@/lib/appwrite';
@@ -7,16 +8,24 @@ import type { MenuItem } from '@/types';
 import MenuItemForm from '@/components/MenuItemForm';
 import MenuItemReviewsModal from '@/components/MenuItemReviewsModal';
 import { getMenuItemAverageRating } from '@/lib/reviews';
-import { Plus, Search, Edit, Trash2, Eye, EyeOff, Star, MessageSquare } from 'lucide-react';
+import { getCategoriesWithMenuCount } from '@/lib/categories';
+import type { CategoryWithMenuCount } from '@/types';
+import { Plus, Search, Edit, Trash2, Eye, EyeOff, Star, MessageSquare, Grid, Filter, X } from 'lucide-react';
 
 export default function MenuPage() {
   const { restaurant } = useAuthStore();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const categoryFromUrl = searchParams.get('category');
+  
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [categories, setCategories] = useState<CategoryWithMenuCount[]>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(categoryFromUrl);
   const [menuItemRatings, setMenuItemRatings] = useState<Record<string, { average: number; total: number }>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+  const [showCategorySidebar, setShowCategorySidebar] = useState(true);
   const [reviewsModal, setReviewsModal] = useState<{ isOpen: boolean; itemId: string; itemName: string }>({
     isOpen: false,
     itemId: '',
@@ -25,9 +34,26 @@ export default function MenuPage() {
 
   useEffect(() => {
     if (restaurant?.$id) {
+      fetchCategories();
       fetchMenuItems();
     }
   }, [restaurant]);
+
+  // Update selected category when URL changes
+  useEffect(() => {
+    const categoryId = searchParams.get('category');
+    setSelectedCategoryId(categoryId);
+  }, [searchParams]);
+
+  const fetchCategories = async () => {
+    if (!restaurant?.$id) return;
+    try {
+      const data = await getCategoriesWithMenuCount(restaurant.$id);
+      setCategories(data);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
 
   const fetchMenuItems = async () => {
     if (!restaurant?.$id) {
@@ -141,16 +167,22 @@ export default function MenuPage() {
         setIsFormOpen(false);
         setEditingItem(null);
       } else {
+        // If adding from category filter, auto-assign category
+        const menuData = selectedCategoryId 
+          ? { ...data, categories: selectedCategoryId }
+          : data;
+          
         await databases.createDocument(
           config.appwrite.databaseId,
           config.appwrite.menuCollectionId,
           ID.unique(),
           {
-            ...data,
+            ...menuData,
             restaurantId: restaurant.$id,
           }
         );
         await fetchMenuItems();
+        await fetchCategories(); // Refresh category counts
         setIsFormOpen(false);
       }
     } catch (error) {
@@ -159,10 +191,31 @@ export default function MenuPage() {
     }
   };
 
-  const filteredItems = menuItems.filter((item) =>
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter items by search and category
+  const filteredItems = menuItems.filter((item) => {
+    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.description.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // Handle categories field (can be string ID or Category object)
+    const itemCategoryId = typeof item.categories === 'string' 
+      ? item.categories 
+      : (item.categories as any)?.$id;
+    const matchesCategory = !selectedCategoryId || itemCategoryId === selectedCategoryId;
+    
+    return matchesSearch && matchesCategory;
+  });
+
+  const handleCategoryClick = (categoryId: string | null) => {
+    setSelectedCategoryId(categoryId);
+    // Update URL params
+    if (categoryId) {
+      setSearchParams({ category: categoryId });
+    } else {
+      setSearchParams({});
+    }
+  };
+
+  const selectedCategory = categories.find(c => c.$id === selectedCategoryId);
 
   if (!restaurant) {
     return (
@@ -174,30 +227,70 @@ export default function MenuPage() {
 
   return (
     <div className="space-y-6">
+      {/* Header with Category Filter Info */}
       <div className="flex items-center justify-between">
+        <div>
           <h1 className="text-3xl font-bold text-gray-900">Menu Management</h1>
-          <button
-            className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-            onClick={handleAddClick}
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            Add Menu Item
-          </button>
+          {selectedCategory && (
+            <p className="text-gray-600 mt-1">
+              Category: <span className="font-semibold text-orange-600">{selectedCategory.name}</span>
+              {' '}({selectedCategory.menuCount} items)
+            </p>
+          )}
         </div>
+        <button
+          className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+          onClick={handleAddClick}
+        >
+          <Plus className="w-5 h-5 mr-2" />
+          {selectedCategory ? `Add to ${selectedCategory.name}` : 'Add Menu Item'}
+        </button>
+      </div>
 
-        {/* Search Bar */}
+      {/* Category Filter Pills */}
+      {categories.length > 0 && (
         <div className="bg-white p-4 rounded-lg shadow">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              placeholder="Search menu items..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="bg-white w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-black"
-            />
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => handleCategoryClick(null)}
+              className={`px-4 py-2 rounded-full transition-colors ${
+                !selectedCategoryId
+                  ? 'bg-orange-500 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              All ({menuItems.length})
+            </button>
+            {categories.map((category) => (
+              <button
+                key={category.$id}
+                onClick={() => handleCategoryClick(category.$id)}
+                className={`px-4 py-2 rounded-full transition-colors ${
+                  selectedCategoryId === category.$id
+                    ? 'bg-orange-500 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {category.name} ({category.menuCount})
+              </button>
+            ))}
           </div>
         </div>
+      )}
+
+      {/* Search Bar */}
+      <div className="bg-white p-4 rounded-lg shadow">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <input
+            type="text"
+            placeholder="Search menu items..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="bg-white w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-black"
+          />
+        </div>
+      </div>
 
         {/* Menu Items */}
         {isLoading ? (
@@ -224,14 +317,19 @@ export default function MenuPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredItems.map((item) => (
-              <div key={item.$id} className="bg-white rounded-lg shadow overflow-hidden">
+              <div key={item.$id} className="bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transition-shadow">
                 {/* Item Image */}
-                <div className="h-48 bg-gray-200 relative">
+                <div className="h-48 bg-gradient-to-br from-gray-50 to-gray-100 relative overflow-hidden">
                   {item.image_url ? (
                     <img
                       src={item.image_url}
                       alt={item.name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        // Fallback to placeholder if image fails to load
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                      }}
                     />
                   ) : (
                     <div className="flex items-center justify-center h-full text-gray-400">

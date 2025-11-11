@@ -137,7 +137,8 @@ const MenuDetail = () => {
                 id: menuItem.$id,
                 name: menuItem.name,
                 price: menuItem.price,
-                image_url: menuItem.image_url,
+                image: menuItem.image_url || '',
+                restaurantId: restaurantId,
                 customizations: [],
                 notes: notes.trim() || ''
             },

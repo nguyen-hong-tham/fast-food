@@ -11,6 +11,7 @@ import DronesPage from '@/pages/DronesPage';
 import LoginPage from '@/pages/LoginPage';
 import OrdersPage from '@/pages/OrdersPage';
 import AssignDronePage from '@/pages/AssignDronePage';
+import { setupDefaultHub } from '@/lib/hub-setup';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -35,6 +36,11 @@ function App() {
   
   useEffect(() => {
     checkAuth();
+    
+    // Setup default hub on app initialization
+    setupDefaultHub().catch(error => {
+      console.error('Failed to setup default hub:', error);
+    });
   }, [checkAuth]);
   
   return (

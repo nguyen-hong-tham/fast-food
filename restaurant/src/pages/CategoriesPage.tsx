@@ -1,11 +1,13 @@
 /**
  * Categories Page - Restaurant Portal
  * Manage menu categories: Add, Edit, Delete, Reorder
+ * Click on category to view/add menu items
  */
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, GripVertical, Eye, EyeOff } from 'lucide-react';
+import { Plus, Edit2, Trash2, GripVertical, Eye, EyeOff, ChevronRight, UtensilsCrossed } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
+import { useNavigate } from 'react-router-dom';
 import {
   getRestaurantCategories,
   getCategoriesWithMenuCount,
@@ -19,6 +21,7 @@ import CategoryModal from '../components/CategoryModal.tsx';
 
 const CategoriesPage: React.FC = () => {
   const { restaurant } = useAuthStore();
+  const navigate = useNavigate();
   const [categories, setCategories] = useState<CategoryWithMenuCount[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -184,7 +187,7 @@ const CategoriesPage: React.FC = () => {
                 onDragStart={(e) => handleDragStart(e, category.$id)}
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, category.$id)}
-                className={`p-4 hover:bg-gray-50 transition-colors cursor-move ${
+                className={`p-4 hover:bg-gray-50 transition-colors ${
                   draggingId === category.$id ? 'opacity-50' : ''
                 } ${!category.isActive ? 'bg-gray-50' : ''}`}
               >
@@ -205,20 +208,21 @@ const CategoriesPage: React.FC = () => {
                           Inactive
                         </span>
                       )}
+                      {/* Menu count badge */}
+                      <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded font-medium">
+                        {category.menuCount} món
+                      </span>
                     </div>
                     {category.description && (
                       <p className="text-sm text-gray-600 mt-1">
                         {category.description}
                       </p>
                     )}
-                    <p className="text-sm text-gray-500 mt-1">
-                      {category.menuCount} menu item
-                      {category.menuCount !== 1 ? 's' : ''}
-                    </p>
                   </div>
 
                   {/* Actions */}
                   <div className="flex items-center gap-2">
+                    
                     <button
                       onClick={() => handleToggleActive(category)}
                       className="p-2 text-gray-600 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-colors"
@@ -273,10 +277,9 @@ const CategoriesPage: React.FC = () => {
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <h4 className="font-semibold text-blue-900 mb-2">💡 Tips</h4>
         <ul className="text-sm text-blue-800 space-y-1">
-          <li>• Drag and drop categories to reorder them</li>
-          <li>• Hide inactive categories instead of deleting them</li>
-          <li>• Assign menu items to categories from the Menu page</li>
-          <li>• Organize your menu for better customer experience</li>
+          <li>• Kéo thả categories để sắp xếp lại thứ tự hiển thị</li>
+          <li>• Ẩn categories không hoạt động thay vì xóa chúng</li>
+          <li>• Sắp xếp menu của bạn để khách hàng dễ dàng tìm kiếm món ăn</li>
         </ul>
       </div>
     </div>

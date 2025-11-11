@@ -24,7 +24,7 @@ const CartItem = React.memo(({ item }: { item: CartItemType }) => {
             <View className="flex flex-row items-center gap-x-3">
                 <View className="cart-item__image">
                     <Image
-                        source={{ uri: item.image_url }}
+                        source={{ uri: item.image || '' }}
                         className="size-4/5 rounded-lg"
                         resizeMode="cover"
                     />

@@ -71,6 +71,16 @@ export interface Customization extends Models.Document {
   type: string;
 }
 
+// ===================== DRONE HUB =====================
+
+export interface DroneHub extends Models.Document {
+  name: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  drones?: Drone[]; // Relationship: one-to-many
+}
+
 // ===================== DRONE =====================
 
 export type DroneStatus = 'available' | 'busy' | 'maintenance' | 'offline';
@@ -91,6 +101,9 @@ export interface Drone extends Models.Document {
   maxRange: number;
   totalDistance: number;
   isActive: boolean;
+  homeLatitude?: number; // Hub location cache
+  homeLongitude?: number; // Hub location cache
+  droneHub?: DroneHub | string; // Relationship to hub
   lastMaintenanceAt?: string;
   nextMaintenanceAt?: string;
 }
