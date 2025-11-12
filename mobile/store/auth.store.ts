@@ -31,6 +31,18 @@ const useAuthStore = create<AuthState>((set) => ({
             const user = await getCurrentUser();
 
             if(user) {
+                // Kiểm tra role - chỉ cho phép customer sử dụng mobile app
+                if (user.role !== 'customer') {
+                    console.warn(`⚠️ User with role "${user.role}" attempted to access mobile app`);
+                    
+                    // Đăng xuất ngay lập tức
+                    await signOut();
+                    set({ isAuthenticated: false, user: null });
+                    
+                    // Throw error để caller có thể xử lý
+                    throw new Error(`Access denied. This app is for customers only.`);
+                }
+                
                 set({ isAuthenticated: true, user: user as unknown as User });
             } else {
                 set({ isAuthenticated: false, user: null });
@@ -38,6 +50,10 @@ const useAuthStore = create<AuthState>((set) => ({
         } catch (e) {
             console.log('fetchAuthenticatedUser error', e);
             set({ isAuthenticated: false, user: null });
+            // Re-throw error nếu là lỗi access denied
+            if (e instanceof Error && e.message.includes('Access denied')) {
+                throw e;
+            }
         } finally {
             set({ isLoading: false });
         }

@@ -27,7 +27,32 @@ const SignIn = () => {
             // Cập nhật lại auth state sau khi đăng nhập thành công
             await fetchAuthenticatedUser();
 
-            // Navigate back to home
+            // Kiểm tra role của user - chỉ cho phép customer đăng nhập vào mobile app
+            const currentUser = useAuthStore.getState().user;
+            
+            if (!currentUser) {
+                throw new Error('Unable to fetch user information');
+            }
+
+            // Kiểm tra role - chỉ cho phép customer
+            if (currentUser.role !== 'customer') {
+                // Đăng xuất ngay lập tức
+                await useAuthStore.getState().logout();
+                
+                let errorMessage = 'Access Denied';
+                let errorDescription = 'This app is for customers only.';
+                
+                if (currentUser.role === 'restaurant') {
+                    errorDescription = 'Restaurant accounts cannot access this app. Please use the Restaurant Portal.';
+                } else if (currentUser.role === 'admin') {
+                    errorDescription = 'Admin accounts cannot access this app. Please use the Admin Portal.';
+                }
+                
+                Alert.alert(errorMessage, errorDescription);
+                return;
+            }
+
+            // Navigate back to home nếu là customer
             router.replace('/');
             
         } catch(error: any) {
