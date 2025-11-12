@@ -237,7 +237,7 @@ const MenuDetail = () => {
 
     return (
         <SafeAreaView className="flex-1 bg-white" style={{ flex: 1 }}>
-            <CustomHeader title={menuItem.name} />
+            <CustomHeader/>
             
             {/* Toast and Dialog for Web */}
             {isWeb && (
