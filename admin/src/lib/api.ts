@@ -12,13 +12,20 @@ export const signIn = async (email: string, password: string) => {
   try {
     // Delete any existing session first to avoid "session already active" error
     try {
-      await account.deleteSession('current');
-      console.log('Deleted existing session');
-    } catch (e) {
+      const currentSession = await account.getSession('current');
+      if (currentSession) {
+        console.log('🔄 Deleting existing session...');
+        await account.deleteSession('current');
+        // Small delay to let Appwrite process the deletion
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+    } catch (e: any) {
       // Ignore if no session exists
-      console.log('No existing session to delete');
+      console.log('ℹ️ No existing session to delete');
     }
     
+    // Create new session
+    console.log('🔐 Creating new admin session...');
     const session = await account.createEmailPasswordSession(email, password);
     
     // Get user data and check if admin
@@ -29,8 +36,38 @@ export const signIn = async (email: string, password: string) => {
       throw new Error('Access denied. Admin privileges required.');
     }
     
+    console.log('✅ Admin login successful');
     return session;
   } catch (error: any) {
+    console.error('❌ Login error:', error);
+    
+    // Handle rate limit error specifically
+    if (error.code === 429 || error.message?.includes('Rate limit')) {
+      throw new Error('Rate limit exceeded. Please try again after some time.');
+    }
+    
+    // Handle session errors with retry
+    if (error.message?.includes('session is active') || error.message?.includes('session is prohibited')) {
+      try {
+        console.log('🔄 Retrying: Force delete session and login again');
+        await account.deleteSession('current').catch(() => {});
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const session = await account.createEmailPasswordSession(email, password);
+        
+        const user = await getCurrentUser();
+        if (!user || user.role !== 'admin') {
+          await signOut();
+          throw new Error('Access denied. Admin privileges required.');
+        }
+        
+        console.log('✅ Admin login successful after retry');
+        return session;
+      } catch (retryError: any) {
+        console.error('❌ Retry failed:', retryError);
+        throw new Error('Login failed: ' + (retryError.message || 'Please try again'));
+      }
+    }
+    
     throw new Error(error.message || 'Login failed');
   }
 };
