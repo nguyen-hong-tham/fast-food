@@ -3,6 +3,12 @@ import { appwriteConfig, databases, updateOrderStatus } from './appwrite';
 import { assignDroneToOrder, completeDroneDelivery, getAvailableDrone, getDroneById, updateDroneLocation } from './api-helpers';
 import { ID } from 'react-native-appwrite';
 
+// Default Hub Location (Trung tâm điều phối drone)
+export const DEFAULT_HUB_LOCATION: Coordinate = {
+  latitude: 10.7587229,
+  longitude: 106.682131,
+};
+
 export interface Coordinate {
   latitude: number;
   longitude: number;
@@ -60,49 +66,29 @@ export const simulateDroneFlight = async ({
   restaurantCoords,
   customerCoords,
   droneId,
-  duration = 60000, // Total 60 seconds for complete delivery
+  duration = 25000, // Total 25 seconds: 10s (hub→restaurant) + 15s (restaurant→customer)
   phase = 'full',
   onProgress,
 }: SimulationOptions) => {
   const drone = await ensureDrone(orderId, droneId);
   
-  // Get drone's hub location as starting point
-  let droneStartCoords: Coordinate;
-  
-  if (drone.droneHub && typeof drone.droneHub === 'object' && 'latitude' in drone.droneHub) {
-    // Drone hub is populated with full object
-    droneStartCoords = {
-      latitude: (drone.droneHub as any).latitude,
-      longitude: (drone.droneHub as any).longitude,
-    };
-    console.log('🏠 Drone starting from hub:', droneStartCoords);
-  } else if (drone.currentLatitude && drone.currentLongitude) {
-    // Use drone's current position
-    droneStartCoords = {
-      latitude: drone.currentLatitude,
-      longitude: drone.currentLongitude,
-    };
-    console.log('📍 Drone starting from current position:', droneStartCoords);
-  } else {
-    // Fallback: start near restaurant
-    droneStartCoords = {
-      latitude: restaurantCoords.latitude + 0.005,
-      longitude: restaurantCoords.longitude + 0.005,
-    };
-    console.log('⚠️ Using fallback start position near restaurant');
-  }
+  // Always use default hub location as starting point
+  const droneStartCoords: Coordinate = DEFAULT_HUB_LOCATION;
+  console.log('🏠 Drone starting from HUB:', droneStartCoords);
   
   // ========================================
-  // PHASE 1: Drone flies to restaurant (30%)
+  // PHASE 1: Drone flies from HUB to RESTAURANT (10 seconds)
   // ========================================
-  const phase1Duration = duration * 0.3;
-  const phase1Steps = Math.max(15, Math.floor(phase1Duration / 1500)); // Increased steps, reduced interval to 1.5s
+  const phase1Duration = 10000; // 10 seconds
+  const phase1Steps = 20; // 20 steps = 0.5s per step for smooth animation
   
   const waypointsToRestaurant = calculateWaypoints(droneStartCoords, restaurantCoords, phase1Steps);
   
-  console.log('🚁 PHASE 1: Drone flying to restaurant...');
+  console.log('🚁 PHASE 1: Drone flying from HUB to RESTAURANT...');
+  console.log('   Hub location:', droneStartCoords);
+  console.log('   Restaurant location:', restaurantCoords);
   
-  // Drone already assigned by admin, just update status to delivering
+  // ✅ NOW set status to 'delivering' - simulation officially starts
   await databases.updateDocument(
     appwriteConfig.databaseId,
     appwriteConfig.ordersCollectionId,
@@ -112,12 +98,16 @@ export const simulateDroneFlight = async ({
       deliveryStartedAt: new Date().toISOString(),
     }
   );
+  
+  console.log('✅ Order status changed to DELIVERING');
 
-  // Simulate flight to restaurant
+  // Simulate flight from hub to restaurant
   for (let i = 0; i < waypointsToRestaurant.length; i += 1) {
     const point = waypointsToRestaurant[i];
     const progress = (i + 1) / waypointsToRestaurant.length;
     const speed = 45; // Fast speed to restaurant
+
+    console.log(`🚁 Step ${i + 1}/${waypointsToRestaurant.length}: Moving to`, point);
 
     await updateDroneLocation(drone.$id, point.latitude, point.longitude, {
       orderId,
@@ -126,31 +116,35 @@ export const simulateDroneFlight = async ({
       altitude: 50,
     });
 
+    console.log(`📌 Calling onProgress - Phase 1 - ${Math.round(progress * 40)}%`);
+    
     onProgress?.({ 
       coordinate: point, 
-      progress: progress * 0.3, // 0-30% of total progress
+      progress: progress * 0.4, // 0-40% of total progress (10s of 25s)
       phase: 'to_restaurant' 
     });
 
-    await sleep(phase1Duration / phase1Steps);
+    await sleep(phase1Duration / phase1Steps); // 0.5s per step
   }
 
   // ========================================
-  // Drone arrived at restaurant
+  // Drone arrived at RESTAURANT - Picking up food
   // ========================================
-  console.log('✅ Drone arrived at restaurant!');
+  console.log('✅ Drone arrived at RESTAURANT!');
+  console.log('📦 Loading food onto drone...');
   
-  // Wait for restaurant to prepare food (simulate)
-  console.log('⏳ Waiting for restaurant to load food onto drone...');
-  await sleep(5000); // 5 seconds loading time
+  // Wait for restaurant to load food onto drone (simulate)
+  await sleep(2000); // 2 seconds loading time
   
   // ========================================
-  // PHASE 2: Drone picks up and flies to customer (70%)
+  // PHASE 2: Drone picks up and flies to CUSTOMER (15 seconds)
   // ========================================
-  console.log('📦 Drone picked up order, flying to customer...');
+  console.log('🚁 PHASE 2: Drone flying from RESTAURANT to CUSTOMER...');
+  console.log('   Restaurant location:', restaurantCoords);
+  console.log('   Customer location:', customerCoords);
   
   // Update estimated delivery time
-  const phase2Duration = duration * 0.7;
+  const phase2Duration = 15000; // 15 seconds
   await databases.updateDocument(
     appwriteConfig.databaseId,
     appwriteConfig.ordersCollectionId,
@@ -175,7 +169,7 @@ export const simulateDroneFlight = async ({
     }
   );
 
-  const phase2Steps = Math.max(30, Math.floor(phase2Duration / 1500)); // More steps for smoother animation (1.5s interval)
+  const phase2Steps = 30; // 30 steps = 0.5s per step for smooth animation
   const waypointsToCustomer = calculateWaypoints(restaurantCoords, customerCoords, phase2Steps);
 
   console.log('🚁 PHASE 2: Drone delivering to customer...');
@@ -183,6 +177,8 @@ export const simulateDroneFlight = async ({
   for (let i = 0; i < waypointsToCustomer.length; i += 1) {
     const point = waypointsToCustomer[i];
     const progress = (i + 1) / waypointsToCustomer.length;
+
+    console.log(`🚁 Step ${i + 1}/${waypointsToCustomer.length}: Moving to`, point);
 
     const speedMultiplier = progress < 0.2 ? 0.6 : progress > 0.8 ? 0.5 : 1;
     const speed = Math.max(15, (drone.maxSpeed || 40) * speedMultiplier);
@@ -195,14 +191,15 @@ export const simulateDroneFlight = async ({
       altitude: 80 - progress * 50,
     });
 
+    console.log(`📌 Calling onProgress - Phase 2 - ${Math.round((0.4 + progress * 0.6) * 100)}%`);
+
     onProgress?.({ 
       coordinate: point, 
-      progress: 0.3 + (progress * 0.7), // 30-100% of total progress
+      progress: 0.4 + (progress * 0.6), // 40-100% of total progress (15s of 25s)
       phase: 'to_customer' 
     });
 
-    const jitter = (phase2Duration / phase2Steps) * (progress < 0.3 ? 1.2 : progress > 0.7 ? 0.8 : 1);
-    await sleep(jitter);
+    await sleep(phase2Duration / phase2Steps); // 0.5s per step
   }
 
   // ========================================

@@ -282,7 +282,8 @@ export default function AssignDronePage() {
         ? order.restaurantId.longitude
         : 106.660172;
 
-      // 1. Update order - assign drone and change status to delivering
+      // 1. Update order - assign drone but keep status as 'ready' (will change to 'delivering' when simulation starts)
+      // Note: 'assigned' is not in Appwrite enum, so we keep it as 'ready'
       await databases.updateDocument(
         import.meta.env.VITE_APPWRITE_DATABASE_ID,
         import.meta.env.VITE_APPWRITE_ORDERS_COLLECTION_ID,
@@ -291,20 +292,21 @@ export default function AssignDronePage() {
           droneId: droneId,
           assignedAt: new Date().toISOString(),
           assignmentType: type,
-          status: 'delivering' // Change to delivering when admin assigns drone
+          // status stays 'ready' - simulation will change to 'delivering'
         }
       );
 
-      // 2. Update drone
+      // 2. Update drone - DO NOT change location yet (let simulation handle it)
+      // Drone should stay at Hub until simulation actually moves it
       await databases.updateDocument(
         import.meta.env.VITE_APPWRITE_DATABASE_ID,
         import.meta.env.VITE_APPWRITE_DRONES_COLLECTION_ID,
         droneId,
         {
           assignedOrderId: orderId,
-          status: 'busy',
-          currentLatitude: restaurantLat, // Set drone location to restaurant
-          currentLongitude: restaurantLng
+          status: 'busy'
+          // ✅ DO NOT set currentLatitude/currentLongitude here
+          // Let the simulation update drone location from Hub
         }
       );
 
@@ -330,6 +332,9 @@ export default function AssignDronePage() {
       }
 
       // 4. 🚀 Start delivery simulation automatically
+      // ❌ DISABLED: Mobile app will handle simulation when user opens tracking
+      // This prevents duplicate simulations from multiple admin clients
+      /*
       console.log('🚀 Starting delivery simulation...');
       startDeliverySimulation(
         orderId,
@@ -347,8 +352,9 @@ export default function AssignDronePage() {
           console.log('✅ Delivery completed!');
         }
       );
+      */
 
-      alert(`✅ Drone ${type === 'manual' ? 'manually' : 'automatically'} assigned successfully!\n\n🚁 Drone is now flying to restaurant.\nYou can track it on the Drones page.`);
+      alert(`✅ Drone ${type === 'manual' ? 'manually' : 'automatically'} assigned successfully!\n\n🚁 Simulation will start when customer opens tracking.\nYou can monitor drone on the Drones page.`);
       
       // Refresh lists
       await fetchReadyOrders();

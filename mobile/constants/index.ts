@@ -4,6 +4,7 @@ import bag from "@/assets/icons/bag.png";
 import check from "@/assets/icons/check.png";
 import clock from "@/assets/icons/clock.png";
 import dollar from "@/assets/icons/dollar.png";
+import drone from "@/assets/icons/drone.png";
 import envelope from "@/assets/icons/envelope.png";
 import home from "@/assets/icons/home.png";
 import location from "@/assets/icons/location.png";
@@ -191,6 +192,7 @@ export const icons = {
     check,
     clock,
     dollar,
+    drone,
     envelope,
     home,
     location,

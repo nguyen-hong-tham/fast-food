@@ -304,6 +304,19 @@ export interface Notification extends Models.Document {
   readAt?: string;
 }
 
+// ===================== DRONE HUB =====================
+
+export interface DroneHub extends Models.Document {
+  name: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  capacity: number;
+  currentDrones: number;
+  isActive: boolean;
+  createdAt: string;
+}
+
 // ===================== DRONE =====================
 
 export interface Drone extends Models.Document {
@@ -325,6 +338,7 @@ export interface Drone extends Models.Document {
   lastMaintenanceAt?: string;
   nextMaintenanceAt?: string;
   createdAt: string;
+  droneHub?: string | DroneHub; // Relationship to DroneHub
 }
 
 // ===================== DRONE EVENT =====================

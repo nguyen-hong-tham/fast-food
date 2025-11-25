@@ -25,7 +25,7 @@ L.Icon.Default.mergeOptions({
 });
 
 // Custom icons
-const createDroneIcon = (status: string) => {
+const createDroneIcon = (status: string, isDelivering: boolean = false) => {
   const colors: Record<string, string> = {
     available: '#10b981',
     busy: '#f59e0b',
@@ -33,27 +33,63 @@ const createDroneIcon = (status: string) => {
     offline: '#6b7280',
   };
 
+  // Use actual drone image
+  const droneImageUrl = '/assets/icons/drone.png';
+
+  const pulseAnimation = isDelivering ? `
+    <style>
+      @keyframes pulse-ring {
+        0% { transform: scale(1); opacity: 0.5; }
+        50% { transform: scale(1.5); opacity: 0.3; }
+        100% { transform: scale(2); opacity: 0; }
+      }
+      .pulse-ring {
+        animation: pulse-ring 2s ease-out infinite;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        border: 2px solid ${colors[status] || '#6b7280'};
+      }
+    </style>
+    <div class="pulse-ring"></div>
+  ` : '';
+
   return L.divIcon({
     className: 'custom-drone-icon',
     html: `
-      <div style="
-        background-color: ${colors[status] || '#6b7280'};
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        border: 3px solid white;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      ">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
-          <path d="M12 2L4.5 7.5l1.5 1.5L12 5l6 4 1.5-1.5L12 2zM12 22l-7.5-5.5 1.5-1.5L12 19l6-4 1.5 1.5L12 22zm0-10L4.5 7.5 12 12l7.5-4.5L12 12z"/>
-        </svg>
+      <div style="position: relative; width: 32px; height: 32px;">
+        ${pulseAnimation}
+        <div style="
+          background-color: ${colors[status] || '#6b7280'};
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          border: 3px solid white;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+          z-index: 10;
+          overflow: hidden;
+        ">
+          <img 
+            src="${droneImageUrl}" 
+            alt="drone"
+            style="width: 22px; height: 22px; object-fit: contain; filter: brightness(0) invert(1);"
+            onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+          />
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="white" style="display: none;">
+            <path d="M12 2L4.5 7.5l1.5 1.5L12 5l6 4 1.5-1.5L12 2zM12 22l-7.5-5.5 1.5-1.5L12 19l6-4 1.5 1.5L12 22zm0-10L4.5 7.5 12 12l7.5-4.5L12 12z"/>
+          </svg>
+        </div>
       </div>
     `,
-    iconSize: [24, 24],
-    iconAnchor: [12, 12],
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
   });
 };
 
@@ -236,7 +272,21 @@ const DroneMap: React.FC<DroneMapProps> = ({
               {/* Delivery Route - Hub → Restaurant → Customer */}
               {showRoutes && activeDelivery && hubPosition && restaurantLat && restaurantLng && (
                 <>
-                  {/* Route: Hub → Restaurant (Blue dashed) */}
+                  {/* Route: Hub → Restaurant (Blue dashed with glow) */}
+                  {/* Shadow layer for depth effect */}
+                  <Polyline
+                    positions={[
+                      [hubPosition.latitude, hubPosition.longitude],
+                      [restaurantLat, restaurantLng],
+                    ]}
+                    pathOptions={{
+                      color: '#1e40af',
+                      weight: 7,
+                      dashArray: '10, 5',
+                      opacity: 0.2,
+                    }}
+                  />
+                  {/* Main route line */}
                   <Polyline
                     positions={[
                       [hubPosition.latitude, hubPosition.longitude],
@@ -244,13 +294,40 @@ const DroneMap: React.FC<DroneMapProps> = ({
                     ]}
                     pathOptions={{
                       color: '#3b82f6',
-                      weight: 3,
+                      weight: 4,
                       dashArray: '10, 5',
-                      opacity: 0.6,
+                      opacity: 0.8,
+                    }}
+                  >
+                    <Popup>
+                      <div className="text-xs">
+                        <p className="font-bold text-blue-600">📍 Phase 1: Hub → Restaurant</p>
+                        <p className="text-gray-600">Distance: {calculateDistance(
+                          hubPosition.latitude,
+                          hubPosition.longitude,
+                          restaurantLat,
+                          restaurantLng
+                        ).toFixed(2)} km</p>
+                        <p className="text-gray-600">Duration: ~10 seconds</p>
+                        <p className="text-xs text-gray-500 mt-1">━━━ Blue dashed route</p>
+                      </div>
+                    </Popup>
+                  </Polyline>
+                  
+                  {/* Route: Restaurant → Customer (Green solid with glow) */}
+                  {/* Shadow layer */}
+                  <Polyline
+                    positions={[
+                      [restaurantLat, restaurantLng],
+                      [activeDelivery.deliveryLatitude, activeDelivery.deliveryLongitude],
+                    ]}
+                    pathOptions={{
+                      color: '#065f46',
+                      weight: 7,
+                      opacity: 0.2,
                     }}
                   />
-                  
-                  {/* Route: Restaurant → Customer (Green solid) */}
+                  {/* Main route line */}
                   <Polyline
                     positions={[
                       [restaurantLat, restaurantLng],
@@ -258,10 +335,43 @@ const DroneMap: React.FC<DroneMapProps> = ({
                     ]}
                     pathOptions={{
                       color: '#10b981',
-                      weight: 3,
-                      opacity: 0.7,
+                      weight: 4,
+                      opacity: 0.9,
                     }}
-                  />
+                  >
+                    <Popup>
+                      <div className="text-xs">
+                        <p className="font-bold text-green-600">📦 Phase 2: Restaurant → Customer</p>
+                        <p className="text-gray-600">Distance: {calculateDistance(
+                          restaurantLat,
+                          restaurantLng,
+                          activeDelivery.deliveryLatitude,
+                          activeDelivery.deliveryLongitude
+                        ).toFixed(2)} km</p>
+                        <p className="text-gray-600">Duration: ~20 seconds</p>
+                        <p className="text-xs text-gray-500 mt-1">──── Green solid route</p>
+                      </div>
+                    </Popup>
+                  </Polyline>
+
+                  {/* Total Route Distance Circle at Restaurant (Pickup Point) */}
+                  <Circle
+                    center={[restaurantLat, restaurantLng]}
+                    radius={100}
+                    pathOptions={{
+                      color: '#f59e0b',
+                      weight: 2,
+                      fillColor: '#fbbf24',
+                      fillOpacity: 0.2,
+                    }}
+                  >
+                    <Popup>
+                      <div className="text-xs">
+                        <p className="font-bold text-orange-600">🍽️ Pickup Point</p>
+                        <p className="text-gray-600">Drone will pause here for 2 seconds</p>
+                      </div>
+                    </Popup>
+                  </Circle>
 
                   {/* Restaurant Marker */}
                   <Marker
@@ -270,26 +380,34 @@ const DroneMap: React.FC<DroneMapProps> = ({
                       className: 'custom-restaurant-icon',
                       html: `
                         <div style="
-                          background-color: #f59e0b;
-                          width: 28px;
-                          height: 28px;
-                          border-radius: 4px;
-                          border: 2px solid white;
-                          box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                          position: relative;
                           display: flex;
+                          flex-direction: column;
                           align-items: center;
-                          justify-content: center;
                         ">
-                          <span style="font-size: 16px;">🍽️</span>
+                          <div style="
+                            background-color: #f59e0b;
+                            width: 36px;
+                            height: 36px;
+                            border-radius: 50% 50% 50% 0;
+                            border: 3px solid white;
+                            box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            transform: rotate(-45deg);
+                          ">
+                            <span style="font-size: 20px; transform: rotate(45deg);">🍽️</span>
+                          </div>
                         </div>
                       `,
-                      iconSize: [28, 28],
-                      iconAnchor: [14, 14],
+                      iconSize: [36, 45],
+                      iconAnchor: [18, 42],
                     })}
                   >
                     <Popup>
                       <div className="text-sm">
-                        <p className="font-bold">Restaurant</p>
+                        <p className="font-bold">🍽️ Restaurant</p>
                         <p className="text-xs text-gray-600">Pickup Location</p>
                       </div>
                     </Popup>
@@ -334,7 +452,7 @@ const DroneMap: React.FC<DroneMapProps> = ({
 
               <Marker
                 position={[drone.currentLatitude, drone.currentLongitude]}
-                icon={createDroneIcon(drone.status)}
+                icon={createDroneIcon(drone.status, !!activeDelivery)}
                 eventHandlers={{
                   click: () => onDroneClick?.(drone),
                 }}
@@ -436,51 +554,82 @@ const DroneMap: React.FC<DroneMapProps> = ({
         })}
       </MapContainer>
 
-      {/* Map Legend */}
-      <div className="absolute bottom-4 right-4 bg-white rounded-lg shadow-lg p-3 z-[1000]">
-        <h4 className="text-sm font-bold mb-2">Legend</h4>
-        <div className="space-y-1 text-xs">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-green-500" />
-            <span>Available</span>
+      {/* Enhanced Map Legend */}
+      <div className="absolute bottom-4 right-4 bg-white rounded-lg shadow-xl p-4 z-[1000] min-w-[200px] border border-gray-200">
+        <h4 className="text-sm font-bold mb-3 text-gray-800 flex items-center gap-2">
+          <span>🗺️</span> Map Legend
+        </h4>
+        
+        {/* Drone Status */}
+        <div className="mb-3">
+          <p className="text-xs font-semibold text-gray-600 mb-1.5">Drone Status:</p>
+          <div className="space-y-1.5 text-xs">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full bg-green-500 shadow-sm" />
+              <span>Available</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full bg-yellow-500 shadow-sm" />
+              <span>Busy</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full bg-red-500 shadow-sm" />
+              <span>Maintenance</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full bg-gray-500 shadow-sm" />
+              <span>Offline</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-yellow-500" />
-            <span>Busy</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-red-500" />
-            <span>Maintenance</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-gray-500" />
-            <span>Offline</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded bg-blue-500" />
-            <span>Hub</span>
-          </div>
-          {showRoutes && (
-            <>
-              <div className="flex items-center gap-2 mt-2 pt-2 border-t">
-                <div className="flex-1 h-0.5 bg-blue-500" style={{ borderTop: '2px dashed #3b82f6' }} />
-                <span className="text-xs">To Restaurant</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 h-0.5 bg-green-500" />
-                <span className="text-xs">To Customer</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-base">🍽️</span>
-                <span>Restaurant</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-base">📍</span>
-                <span>Customer</span>
-              </div>
-            </>
-          )}
         </div>
+
+        {/* Locations */}
+        <div className="mb-3 pb-3 border-b">
+          <p className="text-xs font-semibold text-gray-600 mb-1.5">Locations:</p>
+          <div className="space-y-1.5 text-xs">
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 rounded bg-blue-500 shadow-sm" />
+              <span>Hub (Base)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-base">🍽️</span>
+              <span>Restaurant</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-base">📍</span>
+              <span>Customer</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Routes (only when active) */}
+        {showRoutes && (
+          <div>
+            <p className="text-xs font-semibold text-gray-600 mb-1.5">Delivery Routes:</p>
+            <div className="space-y-2 text-xs">
+              <div className="flex items-center gap-2">
+                <div className="flex-1 relative">
+                  <div className="h-1 bg-blue-500 rounded" style={{ 
+                    backgroundImage: 'repeating-linear-gradient(90deg, #3b82f6, #3b82f6 8px, transparent 8px, transparent 13px)',
+                    opacity: 0.8
+                  }} />
+                </div>
+                <span className="whitespace-nowrap">Hub → Restaurant</span>
+              </div>
+              <div className="text-[10px] text-gray-500 ml-1 -mt-1">
+                ⏱️ ~10 seconds
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <div className="flex-1 h-1 bg-green-500 rounded" style={{ opacity: 0.9 }} />
+                <span className="whitespace-nowrap">Restaurant → Customer</span>
+              </div>
+              <div className="text-[10px] text-gray-500 ml-1 -mt-1">
+                ⏱️ ~20 seconds
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
