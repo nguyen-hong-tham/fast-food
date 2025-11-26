@@ -284,52 +284,45 @@ export default function AssignDronePage() {
 
       // 1. Update order - assign drone but keep status as 'ready' (will change to 'delivering' when simulation starts)
       // Note: 'assigned' is not in Appwrite enum, so we keep it as 'ready'
+      console.log('📝 Updating order with droneId:', droneId, 'Type:', typeof droneId);
+      
       await databases.updateDocument(
         import.meta.env.VITE_APPWRITE_DATABASE_ID,
         import.meta.env.VITE_APPWRITE_ORDERS_COLLECTION_ID,
         orderId,
         {
-          droneId: droneId,
+          droneId: droneId, // Must be string ID for relationship
           assignedAt: new Date().toISOString(),
-          assignmentType: type,
+          // Removed assignmentType - not in schema
           // status stays 'ready' - simulation will change to 'delivering'
         }
       );
+      
+      console.log('✅ Order updated successfully');
 
       // 2. Update drone - DO NOT change location yet (let simulation handle it)
       // Drone should stay at Hub until simulation actually moves it
+      // ✅ FIX: Check if assignedOrderId is a relationship field
+      // If it's a one-to-one relationship, pass the ID directly (not array)
+      // If it's stored as string attribute, also pass directly
       await databases.updateDocument(
         import.meta.env.VITE_APPWRITE_DATABASE_ID,
         import.meta.env.VITE_APPWRITE_DRONES_COLLECTION_ID,
         droneId,
         {
-          assignedOrderId: orderId,
+          assignedOrderId: orderId, // Pass ID directly for one-to-one relationship
           status: 'busy'
           // ✅ DO NOT set currentLatitude/currentLongitude here
           // Let the simulation update drone location from Hub
         }
       );
 
-      // 3. Create drone event (if collection exists)
-      const droneEventsCollectionId = import.meta.env.VITE_APPWRITE_DRONE_EVENTS_COLLECTION_ID;
-      if (droneEventsCollectionId) {
-        try {
-          await databases.createDocument(
-            import.meta.env.VITE_APPWRITE_DATABASE_ID,
-            droneEventsCollectionId,
-            'unique()',
-            {
-              droneId: droneId,
-              orderId: orderId,
-              eventType: 'assigned',
-              description: `${type === 'auto' ? 'Automatically' : 'Manually'} assigned to order`,
-              $createdAt: new Date().toISOString()
-            }
-          );
-        } catch (eventError) {
-          console.warn('Failed to create drone event (non-critical):', eventError);
-        }
-      }
+      // 3. Drone event creation disabled
+      // The drone_events collection has relationship fields that require document objects,
+      // not string IDs. Event tracking will be handled by the simulation system.
+      // If you need to enable this, update the schema to use string attributes instead of relationships.
+
+      console.log('✅ Drone assignment completed');
 
       // 4. 🚀 Start delivery simulation automatically
       // ❌ DISABLED: Mobile app will handle simulation when user opens tracking

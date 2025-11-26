@@ -81,8 +81,12 @@ export default function OrdersPage() {
         dronesMap.set(drone.$id, drone);
       });
       setDrones(dronesMap);
-    } catch (error) {
-      console.error('Error fetching drones:', error);
+    } catch (error: any) {
+      console.error('Error fetching drones:', error.message);
+      // Don't fail if drones can't be fetched - it's optional
+      if (error.message?.includes('not authorized')) {
+        console.warn('💡 Restaurant role needs Read permission for drones collection');
+      }
     }
   };
 
@@ -161,26 +165,43 @@ export default function OrdersPage() {
         );
         filtered = response.documents;
         console.log('✅ Server-side filtering successful:', filtered.length, 'orders');
-      } catch (queryError) {
-        // If server-side filtering fails (relationship), do client-side filtering
-        console.log('⚠️ Server-side filtering failed, using client-side filtering');
-        const response = await databases.listDocuments(
-          config.appwrite.databaseId,
-          config.appwrite.ordersCollectionId,
-          [
-            Query.orderDesc('$createdAt'),
-            Query.limit(100)
-          ]
-        );
+      } catch (queryError: any) {
+        // If server-side filtering fails (relationship or permission), do client-side filtering
+        console.log('⚠️ Server-side filtering failed:', queryError.message);
         
-        // Filter client-side by restaurantId (handle relationship object)
-        filtered = response.documents.filter((order: any) => {
-          const orderRestaurantId = typeof order.restaurantId === 'object' 
-            ? order.restaurantId.$id 
-            : order.restaurantId;
-          return orderRestaurantId === restaurant.$id;
-        });
-        console.log('Client-side filtered:', filtered.length, 'orders');
+        // Check if it's a permission error
+        if (queryError.message?.includes('not authorized') || queryError.code === 401) {
+          console.error('❌ Permission denied: Restaurant role cannot read orders collection');
+          console.error('💡 Solution: Add "Read" permission for restaurant role in Appwrite Console');
+          setOrders([]);
+          setIsLoading(false);
+          return;
+        }
+        
+        try {
+          const response = await databases.listDocuments(
+            config.appwrite.databaseId,
+            config.appwrite.ordersCollectionId,
+            [
+              Query.orderDesc('$createdAt'),
+              Query.limit(100)
+            ]
+          );
+          
+          // Filter client-side by restaurantId (handle relationship object)
+          filtered = response.documents.filter((order: any) => {
+            const orderRestaurantId = typeof order.restaurantId === 'object' 
+              ? order.restaurantId.$id 
+              : order.restaurantId;
+            return orderRestaurantId === restaurant.$id;
+          });
+          console.log('Client-side filtered:', filtered.length, 'orders');
+        } catch (fallbackError: any) {
+          console.error('❌ Failed to fetch orders:', fallbackError.message);
+          setOrders([]);
+          setIsLoading(false);
+          return;
+        }
       }
       
       // ✅ SMART OPTIMIZATION: Calculate missing totals efficiently

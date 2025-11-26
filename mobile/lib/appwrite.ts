@@ -14,7 +14,7 @@ export const appwriteConfig = {
   
   // Existing collections
   userCollectionId: process.env.EXPO_PUBLIC_APPWRITE_USER_COLLECTION_ID || "user", 
-  categoriesCollectionId: process.env.EXPO_PUBLIC_APPWRITE_CATEGORIES_COLLECTION_ID || "category",
+  categoriesCollectionId: process.env.EXPO_PUBLIC_APPWRITE_CATEGORIES_COLLECTION_ID || "categories",
   menuCollectionId: process.env.EXPO_PUBLIC_APPWRITE_MENU_COLLECTION_ID || "menu",
   ordersCollectionId: process.env.EXPO_PUBLIC_APPWRITE_ORDERS_COLLECTION_ID || "orders",
   
@@ -32,6 +32,15 @@ export const appwriteConfig = {
 };
 
 export const client = new Client();
+
+// Debug: Log configuration to verify environment variables are loaded
+console.log('🔧 Appwrite Config:', {
+  endpoint: appwriteConfig.endpoint,
+  projectId: appwriteConfig.projectId,
+  databaseId: appwriteConfig.databaseId,
+  userCollectionId: appwriteConfig.userCollectionId,
+  categoriesCollectionId: appwriteConfig.categoriesCollectionId,
+});
 
 client
     .setEndpoint(appwriteConfig.endpoint)
@@ -198,8 +207,14 @@ export const signOut = async () => {
 
 export const getCurrentUser = async () => {
     try {
+        console.log('🔍 Getting current user...');
+        console.log('📝 Using userCollectionId:', appwriteConfig.userCollectionId);
+        console.log('📝 Using databaseId:', appwriteConfig.databaseId);
+        
         const currentAccount = await account.get();
         if(!currentAccount) throw new Error('No authenticated user found');
+        
+        console.log('👤 Current account ID:', currentAccount.$id);
 
         const currentUser = await databases.listDocuments(
             appwriteConfig.databaseId,
@@ -211,6 +226,7 @@ export const getCurrentUser = async () => {
             throw new Error('User data not found in database');
         }
 
+        console.log('✅ User found:', currentUser.documents[0]);
         return currentUser.documents[0];
     } catch (e) {
         console.log('getCurrentUser error:', e);
