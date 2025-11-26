@@ -32,6 +32,10 @@ const CheckoutScreen = () => {
   
   const [deliveryAddress, setDeliveryAddress] = useState(user?.address_home || '');
   const [deliveryAddressLabel, setDeliveryAddressLabel] = useState(user?.address_home_label || 'Home');
+  const [deliveryCoords, setDeliveryCoords] = useState<{lat?: number, lng?: number}>({
+    lat: selectedLatitude ? parseFloat(selectedLatitude) : user?.latitude,
+    lng: selectedLongitude ? parseFloat(selectedLongitude) : user?.longitude,
+  });
   const [phone, setPhone] = useState(user?.phone || '');
   const [notes, setNotes] = useState('');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'vnpay' | 'cod'>('vnpay');
@@ -39,12 +43,31 @@ const CheckoutScreen = () => {
   const [restaurant, setRestaurant] = useState<any>(null);
   const [showItems, setShowItems] = useState(false);
 
-  // Update address from location picker
+  // Update address and coords from location picker or user profile changes
   useEffect(() => {
     if (selectedAddress) {
       setDeliveryAddress(selectedAddress);
     }
-  }, [selectedAddress]);
+    if (selectedLatitude && selectedLongitude) {
+      setDeliveryCoords({
+        lat: parseFloat(selectedLatitude),
+        lng: parseFloat(selectedLongitude),
+      });
+    }
+  }, [selectedAddress, selectedLatitude, selectedLongitude]);
+  
+  // Update coords when user profile changes (after location picker saves)
+  useEffect(() => {
+    if (user?.latitude && user?.longitude) {
+      setDeliveryCoords(prev => ({
+        lat: prev.lat || user.latitude,
+        lng: prev.lng || user.longitude,
+      }));
+      if (!deliveryAddress && user?.address_home) {
+        setDeliveryAddress(user.address_home);
+      }
+    }
+  }, [user?.latitude, user?.longitude, user?.address_home]);
 
   const subtotal = parseFloat(totalAmount || '0');
   
@@ -110,6 +133,8 @@ const CheckoutScreen = () => {
         : new Date(Date.now() + 30 * 60 * 1000).toISOString(); // fallback: 30 phút
 
       // Create order with "pending" payment status
+      console.log('📍 Delivery coords for order:', deliveryCoords.lat, deliveryCoords.lng);
+      
       const orderData = {
         userId: user.$id,
         restaurantId,
@@ -125,6 +150,9 @@ const CheckoutScreen = () => {
         total,
         deliveryAddress: deliveryAddress.trim(),
         deliveryAddressLabel: deliveryAddressLabel.trim(),
+        // Add delivery coordinates for drone tracking
+        deliveryLatitude: deliveryCoords.lat,
+        deliveryLongitude: deliveryCoords.lng,
         phone: phone.trim(),
         notes: notes.trim(),
         paymentMethod: selectedPaymentMethod,

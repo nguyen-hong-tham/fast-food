@@ -304,6 +304,16 @@ export interface Notification extends Models.Document {
   readAt?: string;
 }
 
+// ===================== DRONE HUB =====================
+
+export interface DroneHub extends Models.Document {
+  name: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  drones?: Drone[] | string[]; // Relationship - can be array of IDs or objects
+}
+
 // ===================== DRONE =====================
 
 export interface Drone extends Models.Document {
@@ -322,6 +332,9 @@ export interface Drone extends Models.Document {
   maxRange: number; // km
   totalDistance: number; // km
   isActive: boolean;
+  homeLatitude?: number; // Home position (from hub)
+  homeLongitude?: number;
+  droneHub?: DroneHub | string; // Relationship - can be ID or object
   lastMaintenanceAt?: string;
   nextMaintenanceAt?: string;
   createdAt: string;

@@ -66,16 +66,37 @@ export const simulateDroneFlight = async ({
 }: SimulationOptions) => {
   const drone = await ensureDrone(orderId, droneId);
   
+  console.log('🚁 Drone simulation starting with drone data:', {
+    id: drone.$id,
+    name: drone.name,
+    homeLatitude: drone.homeLatitude,
+    homeLongitude: drone.homeLongitude,
+    currentLatitude: drone.currentLatitude,
+    currentLongitude: drone.currentLongitude,
+    droneHub: drone.droneHub
+  });
+  
   // Get drone's hub location as starting point
+  // Priority: 1. droneHub object, 2. homeLatitude/Longitude, 3. currentPosition, 4. fallback
   let droneStartCoords: Coordinate;
+  let hubName = 'Unknown';
   
   if (drone.droneHub && typeof drone.droneHub === 'object' && 'latitude' in drone.droneHub) {
     // Drone hub is populated with full object
+    const hub = drone.droneHub as any;
     droneStartCoords = {
-      latitude: (drone.droneHub as any).latitude,
-      longitude: (drone.droneHub as any).longitude,
+      latitude: hub.latitude,
+      longitude: hub.longitude,
     };
-    console.log('🏠 Drone starting from hub:', droneStartCoords);
+    hubName = hub.name || 'Drone Hub';
+    console.log(`🏠 Drone starting from hub "${hubName}":`, droneStartCoords);
+  } else if (drone.homeLatitude && drone.homeLongitude) {
+    // Use drone's home position
+    droneStartCoords = {
+      latitude: drone.homeLatitude,
+      longitude: drone.homeLongitude,
+    };
+    console.log('🏠 Drone starting from home position:', droneStartCoords);
   } else if (drone.currentLatitude && drone.currentLongitude) {
     // Use drone's current position
     droneStartCoords = {
@@ -84,12 +105,12 @@ export const simulateDroneFlight = async ({
     };
     console.log('📍 Drone starting from current position:', droneStartCoords);
   } else {
-    // Fallback: start near restaurant
+    // Fallback: start near restaurant (offset to show drone hub marker)
     droneStartCoords = {
-      latitude: restaurantCoords.latitude + 0.005,
-      longitude: restaurantCoords.longitude + 0.005,
+      latitude: restaurantCoords.latitude + 0.008, // ~800m offset
+      longitude: restaurantCoords.longitude - 0.008,
     };
-    console.log('⚠️ Using fallback start position near restaurant');
+    console.log('⚠️ No hub/home/current position found. Using fallback position:', droneStartCoords);
   }
   
   // ========================================

@@ -25,6 +25,7 @@ export const appwriteConfig = {
   reviewsCollectionId: "reviews", // NEW: Reviews collection
   notificationsCollectionId: "notifications",
   dronesCollectionId: "drones",
+  droneHubsCollectionId: "drone_hub", // Drone hubs collection
   droneEventsCollectionId: "drone_events",
   promotionsCollectionId: "promotions",
   userVouchersCollectionId: "user_vouchers",
@@ -396,6 +397,8 @@ export const createOrderWithPayment = async (orderData: {
     total: number;
     deliveryAddress: string;
     deliveryAddressLabel?: string;
+    deliveryLatitude?: number;
+    deliveryLongitude?: number;
     phone: string;
     notes?: string;
     paymentMethod: 'cod' | 'vnpay';
@@ -445,6 +448,14 @@ export const createOrderWithPayment = async (orderData: {
         if (orderData.notes) {
             orderPayload.notes = orderData.notes;
         }
+        
+        // TODO: Uncomment khi đã thêm deliveryLatitude, deliveryLongitude vào Appwrite database schema
+        // Add delivery coordinates for drone tracking (if available)
+        // if (orderData.deliveryLatitude && orderData.deliveryLongitude) {
+        //     orderPayload.deliveryLatitude = orderData.deliveryLatitude;
+        //     orderPayload.deliveryLongitude = orderData.deliveryLongitude;
+        //     console.log('📍 Order delivery coords:', orderData.deliveryLatitude, orderData.deliveryLongitude);
+        // }
         
         // Thêm các enum fields - đảm bảo giá trị chính xác
         // Validate paymentMethod trước khi gửi
@@ -748,6 +759,66 @@ export const subscribeToDroneEvents = (orderId: string, callback: (event: DroneE
                 console.warn('⚠️ Drone subscription already closed (expected during cleanup)');
             } else {
                 console.error('❌ Error unsubscribing from drone events:', error);
+            }
+        }
+    };
+};
+
+// Subscribe to drone position updates (realtime)
+export const subscribeToDronePosition = (droneId: string, callback: (position: { latitude: number; longitude: number; batteryLevel?: number }) => void) => {
+    const channel = `databases.${appwriteConfig.databaseId}.collections.${appwriteConfig.dronesCollectionId}.documents.${droneId}`;
+
+    let unsubscribe: (() => void) | null = null;
+    let isSubscribed = false;
+
+    try {
+        console.log('🔔 Subscribing to drone position for drone:', droneId);
+        unsubscribe = client.subscribe(channel, event => {
+            try {
+                if (!isSubscribed) {
+                    console.log('✅ Drone position subscription established');
+                    isSubscribed = true;
+                }
+                
+                const payload = event?.payload as any;
+                if (!payload) {
+                    console.warn('⚠️ Received empty payload from drone position subscription');
+                    return;
+                }
+
+                // Check if position changed
+                if (typeof payload.currentLatitude === 'number' && typeof payload.currentLongitude === 'number') {
+                    console.log('📍 Drone position update:', payload.currentLatitude.toFixed(6), payload.currentLongitude.toFixed(6));
+                    callback({
+                        latitude: payload.currentLatitude,
+                        longitude: payload.currentLongitude,
+                        batteryLevel: payload.batteryLevel,
+                    });
+                }
+            } catch (error) {
+                console.error('❌ Error in subscribeToDronePosition callback:', error);
+            }
+        });
+        
+        console.log('📡 Drone position subscription channel active:', channel);
+    } catch (error) {
+        console.error('❌ Error subscribing to drone position:', error);
+        return () => {};
+    }
+
+    return () => {
+        try {
+            if (unsubscribe) {
+                console.log('🔕 Unsubscribing from drone position');
+                isSubscribed = false;
+                unsubscribe();
+                unsubscribe = null;
+            }
+        } catch (error) {
+            if (error instanceof Error && error.message.includes('INVALID_STATE')) {
+                console.warn('⚠️ Drone position subscription already closed');
+            } else {
+                console.error('❌ Error unsubscribing from drone position:', error);
             }
         }
     };
