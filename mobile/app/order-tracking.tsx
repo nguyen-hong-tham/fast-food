@@ -761,24 +761,26 @@ const OrderTrackingScreen = () => {
           progress = 0;
           setPhaseProgress(0);
           console.log('📦 Drone arrived at restaurant, starting delivery to customer...');
-          // Note: No status update here - 'picked_up' is not in Appwrite enum
-          // Status stays as 'delivering'
         } else if (currentPhase === 'to_customer') {
           // Delivery complete
           setSimulationState('completed');
           animationActive = false;
           clearInterval(animationInterval);
           
-          // 🎉 Update order status to DELIVERED
+          // 🎉 Mark as delivered - update LOCAL state immediately
+          // Note: Mobile users don't have permission to update order status in database
+          // The actual database status update is handled by admin simulation
+          console.log('🎉 Delivery complete! Updating local state to delivered...');
+          setOrder(prev => prev ? { ...prev, status: 'delivered' } : null);
+          
+          // Silently try to update database (will likely fail due to permissions - that's OK)
           if (order?.$id) {
-            console.log('🎉 Updating order status to delivered...');
             updateOrderStatus(order.$id, 'delivered')
-              .then(() => {
-                console.log('✅ Order marked as delivered!');
-                // Update local state
-                setOrder(prev => prev ? { ...prev, status: 'delivered' } : null);
-              })
-              .catch(err => console.error('Failed to update status to delivered:', err));
+              .then(() => console.log('✅ Database also updated to delivered!'))
+              .catch(() => {
+                // Silently ignore permission errors - local state is already updated
+                // Admin simulation or restaurant portal will update database later
+              });
           }
         }
       }
