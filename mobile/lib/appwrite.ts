@@ -607,23 +607,77 @@ export const getAllOrders = async (limit: number = 100) => {
 }
 
 /**
- * Update order status (admin only)
+ * Update order status only - handles Appwrite relationship validation issues
+ * droneId is a "Many to one" relationship in orders collection
  */
 export const updateOrderStatus = async (orderId: string, status: string) => {
     try {
+        console.log('📝 Updating order status:', orderId, '→', status);
+        
+        // Validate status is in allowed enum
+        const allowedStatuses = ['pending', 'confirmed', 'preparing', 'ready', 'delivering', 'delivered', 'cancelled'];
+        if (!allowedStatuses.includes(status)) {
+            throw new Error(`Invalid status: ${status}. Must be one of: ${allowedStatuses.join(', ')}`);
+        }
+        
+        // First get the order to check relationship format
+        const currentOrder = await databases.getDocument(
+            appwriteConfig.databaseId,
+            appwriteConfig.ordersCollectionId,
+            orderId
+        );
+        
+        // Debug: log the droneId structure
+        console.log('📋 Order droneId raw:', JSON.stringify(currentOrder.droneId));
+        
+        // Build update payload
+        const updatePayload: Record<string, any> = {
+            status: status
+        };
+        
+        // Handle droneId relationship properly
+        // If droneId exists, we need to include it in correct format
+        if (currentOrder.droneId) {
+            let droneIdValue: string | null = null;
+            
+            if (typeof currentOrder.droneId === 'string') {
+                // Already a string ID
+                droneIdValue = currentOrder.droneId;
+            } else if (typeof currentOrder.droneId === 'object') {
+                if (Array.isArray(currentOrder.droneId)) {
+                    // It's an array - take first element's $id
+                    if (currentOrder.droneId.length > 0) {
+                        const first = currentOrder.droneId[0];
+                        droneIdValue = typeof first === 'string' ? first : first?.$id;
+                    }
+                } else if (currentOrder.droneId.$id) {
+                    // It's a document object
+                    droneIdValue = currentOrder.droneId.$id;
+                }
+            }
+            
+            console.log('📋 Extracted droneId:', droneIdValue);
+            
+            // For "Many to one" relationship, pass the ID directly (not array)
+            if (droneIdValue) {
+                updatePayload.droneId = droneIdValue;
+            }
+        }
+        
+        console.log('📝 Update payload:', JSON.stringify(updatePayload));
+        
         const updatedOrder = await databases.updateDocument(
             appwriteConfig.databaseId,
             appwriteConfig.ordersCollectionId,
             orderId,
-            {
-                status,
-                updatedAt: new Date().toISOString()
-            }
+            updatePayload
         );
 
+        console.log('✅ Order status updated successfully to:', status);
         return updatedOrder;
-    } catch (e) {
-        throw new Error(e as string);
+    } catch (e: any) {
+        console.error('❌ Failed to update order status:', e.message || e);
+        throw new Error(e.message || String(e));
     }
 }
 
