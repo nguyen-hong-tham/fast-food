@@ -61,14 +61,12 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
     if (location) {
       onSelectLocation(location);
       
-      // Navigate back after location is saved
+      // Navigate back with coords params
       setTimeout(() => {
-        if (router.canGoBack()) {
-          router.back();
-        } else {
-          router.replace('/(tabs)' as any);
-        }
-      }, 500); // Wait 500ms for save to complete
+        router.back();
+        // After going back, the parent screen should read from user profile
+        // which was updated in onSelectLocation
+      }, 300);
     }
   }, [selectSuggestion, onSelectLocation]);
 
@@ -80,12 +78,8 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
       
       // Navigate back after location is saved
       setTimeout(() => {
-        if (router.canGoBack()) {
-          router.back();
-        } else {
-          router.replace('/(tabs)' as any);
-        }
-      }, 500);
+        router.back();
+      }, 300);
     }
   }, [getCurrentLocation, onSelectLocation, setQuery]);
 

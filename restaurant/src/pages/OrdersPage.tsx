@@ -31,7 +31,7 @@ interface Drone {
 }
 
 export default function OrdersPage() {
-  const { restaurant } = useAuthStore();
+  const { restaurant, isLoading: authLoading } = useAuthStore();
   const [orders, setOrders] = useState<Order[]>([]);
   const [drones, setDrones] = useState<Map<string, Drone>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
@@ -54,18 +54,97 @@ export default function OrdersPage() {
     isNewOrder(order) && order.status === 'pending'
   ).length;
 
+  // ✅ Wait for auth to finish loading, then fetch orders
   useEffect(() => {
-    if (restaurant?.$id) {
-      fetchOrders();
-      fetchDrones();
-      subscribeToOrders();
-      subscribeToDrones();
+    if (authLoading) {
+      console.log('⏳ Waiting for auth to complete...');
+      return;
     }
+    
+    if (!restaurant?.$id) {
+      console.log('⚠️ No restaurant found after auth loaded');
+      setIsLoading(false);
+      return;
+    }
+
+    console.log('✅ Auth loaded, fetching orders for restaurant:', restaurant.$id);
+    fetchOrders();
+    fetchDrones();
+  }, [authLoading, restaurant?.$id]);
+
+  // Realtime subscriptions - only after auth is ready
+  useEffect(() => {
+    // Don't subscribe until auth is complete
+    if (authLoading || !restaurant?.$id) return;
+
+    let unsubscribeOrders: (() => void) | null = null;
+    let unsubscribeDrones: (() => void) | null = null;
+    
+    // Subscribe to orders
+    const ordersChannel = `databases.${config.appwrite.databaseId}.collections.${config.appwrite.ordersCollectionId}.documents`;
+    console.log('🔔 Subscribing to orders channel:', ordersChannel);
+    
+    unsubscribeOrders = client.subscribe(ordersChannel, (response) => {
+      const payload = response.payload as any;
+      console.log('📨 Realtime order update received:', {
+        orderId: payload.$id,
+        status: payload.status,
+        droneId: payload.droneId,
+        restaurantId: payload.restaurantId
+      });
+      
+      // Update order in list
+      setOrders(prev => {
+        const index = prev.findIndex(o => o.$id === payload.$id);
+        
+        // If order exists in our list, update it
+        if (index >= 0) {
+          console.log('✅ Updating existing order:', payload.$id, 'Status:', payload.status);
+          const newOrders = [...prev];
+          // Preserve totalAmount if payload doesn't have it
+          newOrders[index] = {
+            ...payload,
+            totalAmount: payload.totalAmount || prev[index].totalAmount
+          };
+          return newOrders;
+        }
+        
+        // If order doesn't exist, check if it belongs to this restaurant
+        const payloadRestaurantId = typeof payload.restaurantId === 'string'
+          ? payload.restaurantId
+          : payload.restaurantId?.$id;
+        
+        if (payloadRestaurantId === restaurant?.$id) {
+          console.log('➕ Adding new order:', payload.$id);
+          return [payload, ...prev];
+        }
+        
+        return prev;
+      });
+    });
+    
+    // Subscribe to drones
+    const dronesChannel = `databases.${config.appwrite.databaseId}.collections.${config.appwrite.dronesCollectionId}.documents`;
+    console.log('🔔 Subscribing to drones channel:', dronesChannel);
+    
+    unsubscribeDrones = client.subscribe(dronesChannel, (response) => {
+      const payload = response.payload as any;
+      console.log('🚁 Drone update:', payload.$id, payload.status);
+      
+      setDrones(prev => {
+        const newMap = new Map(prev);
+        newMap.set(payload.$id, payload);
+        return newMap;
+      });
+    });
 
     return () => {
       // Cleanup subscriptions
+      console.log('🧹 Cleaning up subscriptions');
+      if (unsubscribeOrders) unsubscribeOrders();
+      if (unsubscribeDrones) unsubscribeDrones();
     };
-  }, [restaurant]);
+  }, [authLoading, restaurant?.$id]);
 
   // Fetch drones for active orders
   const fetchDrones = async () => {
@@ -90,52 +169,18 @@ export default function OrdersPage() {
     }
   };
 
-  // Subscribe to order updates
-  const subscribeToOrders = () => {
-    const channel = `databases.${config.appwrite.databaseId}.collections.${config.appwrite.ordersCollectionId}.documents`;
-    
-    client.subscribe(channel, (response) => {
-      const payload = response.payload as any;
-      
-      // Update order in list if it belongs to this restaurant
-      const restaurantId = typeof payload.restaurantId === 'string'
-        ? payload.restaurantId
-        : payload.restaurantId?.$id;
-        
-      if (restaurantId === restaurant?.$id) {
-        setOrders(prev => {
-          const index = prev.findIndex(o => o.$id === payload.$id);
-          if (index >= 0) {
-            const newOrders = [...prev];
-            newOrders[index] = payload;
-            return newOrders;
-          }
-          return prev;
-        });
-      }
-    });
-  };
-
-  // Subscribe to drone updates
-  const subscribeToDrones = () => {
-    const channel = `databases.${config.appwrite.databaseId}.collections.${config.appwrite.dronesCollectionId}.documents`;
-    
-    client.subscribe(channel, (response) => {
-      const payload = response.payload as any;
-      
-      setDrones(prev => {
-        const newMap = new Map(prev);
-        newMap.set(payload.$id, payload);
-        return newMap;
-      });
-    });
-  };
-
+  // Auto-refresh orders every 10 seconds as fallback for realtime
   useEffect(() => {
-    if (restaurant?.$id) {
+    if (authLoading || !restaurant?.$id) return;
+    
+    const interval = setInterval(() => {
+      console.log('🔄 Auto-refreshing orders...');
       fetchOrders();
-    }
-  }, [restaurant]);
+      fetchDrones();
+    }, 10000); // Refresh every 10 seconds
+    
+    return () => clearInterval(interval);
+  }, [authLoading, restaurant?.$id]);
 
   const fetchOrders = async () => {
     if (!restaurant?.$id) {

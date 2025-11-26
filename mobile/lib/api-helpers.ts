@@ -437,7 +437,38 @@ export const getDroneById = async (droneId: string): Promise<Drone> => {
         droneId
     );
     
-    return response as unknown as Drone;
+    const drone = response as unknown as Drone;
+    
+    // If droneHub is a string (relationship ID), try to fetch the full hub data
+    // But don't fail if hub doesn't exist - just use homeLatitude/homeLongitude instead
+    if (drone.droneHub && typeof drone.droneHub === 'string') {
+        try {
+            const hubData = await databases.getDocument(
+                databaseId,
+                appwriteConfig.droneHubsCollectionId,
+                drone.droneHub as string
+            );
+            drone.droneHub = hubData as any;
+            console.log('🏠 Fetched drone hub:', hubData.name, hubData.latitude, hubData.longitude);
+        } catch (error) {
+            // Hub not found - this is OK, we'll use homeLatitude/homeLongitude
+            console.log('ℹ️ Drone hub not found, using home position instead');
+            drone.droneHub = undefined; // Clear invalid hub reference
+        }
+    }
+    
+    // Log drone info for debugging
+    console.log('🚁 Drone info:', {
+        id: drone.$id,
+        name: drone.name,
+        currentLat: drone.currentLatitude,
+        currentLng: drone.currentLongitude,
+        homeLat: drone.homeLatitude,
+        homeLng: drone.homeLongitude,
+        droneHub: typeof drone.droneHub === 'object' ? drone.droneHub?.name : drone.droneHub
+    });
+    
+    return drone;
 };
 
 export const assignDroneToOrder = async (droneId: string, orderId: string): Promise<Drone> => {

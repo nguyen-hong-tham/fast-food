@@ -26,6 +26,8 @@ interface Drone {
   batteryLevel: number;
   currentLatitude?: number;
   currentLongitude?: number;
+  homeLatitude?: number;
+  homeLongitude?: number;
   maxPayload: number;
   currentPayload: number;
   maxRange: number;
@@ -118,20 +120,44 @@ export default function AssignDronePage() {
   const fetchReadyOrders = async () => {
     try {
       setError(null);
+      console.log('🔍 Fetching ready orders...');
+      
       const response = await databases.listDocuments(
         import.meta.env.VITE_APPWRITE_DATABASE_ID,
         import.meta.env.VITE_APPWRITE_ORDERS_COLLECTION_ID,
         [
           Query.equal('status', 'ready'),
-          Query.isNull('droneId'),
           Query.orderDesc('$createdAt'),
-          Query.limit(20)
+          Query.limit(50)
         ]
       );
       
-      setReadyOrders(response.documents as any);
+      console.log('📦 All ready orders from DB:', response.documents.length);
+      
+      // Filter out orders that already have a drone assigned (client-side)
+      // Handle droneId as string, object (relationship), or null/undefined
+      const ordersWithoutDrone = response.documents.filter((order: any) => {
+        let hasDrone = false;
+        
+        if (order.droneId) {
+          // If droneId is an object (relationship), check for $id
+          if (typeof order.droneId === 'object' && order.droneId.$id) {
+            hasDrone = true;
+          }
+          // If droneId is a string, check if it's not empty
+          else if (typeof order.droneId === 'string' && order.droneId.trim() !== '') {
+            hasDrone = true;
+          }
+        }
+        
+        console.log(`Order ${order.$id}: droneId=`, order.droneId, `hasDrone=${hasDrone}`);
+        return !hasDrone;
+      });
+      
+      console.log('✅ Orders ready for drone assignment:', ordersWithoutDrone.length);
+      setReadyOrders(ordersWithoutDrone as any);
     } catch (error: any) {
-      console.error('Error fetching ready orders:', error);
+      console.error('❌ Error fetching ready orders:', error);
       setError(`Failed to fetch orders: ${error.message || 'Unknown error'}`);
     } finally {
       setIsLoading(false);
@@ -275,6 +301,12 @@ export default function AssignDronePage() {
         throw new Error('Order not found');
       }
 
+      // Get drone details for hub location
+      const drone = availableDrones.find(d => d.$id === droneId);
+      if (!drone) {
+        throw new Error('Drone not found');
+      }
+
       const restaurantLat = typeof order.restaurantId === 'object' 
         ? order.restaurantId.latitude 
         : 10.762622;
@@ -282,70 +314,79 @@ export default function AssignDronePage() {
         ? order.restaurantId.longitude
         : 106.660172;
 
-      // 1. Update order - assign drone but keep status as 'ready' (will change to 'delivering' when simulation starts)
-      // Note: 'assigned' is not in Appwrite enum, so we keep it as 'ready'
-      console.log('📝 Updating order with droneId:', droneId, 'Type:', typeof droneId);
-      
-      await databases.updateDocument(
-        import.meta.env.VITE_APPWRITE_DATABASE_ID,
-        import.meta.env.VITE_APPWRITE_ORDERS_COLLECTION_ID,
-        orderId,
-        {
-          droneId: droneId, // Must be string ID for relationship
-          assignedAt: new Date().toISOString(),
-          // Removed assignmentType - not in schema
-          // status stays 'ready' - simulation will change to 'delivering'
-        }
-      );
-      
-      console.log('✅ Order updated successfully');
+      // Get hub location - use drone's home position, or current position, or default
+      const hubLat = drone.homeLatitude || drone.currentLatitude || 10.762622;
+      const hubLng = drone.homeLongitude || drone.currentLongitude || 106.660172;
+      console.log('📍 Drone hub location:', hubLat, hubLng);
 
-      // 2. Update drone - DO NOT change location yet (let simulation handle it)
-      // Drone should stay at Hub until simulation actually moves it
-      // ✅ FIX: Check if assignedOrderId is a relationship field
-      // If it's a one-to-one relationship, pass the ID directly (not array)
-      // If it's stored as string attribute, also pass directly
-      await databases.updateDocument(
-        import.meta.env.VITE_APPWRITE_DATABASE_ID,
-        import.meta.env.VITE_APPWRITE_DRONES_COLLECTION_ID,
-        droneId,
-        {
-          assignedOrderId: orderId, // Pass ID directly for one-to-one relationship
-          status: 'busy'
-          // ✅ DO NOT set currentLatitude/currentLongitude here
-          // Let the simulation update drone location from Hub
-        }
-      );
+      // 1. Update order - assign drone AND change status to 'delivering'
+      console.log('📝 Updating order with droneId:', droneId, typeof droneId);
+      try {
+        await databases.updateDocument(
+          import.meta.env.VITE_APPWRITE_DATABASE_ID,
+          import.meta.env.VITE_APPWRITE_ORDERS_COLLECTION_ID,
+          orderId,
+          {
+            droneId: droneId, // Just the ID string for relationship
+            status: 'delivering', // ✅ Change status so order leaves "ready" list
+            assignedAt: new Date().toISOString(),
+          }
+        );
+        console.log('✅ Order updated successfully - status changed to delivering');
+      } catch (orderError: any) {
+        console.error('❌ Failed to update order:', orderError.message);
+        throw orderError;
+      }
 
-      // 3. Drone event creation disabled
-      // The drone_events collection has relationship fields that require document objects,
-      // not string IDs. Event tracking will be handled by the simulation system.
-      // If you need to enable this, update the schema to use string attributes instead of relationships.
+      // 2. Update drone status only (skip assignedOrderId to avoid relationship issues)
+      console.log('📝 Updating drone status...');
+      try {
+        await databases.updateDocument(
+          import.meta.env.VITE_APPWRITE_DATABASE_ID,
+          import.meta.env.VITE_APPWRITE_DRONES_COLLECTION_ID,
+          droneId,
+          {
+            status: 'busy'
+            // Removed assignedOrderId and location - may cause relationship errors
+          }
+        );
+        console.log('✅ Drone updated successfully');
+      } catch (droneError: any) {
+        console.error('❌ Failed to update drone:', droneError.message);
+        // Don't throw - order already updated, continue with simulation
+      }
 
-      console.log('✅ Drone assignment completed');
+      // 3. Create drone event - DISABLED due to relationship issues
+      // TODO: Fix drone events collection schema or remove relationship constraints
 
       // 4. 🚀 Start delivery simulation automatically
-      // ❌ DISABLED: Mobile app will handle simulation when user opens tracking
-      // This prevents duplicate simulations from multiple admin clients
-      /*
+      const customerLat = order.deliveryLatitude || 10.75;
+      const customerLng = order.deliveryLongitude || 106.65;
+      
       console.log('🚀 Starting delivery simulation...');
-      startDeliverySimulation(
-        orderId,
-        droneId,
-        restaurantLat,
-        restaurantLng,
-        order.deliveryLatitude,
-        order.deliveryLongitude,
-        10.762622, // Default hub lat
-        106.660172, // Default hub lng
-        (simulation) => {
-          console.log(`📍 Drone ${simulation.phase} - Progress: ${simulation.progress.toFixed(0)}%`);
-        },
-        () => {
-          console.log('✅ Delivery completed!');
-        }
-      );
-      */
+      console.log(`📍 Route: Hub(${hubLat.toFixed(4)}, ${hubLng.toFixed(4)}) → Restaurant(${restaurantLat.toFixed(4)}, ${restaurantLng.toFixed(4)}) → Customer(${customerLat.toFixed(4)}, ${customerLng.toFixed(4)})`);
+      
+      try {
+        startDeliverySimulation(
+          orderId,
+          droneId,
+          restaurantLat,
+          restaurantLng,
+          customerLat,
+          customerLng,
+          hubLat,
+          hubLng,
+          (simulation) => {
+            console.log(`📍 Drone ${simulation.phase} - Progress: ${simulation.progress.toFixed(0)}%`);
+          },
+          () => {
+            console.log('✅ Delivery completed!');
+          }
+        );
+        console.log('✅ Simulation started successfully');
+      } catch (simError) {
+        console.error('❌ Error starting simulation:', simError);
+      }
 
       alert(`✅ Drone ${type === 'manual' ? 'manually' : 'automatically'} assigned successfully!\n\n🚁 Simulation will start when customer opens tracking.\nYou can monitor drone on the Drones page.`);
       
