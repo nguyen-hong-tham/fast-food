@@ -14,14 +14,8 @@ interface LatLng {
   longitude: number;
 }
 import StatusTimeline from '@/components/tracking/StatusTimeline';
-<<<<<<< HEAD
-import { getOrderById, getOrderItems, subscribeToDroneEvents, subscribeToOrder } from '@/lib/appwrite';
-import { getRestaurantById } from '@/lib/api-helpers';
-import { simulateDroneFlight, DEFAULT_HUB_LOCATION } from '@/lib/drone-simulator';
-=======
 import { getOrderById, getOrderItems, subscribeToDroneEvents, subscribeToDronePosition, subscribeToOrder, updateOrderStatus } from '@/lib/appwrite';
 import { getDroneById, getRestaurantById } from '@/lib/api-helpers';
->>>>>>> 9058acf3dafd0cffc4f244a29aad512c2d6200a5
 import { useDeliveryCalculation } from '@/hooks/useDeliveryCalculation';
 import { icons } from '@/constants';
 import { Drone, DroneHub, Order, OrderItem, Restaurant } from '@/type';
@@ -31,11 +25,6 @@ const DEFAULT_COORDINATE: LatLng = {
   longitude: 106.660172,
 };
 
-<<<<<<< HEAD
-const SIMULATION_DURATION = 25000; // 25 seconds: 10s (hub→restaurant) + 2s (loading) + 15s (restaurant→customer)
-
-=======
->>>>>>> 9058acf3dafd0cffc4f244a29aad512c2d6200a5
 const parseOrderItems = (rawItems: Order['items']): OrderItem[] => {
   // Items are now stored in separate orderItems collection
   // This function is kept for backwards compatibility with old orders
@@ -74,7 +63,6 @@ const OrderTrackingScreen = () => {
 
   const [restaurantCoords, setRestaurantCoords] = useState<LatLng | null>(null);
   const [customerCoords, setCustomerCoords] = useState<LatLng | null>(null);
-  const [hubCoords] = useState<LatLng>(DEFAULT_HUB_LOCATION); // Hub location is fixed
   const [droneCoords, setDroneCoords] = useState<LatLng | null>(null);
   const [droneHubCoords, setDroneHubCoords] = useState<LatLng | null>(null); // Drone hub location
   const [dronePath, setDronePath] = useState<LatLng[]>([]);
@@ -217,19 +205,12 @@ const OrderTrackingScreen = () => {
         
         setRealtimeConnected(true); // Mark realtime as working
         
-<<<<<<< HEAD
-        // If droneId is in update, we're good - no need to refetch
-        // If droneId is missing but status suggests it should have one, refetch
-        const statusesRequiringDrone = ['ready', 'delivering', 'delivered'];
-        if (statusesRequiringDrone.includes(updated.status) && !updated.droneId) {
-=======
         // Always refetch order if droneId is missing in realtime update
         // This catches when Admin assigns drone (ready status) AND when delivering
         const shouldRefetch = !updated.droneId && 
           (updated.status === 'ready' || updated.status === 'delivering' || updated.status === 'picked_up');
         
         if (shouldRefetch) {
->>>>>>> 9058acf3dafd0cffc4f244a29aad512c2d6200a5
           console.log(`Status is ${updated.status} but no droneId in realtime update. Refetching order...`);
           try {
             const fullOrder = await getOrderById(trackingOrderId);
@@ -305,13 +286,6 @@ const OrderTrackingScreen = () => {
         setOrder((prev) => {
           const merged = { ...(prev || {}), ...updated } as Order;
           console.log('Merged order droneId:', merged.droneId);
-          
-          // Reset simulation state when droneId changes to allow re-trigger
-          if (merged.droneId && prev?.droneId !== merged.droneId) {
-            console.log('🔄 DroneId changed, resetting simulation state to allow trigger');
-            setSimulationState('idle');
-          }
-          
           return merged;
         });
       } catch (error) {
@@ -338,19 +312,8 @@ const OrderTrackingScreen = () => {
       if (!isSubscribed) return;
       
       try {
-<<<<<<< HEAD
-        console.log('Drone event received:', event.eventType, event.latitude, event.longitude);
-        
-        if (event.latitude && event.longitude) {
-          const coordinate = { latitude: event.latitude, longitude: event.longitude };
-          setDroneCoords(coordinate);
-          setDronePath((prev) => [...prev, coordinate]);
-          setHasRealtimeProgress(true);
-        }
-=======
         // Note: Position updates are handled by subscribeToDronePosition
         // This subscription is only for drone events like landing
->>>>>>> 9058acf3dafd0cffc4f244a29aad512c2d6200a5
 
         if (event.eventType === 'landing') {
           setCountdownActive(false);
@@ -373,144 +336,6 @@ const OrderTrackingScreen = () => {
 
   // Subscribe to drone position updates (realtime from drone document)
   useEffect(() => {
-<<<<<<< HEAD
-    if (!order) {
-      console.log('No order yet');
-      return;
-    }
-    if (!restaurantCoords || !customerCoords) {
-      console.log('Missing coordinates - restaurant:', !!restaurantCoords, 'customer:', !!customerCoords);
-      return;
-    }
-    if (order.status === 'delivered' || order.status === 'cancelled') {
-      console.log('Order already completed:', order.status);
-      return;
-    }
-    if (simulationState !== 'idle') {
-      console.log('Simulation already running or completed:', simulationState);
-      return;
-    }
-    // Remove hasRealtimeProgress check - let simulation run anyway to create events
-    
-    console.log('=== SIMULATION TRIGGER CHECK ===');
-    console.log('Order status:', order.status);
-    console.log('DroneId:', order.droneId);
-    console.log('Simulation state:', simulationState);
-    console.log('Restaurant coords:', restaurantCoords);
-    console.log('Customer coords:', customerCoords);
-    
-    // Trigger simulation when order has drone assigned
-    // Status will be 'ready' (after admin assigns) or 'delivering' (already started)
-    const shouldStartSimulation = 
-      (order.status === 'ready' || 
-       order.status === 'delivering') &&
-      !!order.droneId;
-    
-    if (!shouldStartSimulation) {
-      if (!order.droneId) {
-        console.log('⏳ No drone assigned yet. Waiting for admin...');
-      } else {
-        console.log('❌ Simulation not triggered. Status:', order.status);
-      }
-      return;
-    }
-
-    // Clear error message if drone is now assigned
-    setErrorMessage(null);
-
-    console.log('✅ === STARTING DRONE SIMULATION ===');
-    console.log('  - Order ID:', order.$id);
-    console.log('  - Status:', order.status);
-    console.log('  - Drone ID:', order.droneId);
-    console.log('  - Restaurant:', restaurantCoords);
-    console.log('  - Customer:', customerCoords);
-
-    setSimulationState('running');
-    setCountdownActive(true);
-    
-    // Set initial drone position at HUB
-    const droneStartCoords = DEFAULT_HUB_LOCATION;
-    
-    console.log('Initial drone position (HUB):', droneStartCoords);
-    
-    setDronePath([droneStartCoords]);
-    setDroneCoords(droneStartCoords);
-    
-    // Set initial ETA
-    const initialETA = SIMULATION_DURATION / 60000;
-    setEtaMinutes(initialETA);
-
-    let isMounted = true;
-
-    console.log('🚀 Calling simulateDroneFlight...');
-    console.log('   orderId:', order.$id);
-    console.log('   droneId:', order.droneId);
-    console.log('   restaurantCoords:', restaurantCoords);
-    console.log('   customerCoords:', customerCoords);
-
-    // Small delay to ensure DeliveryMap subscription is ready
-    const startSimulation = async () => {
-      console.log('⏳ Waiting 1s for DeliveryMap to subscribe...');
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      console.log('🎬 Starting simulation NOW');
-      return simulateDroneFlight({
-        orderId: order.$id,
-        restaurantCoords,
-        customerCoords,
-        droneId: order.droneId,
-        duration: SIMULATION_DURATION,
-        onProgress: ({ coordinate, progress, phase }) => {
-          if (!isMounted) return;
-          
-          console.log(`📡 PROGRESS UPDATE: ${phase} - ${Math.round(progress * 100)}%`);
-          console.log('   Coordinate:', coordinate);
-          
-          setDroneCoords(coordinate);
-          setDronePath((prev) => {
-            const newPath = [...prev, coordinate];
-            console.log('   Path length:', newPath.length);
-            return newPath;
-          });
-          setCurrentPhase(phase);
-          
-          // Calculate phase-specific progress
-          if (phase === 'to_restaurant') {
-            setPhaseProgress((progress / 0.4) * 100); // 0-40% maps to 0-100%
-          } else if (phase === 'to_customer') {
-            setPhaseProgress(((progress - 0.4) / 0.6) * 100); // 40-100% maps to 0-100%
-          }
-          
-          // Update ETA based on progress
-          const remainingTime = Math.max(0, (1 - progress) * (SIMULATION_DURATION / 60000));
-          setEtaMinutes(remainingTime);
-        },
-      });
-    };
-
-    startSimulation()
-      .then(() => {
-        if (!isMounted) return;
-        console.log('Drone simulation completed successfully');
-        setSimulationState('completed');
-        setCountdownActive(false);
-        setEtaMinutes(0);
-      })
-      .catch((err) => {
-        // Log simulation errors for debugging
-        if (!isMounted) return;
-        console.error('❌ SIMULATION ERROR:', err);
-        console.error('   Error message:', err?.message);
-        console.error('   Error stack:', err?.stack);
-        
-        setSimulationState('idle');
-        setCountdownActive(false);
-        setEtaMinutes(undefined);
-        
-        // Show error in dev mode
-        if (__DEV__) {
-          console.warn('Drone simulation could not start:', err?.message);
-=======
     if (!order?.droneId) return;
     if (order.status === 'delivered' || order.status === 'cancelled') return;
 
@@ -530,7 +355,6 @@ const OrderTrackingScreen = () => {
         if (last && Math.abs(last.latitude - coordinate.latitude) < 0.00001 && 
             Math.abs(last.longitude - coordinate.longitude) < 0.00001) {
           return prev;
->>>>>>> 9058acf3dafd0cffc4f244a29aad512c2d6200a5
         }
         // Keep only last 50 points to prevent memory issues
         const newPath = [...prev, coordinate];
@@ -547,10 +371,6 @@ const OrderTrackingScreen = () => {
         console.error('Error unsubscribing from drone position:', error);
       }
     };
-<<<<<<< HEAD
-  }, [order, restaurantCoords, customerCoords, simulationState]);
-  // Removed hasRealtimeProgress from deps to allow simulation to start even if realtime is active
-=======
   }, [order?.droneId, order?.status, restaurantCoords, customerCoords]);
 
   // Fetch drone hub info when drone is assigned (for map display)
@@ -799,7 +619,6 @@ const OrderTrackingScreen = () => {
       clearInterval(realtimeTracker);
     };
   }, [simulationState, currentPhase, order?.droneId, order?.status, droneHubCoords, restaurantCoords, customerCoords, hasRealtimeProgress]);
->>>>>>> 9058acf3dafd0cffc4f244a29aad512c2d6200a5
 
   // Auto-update countdown every 30 seconds for real-time ETA
   useEffect(() => {
@@ -914,15 +733,10 @@ const OrderTrackingScreen = () => {
       {/* Map - Full width at top */}
       <View style={{ height: 320 }} className="relative">
         <DeliveryMap
-          hub={hubCoords}
           restaurant={restaurantCoords}
           customer={customerCoords}
           drone={droneCoords}
-<<<<<<< HEAD
-          droneId={order?.droneId || null}
-=======
           droneHub={droneHubCoords}
->>>>>>> 9058acf3dafd0cffc4f244a29aad512c2d6200a5
           path={dronePath}
           currentPhase={currentPhase}
           etaMinutes={etaMinutes}

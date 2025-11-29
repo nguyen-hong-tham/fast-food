@@ -59,6 +59,14 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
+      // Step 0: Delete any existing sessions first
+      try {
+        await account.deleteSessions();
+      } catch (cleanupError) {
+        // Ignore if no sessions exist
+        console.log('No existing sessions to clear');
+      }
+
       // Step 1: Create Appwrite Auth account
       const newUser = await account.create(
         ID.unique(),

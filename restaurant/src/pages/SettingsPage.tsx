@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 
 import { useAuthStore } from '@/store/authStore';
-import { databases } from '@/lib/appwrite';
+import { databases, account } from '@/lib/appwrite';
 import { config } from '@/config';
-import { Save, Loader2, Info, CheckCircle, XCircle, X } from 'lucide-react';
+import { Save, Loader2, Info, CheckCircle, XCircle, X, AlertTriangle, Trash2 } from 'lucide-react';
+import { Query } from '@/lib/appwrite';
 
 interface RestaurantSettings {
   name: string;
@@ -19,7 +20,11 @@ interface RestaurantSettings {
 export default function SettingsPage() {
   const { restaurant, user, refreshRestaurant } = useAuthStore();
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [pendingOrders, setPendingOrders] = useState<any[]>([]);
   
   const [settings, setSettings] = useState<RestaurantSettings>({
     name: '',
@@ -58,6 +63,161 @@ export default function SettingsPage() {
       logo: safeString(restaurant.logo),
       coverImage: safeString(restaurant.coverImage),
     });
+  };
+
+  // Check for pending orders that prevent deletion
+  const checkPendingOrders = async () => {
+    if (!restaurant?.$id) return;
+
+    try {
+      const orders = await databases.listDocuments(
+        config.appwrite.databaseId,
+        config.appwrite.ordersCollectionId,
+        [
+          Query.equal('restaurantId', restaurant.$id),
+          Query.isNotNull('status'),
+        ]
+      );
+
+      // Filter orders with status: pending, preparing, ready, delivering
+      const blockedOrders = orders.documents.filter((order: any) => {
+        const status = order.status?.toLowerCase();
+        return ['pending', 'preparing', 'ready', 'delivering'].includes(status);
+      });
+
+      setPendingOrders(blockedOrders);
+      return blockedOrders;
+    } catch (error) {
+      console.error('Error checking pending orders:', error);
+      return [];
+    }
+  };
+
+  const handleDeleteRestaurant = async () => {
+    if (!restaurant?.$id) return;
+
+    setIsDeleting(true);
+    setMessage(null);
+
+    try {
+      // Check for pending orders again (in case they changed)
+      const blocked = await checkPendingOrders();
+      if (blocked.length > 0) {
+        setMessage({
+          type: 'error',
+          text: `Cannot delete restaurant. You have ${blocked.length} active order(s). Please complete or cancel them first.`,
+        });
+        setShowDeleteModal(false);
+        setIsDeleting(false);
+        return;
+      }
+
+      // Step 1: Delete all orders related to this restaurant
+      try {
+        const orders = await databases.listDocuments(
+          config.appwrite.databaseId,
+          config.appwrite.ordersCollectionId,
+          [Query.equal('restaurantId', restaurant.$id)]
+        );
+        
+        for (const order of orders.documents) {
+          // Delete order items first
+          try {
+            const orderItems = await databases.listDocuments(
+              config.appwrite.databaseId,
+              config.appwrite.orderItemsCollectionId,
+              [Query.equal('orderId', order.$id)]
+            );
+            
+            for (const item of orderItems.documents) {
+              await databases.deleteDocument(
+                config.appwrite.databaseId,
+                config.appwrite.orderItemsCollectionId,
+                item.$id
+              );
+            }
+          } catch (err) {
+            console.warn('Error deleting order items for order', order.$id, err);
+          }
+          
+          // Delete order
+          await databases.deleteDocument(
+            config.appwrite.databaseId,
+            config.appwrite.ordersCollectionId,
+            order.$id
+          );
+        }
+      } catch (err) {
+        console.warn('Error deleting orders:', err);
+      }
+
+      // Step 2: Delete all menu items related to this restaurant
+      try {
+        const menuItems = await databases.listDocuments(
+          config.appwrite.databaseId,
+          config.appwrite.menuCollectionId,
+          [Query.equal('restaurantId', restaurant.$id)]
+        );
+        
+        for (const item of menuItems.documents) {
+          await databases.deleteDocument(
+            config.appwrite.databaseId,
+            config.appwrite.menuCollectionId,
+            item.$id
+          );
+        }
+      } catch (err) {
+        console.warn('Error deleting menu items:', err);
+      }
+
+      // Step 3: Delete all reviews related to this restaurant
+      try {
+        const reviews = await databases.listDocuments(
+          config.appwrite.databaseId,
+          config.appwrite.reviewsCollectionId,
+          [Query.equal('restaurantId', restaurant.$id)]
+        );
+        
+        for (const review of reviews.documents) {
+          await databases.deleteDocument(
+            config.appwrite.databaseId,
+            config.appwrite.reviewsCollectionId,
+            review.$id
+          );
+        }
+      } catch (err) {
+        console.warn('Error deleting reviews:', err);
+      }
+
+      // Step 4: Delete the restaurant document
+      await databases.deleteDocument(
+        config.appwrite.databaseId,
+        config.appwrite.restaurantsCollectionId,
+        restaurant.$id
+      );
+
+      // Step 5: Delete user account
+      await account.deleteSession('current');
+      
+      setMessage({
+        type: 'success',
+        text: 'Restaurant deleted successfully. You have been logged out.',
+      });
+
+      // Redirect to login after 2 seconds
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 2000);
+    } catch (error: any) {
+      console.error('Error deleting restaurant:', error);
+      setMessage({
+        type: 'error',
+        text: error.message || 'Failed to delete restaurant. Please try again.',
+      });
+      setShowDeleteModal(false);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -375,7 +535,7 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <div className="flex justify-end">
+          <div className="flex justify-between items-center">
             <button
               type="submit"
               disabled={isSaving}
@@ -393,8 +553,117 @@ export default function SettingsPage() {
                 </>
               )}
             </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                checkPendingOrders();
+                setShowDeleteModal(true);
+              }}
+              className="flex items-center px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Trash2 className="w-5 h-5 mr-2" />
+              Delete Restaurant
+            </button>
           </div>
         </form>
+
+        {/* Delete Restaurant Modal */}
+        {showDeleteModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                <div className="flex items-center gap-3">
+                  <AlertTriangle className="w-6 h-6 text-red-600" />
+                  <h3 className="text-lg font-semibold text-gray-900">Delete Restaurant</h3>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setDeleteConfirmText('');
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="p-6 space-y-4">
+                {pendingOrders.length > 0 ? (
+                  // Show warning if there are pending orders
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <h4 className="font-semibold text-red-900 mb-2">Cannot Delete Restaurant</h4>
+                    <p className="text-sm text-red-700 mb-3">
+                      Your restaurant has {pendingOrders.length} active order(s) that need to be completed or cancelled first:
+                    </p>
+                    <ul className="space-y-2 max-h-48 overflow-y-auto">
+                      {pendingOrders.map((order: any) => (
+                        <li key={order.$id} className="text-sm text-red-700 bg-red-100 p-2 rounded">
+                          Order #{order.$id.slice(-8).toUpperCase()} - Status: <strong>{order.status}</strong>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : (
+                  // Show delete confirmation if no pending orders
+                  <>
+                    <p className="text-gray-700">
+                      This action <strong>cannot be undone</strong>. This will permanently delete your restaurant and your account.
+                    </p>
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                      <p className="text-sm text-red-700">
+                        Type <strong>"delete my restaurant"</strong> to confirm:
+                      </p>
+                      <input
+                        type="text"
+                        value={deleteConfirmText}
+                        onChange={(e) => setDeleteConfirmText(e.target.value)}
+                        placeholder="Type here..."
+                        className="mt-2 w-full px-3 py-2 border border-red-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-black"
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
+                <button
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setDeleteConfirmText('');
+                  }}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteRestaurant}
+                  disabled={
+                    isDeleting ||
+                    pendingOrders.length > 0 ||
+                    deleteConfirmText !== 'delete my restaurant'
+                  }
+                  className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isDeleting ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-5 h-5 mr-2" />
+                      Delete Restaurant
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
     </div>
   );
 }

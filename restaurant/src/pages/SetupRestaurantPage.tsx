@@ -56,7 +56,7 @@ export default function SetupRestaurantPage() {
           latitude: formData.latitude,
           longitude: formData.longitude,
           isActive: true,
-          rating: 0,
+          rating: 1,
         }
       );
 

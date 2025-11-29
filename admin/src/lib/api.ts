@@ -350,7 +350,7 @@ export const createDrone = async (data: {
         currentLongitude: hubLocation.longitude,
         homeLatitude: hubLocation.latitude,
         homeLongitude: hubLocation.longitude,
-        droneHub: DEFAULT_HUB_ID,
+        droneHub: [DEFAULT_HUB_ID],
       }
     );
     
