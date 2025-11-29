@@ -142,7 +142,9 @@ const OrderTrackingScreen = () => {
     (async () => {
       // First priority: use deliveryLatitude/deliveryLongitude from order if available
       if (order.deliveryLatitude && order.deliveryLongitude) {
-        console.log('📍 Using delivery coords from order:', order.deliveryLatitude, order.deliveryLongitude);
+        console.log('📍 Using delivery coords from order DB:', order.deliveryLatitude, order.deliveryLongitude);
+        console.log('📍 Delivery address from order:', order.deliveryAddress);
+        alert(`🔍 DEBUG Customer Coords:\nDB Coords: ${order.deliveryLatitude}, ${order.deliveryLongitude}\nAddress: ${order.deliveryAddress}`);
         setCustomerCoords({ 
           latitude: order.deliveryLatitude, 
           longitude: order.deliveryLongitude 
@@ -521,6 +523,11 @@ const OrderTrackingScreen = () => {
 
     console.log(`🚁 Starting local animation: ${currentPhase}`);
     console.log(`📍 From:`, startCoords, `To:`, targetCoords);
+    
+    // Debug: Alert to show exact coordinates
+    if (currentPhase === 'to_customer') {
+      alert(`🔍 Drone Route (to_customer):\n\nRestaurant (start):\n${startCoords.latitude.toFixed(6)}, ${startCoords.longitude.toFixed(6)}\n\nCustomer (target):\n${targetCoords.latitude.toFixed(6)}, ${targetCoords.longitude.toFixed(6)}`);
+    }
 
     let progress = phaseProgress / 100; // Convert 0-100 to 0-1
     let lastRealtimeUpdate = Date.now();

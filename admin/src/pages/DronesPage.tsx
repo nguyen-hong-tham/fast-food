@@ -46,7 +46,7 @@ export default function DronesPage() {
     maxPayload: 5,
     maxSpeed: 50,
     maxRange: 10,
-    droneHub: '',
+    droneHub: '', // Keep for type compatibility but won't be used
   });
   const [hubFormData, setHubFormData] = useState<HubFormData>({
     name: '',
@@ -235,11 +235,6 @@ export default function DronesPage() {
       return;
     }
     
-    if (!formData.droneHub) {
-      alert('Please select a hub for the drone');
-      return;
-    }
-    
     try {
       setIsSubmitting(true);
       
@@ -253,7 +248,6 @@ export default function DronesPage() {
           maxPayload: formData.maxPayload,
           maxSpeed: formData.maxSpeed,
           maxRange: formData.maxRange,
-          droneHub: formData.droneHub,
         });
         setDrones(drones.map(d => d.$id === updated.$id ? updated : d));
         alert('Drone updated successfully');
@@ -962,28 +956,6 @@ export default function DronesPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                   placeholder="DJI"
                 />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Hub <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={formData.droneHub}
-                  onChange={(e) => setFormData({ ...formData, droneHub: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                  required
-                >
-                  {hubs.length === 0 ? (
-                    <option value="">No hub available</option>
-                  ) : (
-                    hubs.map(hub => (
-                      <option key={hub.$id} value={hub.$id}>
-                        {hub.name}
-                      </option>
-                    ))
-                  )}
-                </select>
               </div>
 
               {editingDrone && (

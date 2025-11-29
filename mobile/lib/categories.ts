@@ -48,7 +48,7 @@ export const getRestaurantCategories = async (
 ): Promise<Category[]> => {
   try {
     const queries = [
-      Query.equal('restaurant', restaurantId),
+      Query.equal('restaurantId', restaurantId),
       Query.orderAsc('displayOrder'),
       Query.orderAsc('name'),
     ];

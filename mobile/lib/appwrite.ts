@@ -14,7 +14,7 @@ export const appwriteConfig = {
   
   // Existing collections
   userCollectionId: process.env.EXPO_PUBLIC_APPWRITE_USER_COLLECTION_ID || "user", 
-  categoriesCollectionId: process.env.EXPO_PUBLIC_APPWRITE_CATEGORIES_COLLECTION_ID || "category",
+  categoriesCollectionId: process.env.EXPO_PUBLIC_APPWRITE_CATEGORIES_COLLECTION_ID || "categories",
   menuCollectionId: process.env.EXPO_PUBLIC_APPWRITE_MENU_COLLECTION_ID || "menu",
   ordersCollectionId: process.env.EXPO_PUBLIC_APPWRITE_ORDERS_COLLECTION_ID || "orders",
   
@@ -288,7 +288,7 @@ export const getRestaurantCategories = async (restaurantId: string) => {
             appwriteConfig.databaseId,
             appwriteConfig.categoriesCollectionId,
             [
-                Query.equal('restaurant', restaurantId),
+                Query.equal('restaurantId', restaurantId),
                 Query.equal('isActive', true),
                 Query.orderAsc('displayOrder'),
                 Query.orderAsc('name'),
@@ -449,13 +449,12 @@ export const createOrderWithPayment = async (orderData: {
             orderPayload.notes = orderData.notes;
         }
         
-        // TODO: Uncomment khi đã thêm deliveryLatitude, deliveryLongitude vào Appwrite database schema
         // Add delivery coordinates for drone tracking (if available)
-        // if (orderData.deliveryLatitude && orderData.deliveryLongitude) {
-        //     orderPayload.deliveryLatitude = orderData.deliveryLatitude;
-        //     orderPayload.deliveryLongitude = orderData.deliveryLongitude;
-        //     console.log('📍 Order delivery coords:', orderData.deliveryLatitude, orderData.deliveryLongitude);
-        // }
+        if (orderData.deliveryLatitude && orderData.deliveryLongitude) {
+            orderPayload.deliveryLatitude = orderData.deliveryLatitude;
+            orderPayload.deliveryLongitude = orderData.deliveryLongitude;
+            console.log('📍 Order delivery coords:', orderData.deliveryLatitude, orderData.deliveryLongitude);
+        }
         
         // Thêm các enum fields - đảm bảo giá trị chính xác
         // Validate paymentMethod trước khi gửi
