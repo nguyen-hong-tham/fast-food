@@ -189,11 +189,13 @@ export default function OrdersPage() {
       return;
     }
 
-    try {
-      setIsLoading(true);
-      console.log('Fetching orders for restaurant:', restaurant.$id);
-      
-      // Try to query with restaurantId filter (will work if it's a string attribute)
+      try {
+        setIsLoading(true);
+        console.log('🔍 Fetching orders for restaurant:', restaurant.$id);
+        console.log('🏪 Restaurant name:', restaurant.name);
+        
+        // Debug alert
+        //alert(`DEBUG: Restaurant ID = ${restaurant.$id}\nRestaurant Name = ${restaurant.name}`);      // Try to query with restaurantId filter (will work if it's a string attribute)
       // If it fails, fall back to client-side filtering
       let filtered: any[];
       
@@ -211,86 +213,106 @@ export default function OrdersPage() {
         filtered = response.documents;
         console.log('✅ Server-side filtering successful:', filtered.length, 'orders');
       } catch (queryError: any) {
-        // If server-side filtering fails (relationship or permission), do client-side filtering
+        // If server-side filtering fails (relationship), do client-side filtering
         console.log('⚠️ Server-side filtering failed:', queryError.message);
+        console.log('📥 Fetching ALL orders for client-side filtering...');
+        const response = await databases.listDocuments(
+          config.appwrite.databaseId,
+          config.appwrite.ordersCollectionId,
+          [
+            Query.orderDesc('$createdAt'),
+            Query.limit(100)
+          ]
+        );
         
-        // Check if it's a permission error
-        if (queryError.message?.includes('not authorized') || queryError.code === 401) {
-          console.error('❌ Permission denied: Restaurant role cannot read orders collection');
-          console.error('💡 Solution: Add "Read" permission for restaurant role in Appwrite Console');
-          setOrders([]);
-          setIsLoading(false);
-          return;
-        }
+        console.log('📊 Total orders in database:', response.documents.length);
         
-        try {
-          const response = await databases.listDocuments(
-            config.appwrite.databaseId,
-            config.appwrite.ordersCollectionId,
-            [
-              Query.orderDesc('$createdAt'),
-              Query.limit(100)
-            ]
-          );
-          
-          // Filter client-side by restaurantId (handle relationship object)
-          filtered = response.documents.filter((order: any) => {
-            const orderRestaurantId = typeof order.restaurantId === 'object' 
-              ? order.restaurantId.$id 
-              : order.restaurantId;
-            return orderRestaurantId === restaurant.$id;
+        // Debug: Log first few orders to see restaurantId structure
+        response.documents.slice(0, 3).forEach((order: any, index: number) => {
+          const orderRestaurantId = typeof order.restaurantId === 'object' 
+            ? order.restaurantId?.$id || JSON.stringify(order.restaurantId)
+            : order.restaurantId;
+          console.log(`Order ${index + 1}:`, {
+            orderId: order.$id,
+            restaurantId: orderRestaurantId,
+            restaurantIdType: typeof order.restaurantId,
+            status: order.status,
+            matches: orderRestaurantId === restaurant.$id
           });
-          console.log('Client-side filtered:', filtered.length, 'orders');
-        } catch (fallbackError: any) {
-          console.error('❌ Failed to fetch orders:', fallbackError.message);
-          setOrders([]);
-          setIsLoading(false);
-          return;
-        }
+        });
+        
+        // Filter client-side by restaurantId (handle relationship object)
+        filtered = response.documents.filter((order: any) => {
+          const orderRestaurantId = typeof order.restaurantId === 'object' 
+            ? order.restaurantId?.$id 
+            : order.restaurantId;
+          const matches = orderRestaurantId === restaurant.$id;
+          return matches;
+        });
+        console.log('✅ Client-side filtered:', filtered.length, 'orders for restaurant', restaurant.$id);
       }
       
-      // ✅ SMART OPTIMIZATION: Calculate missing totals efficiently
-      // Fetch ALL order items once, then group by orderId
-      const ordersNeedingTotals = filtered.filter((o: any) => !o.totalAmount || o.totalAmount === 0);
+      // ✅ ALWAYS recalculate totals from order_items to ensure accuracy
+      console.log(`📊 Calculating totals for ${filtered.length} orders from order_items`);
       
-      if (ordersNeedingTotals.length > 0) {
-        console.log(`📊 ${ordersNeedingTotals.length} orders need total calculation`);
+      try {
+        // Fetch all order items in one call
+        const itemsResponse = await databases.listDocuments(
+          config.appwrite.databaseId,
+          config.appwrite.orderItemsCollectionId,
+          [Query.limit(500)]
+        );
         
-        try {
-          // Fetch all order items in one call
-          const itemsResponse = await databases.listDocuments(
-            config.appwrite.databaseId,
-            config.appwrite.orderItemsCollectionId,
-            [Query.limit(500)]
+        console.log(`📦 Found ${itemsResponse.documents.length} order items in database`);
+        
+        // Group items by orderId
+        const itemsByOrderId: Record<string, any[]> = {};
+        itemsResponse.documents.forEach((item: any) => {
+          const orderId = typeof item.orderId === 'object' ? item.orderId.$id : item.orderId;
+          if (!itemsByOrderId[orderId]) itemsByOrderId[orderId] = [];
+          itemsByOrderId[orderId].push(item);
+        });
+        
+        // Calculate totals for ALL orders - prioritize order.total from database
+        const updatedOrders = filtered.map((order: any) => {
+          const items = itemsByOrderId[order.$id] || [];
+          
+          // Priority 1: Use order.total if available (includes shipping)
+          if (order.total && order.total > 0) {
+            console.log(`Order ${order.$id}: Using order.total = ${order.total}₫`);
+            return { ...order, totalAmount: order.total };
+          }
+          
+          // Priority 2: Use order.totalAmount if available
+          if (order.totalAmount && order.totalAmount > 0) {
+            console.log(`Order ${order.$id}: Using order.totalAmount = ${order.totalAmount}₫`);
+            return order;
+          }
+          
+          // Priority 3: Calculate from items (fallback for old orders)
+          const calculatedTotal = items.reduce((sum: number, item: any) => 
+            sum + (item.subtotal || 0), 0
           );
           
-          // Group items by orderId
-          const itemsByOrderId: Record<string, any[]> = {};
-          itemsResponse.documents.forEach((item: any) => {
-            const orderId = typeof item.orderId === 'object' ? item.orderId.$id : item.orderId;
-            if (!itemsByOrderId[orderId]) itemsByOrderId[orderId] = [];
-            itemsByOrderId[orderId].push(item);
-          });
+          console.log(`Order ${order.$id}: ${items.length} items, calculated = ${calculatedTotal}₫`);
           
-          // Calculate totals for orders that need it
-          const updatedOrders = filtered.map((order: any) => {
-            if (order.totalAmount && order.totalAmount > 0) return order;
-            
-            const items = itemsByOrderId[order.$id] || [];
-            const calculatedTotal = items.reduce((sum: number, item: any) => 
-              sum + (item.subtotal || 0), 0
-            );
-            
-            return { ...order, totalAmount: calculatedTotal };
-          });
-          
-          console.log('✅ Totals calculated successfully');
-          setOrders(updatedOrders as any);
-        } catch (calcError) {
-          console.error('Error calculating totals:', calcError);
-          setOrders(filtered as any);
-        }
-      } else {
+          return { 
+            ...order, 
+            totalAmount: calculatedTotal > 0 ? calculatedTotal : order.totalAmount 
+          };
+        });
+        
+        console.log('✅ Totals recalculated from order items');
+        console.table(updatedOrders.map((o: any) => ({
+          orderId: o.$id.slice(-8),
+          items: (itemsByOrderId[o.$id] || []).length,
+          totalAmount: o.totalAmount,
+          status: o.status
+        })));
+        
+        setOrders(updatedOrders as any);
+      } catch (calcError) {
+        console.error('Error calculating totals:', calcError);
         setOrders(filtered as any);
       }
     } catch (error: any) {

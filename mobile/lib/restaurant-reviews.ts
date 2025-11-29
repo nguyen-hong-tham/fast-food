@@ -35,6 +35,11 @@ export async function createRestaurantReview(
   }
 ) {
   try {
+    // TODO: Fix - Collection reviews doesn't exist or has different schema
+    console.warn('⚠️ Reviews collection not properly configured in Appwrite');
+    throw new Error('Reviews feature is temporarily disabled. Please contact support.');
+    
+    /* DISABLED until reviews collection is properly set up
     // Validate ratings
     if (data.overallRating < 1 || data.overallRating > 5) {
       throw new Error('Overall rating must be between 1 and 5');
@@ -52,9 +57,9 @@ export async function createRestaurantReview(
       appwriteConfig.reviewsCollectionId,
       'unique()',
       {
-        user: userId,           // Relationship field to User collection
-        restaurant: restaurantId, // Relationship field to restaurants collection
-        order: orderId,          // Relationship field to orders collection
+        userId: userId,
+        restaurantId: restaurantId,
+        orderId: orderId,
         overallRating: data.overallRating,
         foodQuality: data.foodQuality || null,
         deliverySpeed: data.deliverySpeed || null,
@@ -69,6 +74,7 @@ export async function createRestaurantReview(
     await updateRestaurantAverageRating(restaurantId);
 
     return review;
+    */
   } catch (error) {
     console.error('Error creating restaurant review:', error);
     throw error;
@@ -89,11 +95,16 @@ export async function getRestaurantReviews(
   offset: number = 0
 ) {
   try {
+    // TODO: Fix - Collection reviews doesn't exist or has different schema
+    console.warn('⚠️ Reviews collection not properly configured in Appwrite');
+    return [];
+    
+    /* DISABLED until reviews collection is properly set up
     const response = await databases.listDocuments(
       appwriteConfig.databaseId,
       appwriteConfig.reviewsCollectionId,
       [
-        Query.equal('restaurant', restaurantId), // Relationship field name
+        Query.equal('restaurantId', restaurantId),
         Query.equal('isVisible', true),
         Query.orderDesc('$createdAt'),
         Query.limit(limit),
@@ -102,9 +113,10 @@ export async function getRestaurantReviews(
     );
 
     return response.documents as unknown as Review[];
+    */
   } catch (error) {
     console.error('Error fetching restaurant reviews:', error);
-    throw error;
+    return [];
   }
 }
 
@@ -124,13 +136,13 @@ export async function getRestaurantReviewsWithUserInfo(
     const reviewsWithUser = await Promise.all(
       reviews.map(async (review) => {
         try {
-          // Access user ID from relationship field
-          const userIdFromRelation = (review as any).user?.$id || (review as any).user;
+          // Access userId directly from review document
+          const userId = (review as any).userId;
           
           const user = await databases.getDocument(
             appwriteConfig.databaseId,
             appwriteConfig.userCollectionId,
-            userIdFromRelation
+            userId
           );
 
           return {
@@ -167,20 +179,26 @@ export async function getRestaurantReviewsWithUserInfo(
  */
 export async function getUserReviewForOrder(userId: string, orderId: string) {
   try {
+    // TODO: Fix - Collection reviews doesn't exist or has different schema
+    console.warn('⚠️ Reviews collection not properly configured in Appwrite');
+    return null;
+    
+    /* DISABLED until reviews collection is properly set up
     const response = await databases.listDocuments(
       appwriteConfig.databaseId,
       appwriteConfig.reviewsCollectionId,
       [
-        Query.equal('user', userId),   // Relationship field name
-        Query.equal('order', orderId), // Relationship field name
+        Query.equal('userId', userId),
+        Query.equal('orderId', orderId),
         Query.limit(1),
       ]
     );
 
     return response.documents.length > 0 ? (response.documents[0] as unknown as Review) : null;
+    */
   } catch (error) {
     console.error('Error fetching user review for order:', error);
-    throw error;
+    return null;
   }
 }
 
@@ -197,8 +215,14 @@ export async function hasUserReviewedOrder(
   orderId: string
 ): Promise<boolean> {
   try {
+    // TODO: Fix - Collection reviews doesn't exist or has different schema
+    console.warn('⚠️ Reviews collection not properly configured in Appwrite');
+    return false;
+    
+    /* DISABLED until reviews collection is properly set up
     const review = await getUserReviewForOrder(userId, orderId);
     return review !== null;
+    */
   } catch (error) {
     console.error('Error checking if user reviewed order:', error);
     return false;
@@ -295,11 +319,25 @@ export async function replyToReview(reviewId: string, response: string) {
  */
 export async function getRestaurantAverageRating(restaurantId: string) {
   try {
+    // TODO: Fix - Collection reviews doesn't exist or has different schema
+    console.warn('⚠️ Reviews collection not properly configured in Appwrite');
+    return {
+      average: 0,
+      total: 0,
+      distribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
+      averageByCategory: {
+        foodQuality: 0,
+        deliverySpeed: 0,
+        service: 0,
+      },
+    };
+    
+    /* DISABLED until reviews collection is properly set up
     const response = await databases.listDocuments(
       appwriteConfig.databaseId,
       appwriteConfig.reviewsCollectionId,
       [
-        Query.equal('restaurant', restaurantId), // Relationship field name
+        Query.equal('restaurantId', restaurantId),
         Query.equal('isVisible', true),
         Query.limit(1000), // Maximum to calculate average
       ]
@@ -361,6 +399,7 @@ export async function getRestaurantAverageRating(restaurantId: string) {
       distribution,
       averageByCategory,
     };
+    */
   } catch (error) {
     console.error('Error calculating restaurant average rating:', error);
     return {
@@ -418,8 +457,13 @@ export async function getFilteredRestaurantReviews(
   } = {}
 ) {
   try {
+    // TODO: Fix - Collection reviews doesn't exist or has different schema
+    console.warn('⚠️ Reviews collection not properly configured in Appwrite');
+    return [];
+    
+    /* DISABLED until reviews collection is properly set up
     const queries = [
-      Query.equal('restaurant', restaurantId), // Relationship field name
+      Query.equal('restaurantId', restaurantId),
       Query.equal('isVisible', true),
     ];
 
@@ -458,8 +502,9 @@ export async function getFilteredRestaurantReviews(
     const reviews = response.documents as unknown as Review[];
 
     return reviews;
+    */
   } catch (error) {
     console.error('Error fetching filtered reviews:', error);
-    throw error;
+    return [];
   }
 }

@@ -273,23 +273,6 @@ export interface PaymentResult {
   message: string;
 }
 
-// ===================== REVIEW =====================
-
-export interface Review extends Models.Document {
-  user: string | Models.Document; // Relationship field to User collection
-  restaurant: string | Models.Document; // Relationship field to restaurants collection
-  order: string | Models.Document; // Relationship field to orders collection
-  overallRating: number; // 1-5
-  foodQuality?: number; // 1-5
-  deliverySpeed?: number; // 1-5
-  service?: number; // 1-5
-  comment?: string;
-  isVisible: boolean;
-  restaurantResponse?: string;
-  createdAt: string;
-  updatedAt?: string;
-}
-
 // ===================== NOTIFICATION =====================
 
 export interface Notification extends Models.Document {
@@ -475,15 +458,32 @@ export interface Review extends Models.Document {
   userId: string;
   orderId: string;
   restaurantId: string;
-  menuItemId: string;
-  rating: number; // 1-5
+  menuItemId?: string; // Optional - for menu item reviews
+  
+  // Overall rating (required)
+  rating?: number; // 1-5 (for menu items)
+  overallRating?: number; // 1-5 (for restaurants)
+  
+  // Detailed ratings (for restaurant reviews)
+  foodQuality?: number; // 1-5
+  deliverySpeed?: number; // 1-5
+  service?: number; // 1-5
+  
+  // Review content
   comment?: string;
   images?: string[]; // Array of image URLs
-  helpful?: number; // Number of people found this helpful
-  reply?: string; // Restaurant's reply
+  
+  // Restaurant response
+  reply?: string; // Restaurant's reply (menu item reviews)
   repliedAt?: string;
+  restaurantResponse?: string; // Restaurant response (restaurant reviews)
+  
+  // Metadata
+  helpful?: number; // Number of people found this helpful
   isVerifiedPurchase?: boolean;
+  isVisible?: boolean; // For restaurant reviews
   status?: 'active' | 'hidden' | 'reported';
+  
   // Appwrite auto fields: $id, $createdAt, $updatedAt
 }
 

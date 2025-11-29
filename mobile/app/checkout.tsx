@@ -135,6 +135,15 @@ const CheckoutScreen = () => {
       // Create order with "pending" payment status
       console.log('📍 Delivery coords for order:', deliveryCoords.lat, deliveryCoords.lng);
       
+      // Validate coordinates - use user's coords or default
+      const finalLat = deliveryCoords.lat || user?.latitude || 10.762622;
+      const finalLng = deliveryCoords.lng || user?.longitude || 106.660172;
+      
+      if (!finalLat || !finalLng) {
+        Alert.alert('Error', 'Cannot determine delivery location. Please set your address.');
+        return;
+      }
+      
       const orderData = {
         userId: user.$id,
         restaurantId,
@@ -150,9 +159,9 @@ const CheckoutScreen = () => {
         total,
         deliveryAddress: deliveryAddress.trim(),
         deliveryAddressLabel: deliveryAddressLabel.trim(),
-        // Add delivery coordinates for drone tracking
-        deliveryLatitude: deliveryCoords.lat,
-        deliveryLongitude: deliveryCoords.lng,
+        // Add delivery coordinates for drone tracking (always valid numbers)
+        deliveryLatitude: finalLat,
+        deliveryLongitude: finalLng,
         phone: phone.trim(),
         notes: notes.trim(),
         paymentMethod: selectedPaymentMethod,

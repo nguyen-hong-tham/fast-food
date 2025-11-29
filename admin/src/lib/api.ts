@@ -328,6 +328,30 @@ export const createDrone = async (data: {
   try {
     const hubLocation = getDefaultHubLocation();
     
+    const droneData: any = {
+      code: data.code,
+      name: data.name,
+      model: data.model || '',
+      status: data.status || 'available',
+      batteryLevel: data.batteryLevel || 100,
+      totalFlights: 0,
+      currentPayload: 0,
+      maxPayload: data.maxPayload || 5,
+      maxSpeed: data.maxSpeed || 50,
+      maxRange: data.maxRange || 10,
+      totalDistance: 0,
+      isActive: true,
+      // Set drone at hub location
+      currentLatitude: hubLocation.latitude,
+      currentLongitude: hubLocation.longitude,
+      homeLatitude: hubLocation.latitude,
+      homeLongitude: hubLocation.longitude,
+    };
+    
+    // Only set droneHub if it's a valid relationship field
+    // Skip if relationship is configured from hub side (One to Many)
+    // droneHub: DEFAULT_HUB_ID, // REMOVED - relationship might be configured from hub side
+    
     const drone = await databases.createDocument(
       appwriteConfig.databaseId,
       appwriteConfig.dronesCollectionId,
