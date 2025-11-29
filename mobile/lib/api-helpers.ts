@@ -549,8 +549,7 @@ export const updateDroneLocation = async (
         orderId?: string;
     } = {}
 ): Promise<void> => {
-    // Update drone position only - don't create event for every position update
-    // (position updates happen too frequently and would create too many events)
+    // Update drone position
     await databases.updateDocument(
         databaseId,
         appwriteConfig.dronesCollectionId,
@@ -562,8 +561,29 @@ export const updateDroneLocation = async (
         }
     );
     
-    // Note: We removed event creation here because 'position_update' is not in the enum.
-    // Only create events for significant milestones: takeoff, landing, delivery_start, etc.
+    // Create position update event for real-time tracking
+    if (appwriteConfig.droneEventsCollectionId) {
+        try {
+            await databases.createDocument(
+                databaseId,
+                appwriteConfig.droneEventsCollectionId,
+                ID.unique(),
+                {
+                    droneId,
+                    orderId: options.orderId || null,
+                    eventType: 'position_update',
+                    latitude,
+                    longitude,
+                    altitude: options.altitude || null,
+                    speed: options.speed || null,
+                    batteryLevel: options.batteryLevel || null,
+                }
+            );
+        } catch (error) {
+            // Silently fail if position_update is not in enum
+            console.log('Note: position_update event type may not be in schema');
+        }
+    }
 };
 
 export const completeDroneDelivery = async (droneId: string): Promise<void> => {

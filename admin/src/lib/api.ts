@@ -356,7 +356,26 @@ export const createDrone = async (data: {
       appwriteConfig.databaseId,
       appwriteConfig.dronesCollectionId,
       ID.unique(),
-      droneData
+      {
+        code: data.code,
+        name: data.name,
+        model: data.model || '',
+        status: data.status || 'available',
+        batteryLevel: data.batteryLevel || 100,
+        totalFlights: 0,
+        currentPayload: 0,
+        maxPayload: data.maxPayload || 5,
+        maxSpeed: data.maxSpeed || 50,
+        maxRange: data.maxRange || 10,
+        totalDistance: 0,
+        isActive: true,
+        // Set drone at hub location
+        currentLatitude: hubLocation.latitude,
+        currentLongitude: hubLocation.longitude,
+        homeLatitude: hubLocation.latitude,
+        homeLongitude: hubLocation.longitude,
+        droneHub: [DEFAULT_HUB_ID],
+      }
     );
     
     return drone as Drone;

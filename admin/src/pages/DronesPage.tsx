@@ -35,7 +35,7 @@ export default function DronesPage() {
   const [editingDrone, setEditingDrone] = useState<Drone | null>(null);
   const [editingHub, setEditingHub] = useState<DroneHub | null>(null);
   const [selectedDroneId, setSelectedDroneId] = useState<string>();
-  const [viewMode, setViewMode] = useState<'list' | 'map' | 'hub'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'hub'>('list');
   const [isEditingHubInfo, setIsEditingHubInfo] = useState(false);
   const [formData, setFormData] = useState<DroneFormData>({
     code: '',
@@ -408,17 +408,6 @@ export default function DronesPage() {
                 <List className="w-4 h-4" />
                 List
               </button>
-              <button
-                onClick={() => setViewMode('map')}
-                className={`px-4 py-2 flex items-center gap-2 transition-colors ${
-                  viewMode === 'map'
-                    ? 'bg-primary text-white'
-                    : 'text-gray-700 hover:bg-gray-50'
-                }`}
-              >
-                <Map className="w-4 h-4" />
-                Map
-              </button>
             </div>
           </div>
         </div>
@@ -606,18 +595,6 @@ export default function DronesPage() {
               </table>
             </div>
           )}
-        </div>
-      ) : viewMode === 'map' ? (
-        /* MAP VIEW */
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-          <DroneMap
-            drones={filteredDrones}
-            hubs={hubs}
-            selectedDroneId={selectedDroneId}
-            onDroneClick={(drone) => setSelectedDroneId(drone.$id)}
-            showRoutes={false}
-            className="h-[600px]"
-          />
         </div>
       ) : (
         /* HUB VIEW */

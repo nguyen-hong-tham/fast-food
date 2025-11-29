@@ -160,8 +160,12 @@ export default function OrdersPage() {
         dronesMap.set(drone.$id, drone);
       });
       setDrones(dronesMap);
-    } catch (error) {
-      console.error('Error fetching drones:', error);
+    } catch (error: any) {
+      console.error('Error fetching drones:', error.message);
+      // Don't fail if drones can't be fetched - it's optional
+      if (error.message?.includes('not authorized')) {
+        console.warn('💡 Restaurant role needs Read permission for drones collection');
+      }
     }
   };
 

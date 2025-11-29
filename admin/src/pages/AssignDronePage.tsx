@@ -358,28 +358,6 @@ export default function AssignDronePage() {
 
       // 3. Create drone event - DISABLED due to relationship issues
       // TODO: Fix drone events collection schema or remove relationship constraints
-      /*
-      const droneEventsCollectionId = import.meta.env.VITE_APPWRITE_DRONE_EVENTS_COLLECTION_ID;
-      if (droneEventsCollectionId) {
-        try {
-          console.log('📝 Creating drone event...');
-          await databases.createDocument(
-            import.meta.env.VITE_APPWRITE_DATABASE_ID,
-            droneEventsCollectionId,
-            'unique()',
-            {
-              droneId: droneId,
-              orderId: orderId,
-              eventType: 'assigned',
-              description: `${type === 'auto' ? 'Automatically' : 'Manually'} assigned to order`
-            }
-          );
-          console.log('✅ Drone event created');
-        } catch (eventError: any) {
-          console.warn('Failed to create drone event (non-critical):', eventError.message);
-        }
-      }
-      */
 
       // 4. 🚀 Start delivery simulation automatically
       const customerLat = order.deliveryLatitude || 10.75;
@@ -410,7 +388,7 @@ export default function AssignDronePage() {
         console.error('❌ Error starting simulation:', simError);
       }
 
-      alert(`✅ Drone ${type === 'manual' ? 'manually' : 'automatically'} assigned successfully!\n\n🚁 Drone is now flying to restaurant.\nYou can track it on the Drones page.`);
+      alert(`✅ Drone ${type === 'manual' ? 'manually' : 'automatically'} assigned successfully!\n\n🚁 Simulation will start when customer opens tracking.\nYou can monitor drone on the Drones page.`);
       
       // Refresh lists
       await fetchReadyOrders();

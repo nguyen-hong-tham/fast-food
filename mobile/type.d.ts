@@ -294,7 +294,14 @@ export interface DroneHub extends Models.Document {
   address: string;
   latitude: number;
   longitude: number;
+<<<<<<< HEAD
+  capacity: number;
+  currentDrones: number;
+  isActive: boolean;
+  createdAt: string;
+=======
   drones?: Drone[] | string[]; // Relationship - can be array of IDs or objects
+>>>>>>> 9058acf3dafd0cffc4f244a29aad512c2d6200a5
 }
 
 // ===================== DRONE =====================
@@ -321,6 +328,7 @@ export interface Drone extends Models.Document {
   lastMaintenanceAt?: string;
   nextMaintenanceAt?: string;
   createdAt: string;
+  droneHub?: string | DroneHub; // Relationship to DroneHub
 }
 
 // ===================== DRONE EVENT =====================
