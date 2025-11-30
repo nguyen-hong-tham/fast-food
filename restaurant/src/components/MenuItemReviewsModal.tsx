@@ -36,6 +36,9 @@ export default function MenuItemReviewsModal({
       setStats(statsData);
     } catch (error) {
       console.error('Error loading menu item reviews:', error);
+      // Set empty state on error
+      setReviews([]);
+      setStats({ average: 0, total: 0, distribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 } });
     } finally {
       setIsLoading(false);
     }

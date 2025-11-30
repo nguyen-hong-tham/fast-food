@@ -4,7 +4,7 @@ import { Account, Client, Databases, Storage } from 'appwrite';
 export const appwriteConfig = {
   endpoint: import.meta.env.VITE_APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1',
   projectId: import.meta.env.VITE_APPWRITE_PROJECT_ID || '',
-  databaseId: import.meta.env.VITE_APPWRITE_DATABASE_ID || '68da5e73002cb68e70af',
+  databaseId: import.meta.env.VITE_APPWRITE_DATABASE_ID || '692a85350000a4fc97b3',
   bucketId: import.meta.env.VITE_APPWRITE_BUCKET_ID || '68dacda1003d6943981e',
   
   // Existing collections
@@ -29,39 +29,14 @@ export const appwriteConfig = {
   auditLogsCollectionId: import.meta.env.VITE_APPWRITE_AUDIT_LOGS_COLLECTION_ID || 'audit_logs',
 };
 
-// Initialize Appwrite Client with admin-specific session
+// Initialize Appwrite Client
 export const client = new Client()
   .setEndpoint(appwriteConfig.endpoint)
   .setProject(appwriteConfig.projectId);
 
-// Use a unique session storage key for admin to avoid conflicts with customer app
-if (typeof window !== 'undefined') {
-  // Override localStorage for admin sessions
-  const ADMIN_PREFIX = 'admin_';
-  const nativeSetItem = window.localStorage.setItem;
-  const nativeGetItem = window.localStorage.getItem;
-  const nativeRemoveItem = window.localStorage.removeItem;
-  
-  window.localStorage.setItem = function(key: string, value: string) {
-    if (key.includes('appwrite') || key.includes('cookieFallback')) {
-      return nativeSetItem.call(this, ADMIN_PREFIX + key, value);
-    }
-    return nativeSetItem.call(this, key, value);
-  };
-  
-  window.localStorage.getItem = function(key: string) {
-    if (key.includes('appwrite') || key.includes('cookieFallback')) {
-      return nativeGetItem.call(this, ADMIN_PREFIX + key);
-    }
-    return nativeGetItem.call(this, key);
-  };
-  
-  window.localStorage.removeItem = function(key: string) {
-    if (key.includes('appwrite') || key.includes('cookieFallback')) {
-      return nativeRemoveItem.call(this, ADMIN_PREFIX + key);
-    }
-    return nativeRemoveItem.call(this, key);
-  };
+// Add localhost as allowed origin for CORS
+if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+  console.log('🔧 Running on localhost, origin:', window.location.origin);
 }
 
 // Initialize services

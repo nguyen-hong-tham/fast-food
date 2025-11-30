@@ -7,10 +7,10 @@ import { Client, Databases } from 'appwrite';
 
 const client = new Client()
   .setEndpoint('https://cloud.appwrite.io/v1')
-  .setProject(import.meta.env.VITE_APPWRITE_PROJECT_ID || '');
+  .setProject(import.meta.env.VITE_APPWRITE_PROJECT_ID || '692a847d0025bb4d2bb6');
 
 const databases = new Databases(client);
-const databaseId = import.meta.env.VITE_APPWRITE_DATABASE_ID || '68da5e73002cb68e70af';
+const databaseId = import.meta.env.VITE_APPWRITE_DATABASE_ID || '692a85350000a4fc97b3';
 
 export const DEFAULT_HUB_ID = 'default-hub-001';
 

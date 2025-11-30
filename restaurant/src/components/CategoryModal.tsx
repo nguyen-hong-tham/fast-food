@@ -29,12 +29,21 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
   const [error, setError] = useState('');
 
   useEffect(() => {
+    console.log('🔄 CategoryModal effect triggered, category:', category);
     if (category) {
+      console.log('📝 Loading category for edit:', category.name);
       setFormData({
         name: category.name,
         description: category.description || '',
       });
+    } else {
+      console.log('🆕 Resetting for new category');
+      setFormData({
+        name: '',
+        description: '',
+      });
     }
+    setError(''); // Clear any previous errors
   }, [category]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -50,17 +59,20 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
 
     try {
       console.log('📝 Submitting category form...');
+      console.log('📝 Category object:', category);
       console.log('📝 Restaurant ID:', restaurantId);
       console.log('📝 Form data:', formData);
       
       if (category) {
         // Update existing category
+        console.log('🔄 Updating existing category:', category.$id);
         await updateCategory(category.$id, {
           name: formData.name.trim(),
           description: formData.description.trim() || undefined,
         });
       } else {
         // Create new category
+        console.log('✨ Creating NEW category');
         await createCategory({
           restaurantId,
           name: formData.name.trim(),

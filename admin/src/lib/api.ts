@@ -27,11 +27,18 @@ export const signIn = async (email: string, password: string) => {
     // Create new session
     console.log('🔐 Creating new admin session...');
     const session = await account.createEmailPasswordSession(email, password);
+    console.log('✅ Session created:', session.$id);
+    
+    // Small delay to ensure session is fully established
+    await new Promise(resolve => setTimeout(resolve, 500));
     
     // Get user data and check if admin
+    console.log('📋 Fetching user data...');
     const user = await getCurrentUser();
+    console.log('👤 User data:', user);
     
     if (!user || user.role !== 'admin') {
+      console.log('❌ Access denied - user role:', user?.role);
       await signOut();
       throw new Error('Access denied. Admin privileges required.');
     }

@@ -88,7 +88,7 @@ export default function MenuItemForm({ initialData = {}, onSubmit, onCancel }: M
         calories: calories || undefined,
         protein: protein || undefined,
         isAvailable,
-        categories: categoryId || undefined, // ← Add category relationship
+        categories: categoryId || undefined, // ← Many-to-One relationship: string ID, not array
       });
     } finally {
       setIsSubmitting(false);

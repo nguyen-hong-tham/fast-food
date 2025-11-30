@@ -141,7 +141,7 @@ export default function CustomersPage() {
                 <div className="flex items-center gap-3">
                   <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
                   <p className="text-sm text-gray-600">
-                    Joined {customer.createdAt ? new Date(customer.createdAt).toLocaleDateString() : 'N/A'}
+                    Joined {customer.$createdAt ? new Date(customer.$createdAt).toLocaleDateString() : 'N/A'}
                   </p>
                 </div>
               </div>
@@ -216,8 +216,8 @@ export default function CustomersPage() {
                     Joined Date
                   </p>
                   <p className="text-gray-700">
-                    {selectedCustomer.createdAt 
-                      ? new Date(selectedCustomer.createdAt).toLocaleString()
+                    {selectedCustomer.$createdAt 
+                      ? new Date(selectedCustomer.$createdAt).toLocaleString()
                       : 'N/A'}
                   </p>
                 </div>

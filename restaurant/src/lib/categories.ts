@@ -32,7 +32,8 @@ export const createCategory = async (
       {
         name: params.name,
         description: params.description || '',
-        restaurant: params.restaurantId, // ← Use relationship field name
+        restaurantId: params.restaurantId, // ← String field for querying
+        restaurant: [params.restaurantId], // ← Relationship field (array format)
         displayOrder: params.displayOrder || 0,
         isActive: params.isActive !== undefined ? params.isActive : true,
       }
@@ -54,8 +55,9 @@ export const getRestaurantCategories = async (
   includeInactive: boolean = false
 ): Promise<Category[]> => {
   try {
+    // Query by restaurantId string field (much faster than filtering client-side)
     const queries = [
-      Query.equal('restaurant', restaurantId), // ← Use relationship field name
+      Query.equal('restaurantId', restaurantId), // ← Query by string field
       Query.orderAsc('displayOrder'),
       Query.orderAsc('name'),
     ];

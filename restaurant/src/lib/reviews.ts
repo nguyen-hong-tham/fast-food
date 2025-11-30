@@ -210,8 +210,8 @@ export async function getMenuItemAverageRating(menuItemId: string) {
       total: reviews.length,
       distribution,
     };
-  } catch (error) {
-    console.error('Error calculating menu item average rating:', error);
+  } catch (error: any) {
+    console.warn('⚠️ Could not calculate menu item average rating:', error?.message);
     return {
       average: 0,
       total: 0,

@@ -83,6 +83,7 @@ const CategoriesPage: React.FC = () => {
 
   const handleSave = async () => {
     setShowModal(false);
+    setEditingCategory(null); // Reset editing state
     await loadCategories();
   };
 
@@ -266,9 +267,13 @@ const CategoriesPage: React.FC = () => {
       {/* Category Modal */}
       {showModal && (
         <CategoryModal
+          key={editingCategory?.$id || 'new'} 
           category={editingCategory}
           restaurantId={restaurant!.$id}
-          onClose={() => setShowModal(false)}
+          onClose={() => {
+            setShowModal(false);
+            setEditingCategory(null); // Reset when closing
+          }}
           onSave={handleSave}
         />
       )}
