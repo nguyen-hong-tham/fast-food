@@ -73,7 +73,13 @@ const OrderCard = React.memo(({ order }: OrderCardProps) => {
             const items = typeof order.items === 'string' 
                 ? JSON.parse(order.items) 
                 : order.items;
-            return items.reduce((sum: number, item: any) => sum + item.quantity, 0);
+            
+            if (!Array.isArray(items)) return 0;
+            
+            return items.reduce((sum: number, item: any) => {
+                const quantity = typeof item.quantity === 'number' ? item.quantity : 0;
+                return sum + quantity;
+            }, 0);
         } catch (error) {
             console.warn('Failed to parse order items:', error);
             return 0;

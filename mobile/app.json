@@ -3,7 +3,7 @@
     "name": "sgu_fastfood_deli",
     "slug": "sgu_fastfood_deli",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "sgufastfooddeli",
     "userInterfaceStyle": "automatic",
