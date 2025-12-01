@@ -170,7 +170,26 @@ export default function SettingsPage() {
         console.warn('Error deleting menu items:', err);
       }
 
-      // Step 3: Delete all reviews related to this restaurant
+      // Step 3: Delete all categories related to this restaurant
+      try {
+        const categories = await databases.listDocuments(
+          config.appwrite.databaseId,
+          config.appwrite.categoriesCollectionId,
+          [Query.equal('restaurantId', restaurant.$id)]
+        );
+        
+        for (const category of categories.documents) {
+          await databases.deleteDocument(
+            config.appwrite.databaseId,
+            config.appwrite.categoriesCollectionId,
+            category.$id
+          );
+        }
+      } catch (err) {
+        console.warn('Error deleting categories:', err);
+      }
+
+      // Step 4: Delete all reviews related to this restaurant
       try {
         const reviews = await databases.listDocuments(
           config.appwrite.databaseId,
@@ -189,19 +208,62 @@ export default function SettingsPage() {
         console.warn('Error deleting reviews:', err);
       }
 
-      // Step 4: Delete the restaurant document
+      // Step 5: Delete the restaurant document
       await databases.deleteDocument(
         config.appwrite.databaseId,
         config.appwrite.restaurantsCollectionId,
         restaurant.$id
       );
 
-      // Step 5: Delete user account
-      await account.deleteSession('current');
+      // Step 6: Get user document ID before deleting session
+      let userDocumentId: string | null = null;
+      try {
+        const currentUser = await account.get();
+        if (currentUser) {
+          // Find user document by accountId
+          const userDocs = await databases.listDocuments(
+            config.appwrite.databaseId,
+            config.appwrite.usersCollectionId,
+            [Query.equal('accountId', currentUser.$id)]
+          );
+          if (userDocs.documents.length > 0) {
+            userDocumentId = userDocs.documents[0].$id;
+          }
+        }
+      } catch (err) {
+        console.warn('Error getting user document ID:', err);
+      }
+
+      // Step 7: Delete user document from database
+      if (userDocumentId) {
+        try {
+          await databases.deleteDocument(
+            config.appwrite.databaseId,
+            config.appwrite.usersCollectionId,
+            userDocumentId
+          );
+          console.log('✅ User document deleted');
+        } catch (err) {
+          console.warn('Error deleting user document:', err);
+        }
+      }
+
+      // Step 8: Delete auth account (this will also delete the session)
+      try {
+        // Note: account.delete() is only available with JWT or API Key
+        // We need to delete session first, then user must be deleted by admin
+        await account.deleteSessions();
+        console.log('✅ All sessions deleted');
+        
+        // Since we can't delete the auth account from client-side,
+        // we've already deleted the user document, which prevents login access
+      } catch (err) {
+        console.warn('Error deleting sessions:', err);
+      }
       
       setMessage({
         type: 'success',
-        text: 'Restaurant deleted successfully. You have been logged out.',
+        text: 'Restaurant and all related data deleted successfully. You have been logged out.',
       });
 
       // Redirect to login after 2 seconds

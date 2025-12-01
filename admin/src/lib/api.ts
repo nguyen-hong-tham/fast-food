@@ -1,7 +1,6 @@
 import type { Category, Drone, DroneHub, MenuItem, Order, User } from '@/types';
 import { ID, Query } from 'appwrite';
 import { account, appwriteConfig, databases } from './appwrite';
-import { DEFAULT_HUB_ID, getDefaultHubLocation } from './hub-setup';
 
 // ===================== AUTH =====================
 
@@ -320,7 +319,7 @@ export const getAllDrones = async (limit: number = 100): Promise<Drone[]> => {
 };
 
 /**
- * Create new drone - Auto-assigns to default hub
+ * Create new drone with hub assignment
  */
 export const createDrone = async (data: {
   code: string;
@@ -331,33 +330,15 @@ export const createDrone = async (data: {
   maxPayload?: number;
   maxSpeed?: number;
   maxRange?: number;
+  hubId: string;
 }): Promise<Drone> => {
   try {
-    const hubLocation = getDefaultHubLocation();
-    
-    const droneData: any = {
-      code: data.code,
-      name: data.name,
-      model: data.model || '',
-      status: data.status || 'available',
-      batteryLevel: data.batteryLevel || 100,
-      totalFlights: 0,
-      currentPayload: 0,
-      maxPayload: data.maxPayload || 5,
-      maxSpeed: data.maxSpeed || 50,
-      maxRange: data.maxRange || 10,
-      totalDistance: 0,
-      isActive: true,
-      // Set drone at hub location
-      currentLatitude: hubLocation.latitude,
-      currentLongitude: hubLocation.longitude,
-      homeLatitude: hubLocation.latitude,
-      homeLongitude: hubLocation.longitude,
-    };
-    
-    // Only set droneHub if it's a valid relationship field
-    // Skip if relationship is configured from hub side (One to Many)
-    // droneHub: DEFAULT_HUB_ID, // REMOVED - relationship might be configured from hub side
+    // Get hub location from the selected hub
+    const hub = await databases.getDocument(
+      appwriteConfig.databaseId,
+      appwriteConfig.droneHubsCollectionId,
+      data.hubId
+    );
     
     const drone = await databases.createDocument(
       appwriteConfig.databaseId,
@@ -376,12 +357,12 @@ export const createDrone = async (data: {
         maxRange: data.maxRange || 10,
         totalDistance: 0,
         isActive: true,
+        hubId: data.hubId,
         // Set drone at hub location
-        currentLatitude: hubLocation.latitude,
-        currentLongitude: hubLocation.longitude,
-        homeLatitude: hubLocation.latitude,
-        homeLongitude: hubLocation.longitude,
-        droneHub: [DEFAULT_HUB_ID],
+        currentLatitude: hub.latitude,
+        currentLongitude: hub.longitude,
+        homeLatitude: hub.latitude,
+        homeLongitude: hub.longitude,
       }
     );
     

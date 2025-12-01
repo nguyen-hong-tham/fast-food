@@ -13,7 +13,7 @@ interface DroneFormData {
   maxPayload: number;
   maxSpeed: number;
   maxRange: number;
-  droneHub: string;
+  hubId: string; // String field instead of relationship
 }
 
 interface HubFormData {
@@ -46,7 +46,7 @@ export default function DronesPage() {
     maxPayload: 5,
     maxSpeed: 50,
     maxRange: 10,
-    droneHub: '', // Keep for type compatibility but won't be used
+    hubId: '', // Hub ID is required (string field)
   });
   const [hubFormData, setHubFormData] = useState<HubFormData>({
     name: '',
@@ -135,6 +135,7 @@ export default function DronesPage() {
     
     if (drone) {
       setEditingDrone(drone);
+      const droneHubId = (drone as any).hubId || getDroneHubId(drone);
       setFormData({
         code: drone.code || '',
         name: drone.name || '',
@@ -144,7 +145,7 @@ export default function DronesPage() {
         maxPayload: drone.maxPayload || 5,
         maxSpeed: drone.maxSpeed || 50,
         maxRange: drone.maxRange || 10,
-        droneHub: typeof drone.droneHub === 'string' ? drone.droneHub : (drone.droneHub?.$id || (hubs.length > 0 ? hubs[0].$id : '')),
+        hubId: droneHubId || (hubs.length > 0 ? hubs[0].$id : ''),
       });
     } else {
       setEditingDrone(null);
@@ -157,7 +158,7 @@ export default function DronesPage() {
         maxPayload: 5,
         maxSpeed: 50,
         maxRange: 10,
-        droneHub: hubs.length > 0 ? hubs[0].$id : '',
+        hubId: hubs.length > 0 ? hubs[0].$id : '',
       });
     }
     setIsModalOpen(true);
@@ -235,6 +236,11 @@ export default function DronesPage() {
       return;
     }
     
+    if (!formData.hubId) {
+      alert('Please select a hub for this drone');
+      return;
+    }
+    
     try {
       setIsSubmitting(true);
       
@@ -248,13 +254,15 @@ export default function DronesPage() {
           maxPayload: formData.maxPayload,
           maxSpeed: formData.maxSpeed,
           maxRange: formData.maxRange,
+          hubId: formData.hubId,
         });
         setDrones(drones.map(d => d.$id === updated.$id ? updated : d));
         alert('Drone updated successfully');
       } else {
         const newDrone = await createDrone({
           ...formData,
-          status: 'available'
+          status: 'available',
+          hubId: formData.hubId,
         });
         setDrones([newDrone, ...drones]);
         alert('Drone created successfully and assigned to hub');
@@ -285,7 +293,14 @@ export default function DronesPage() {
   };
   
   const handleDeleteHub = async (hubId: string) => {
-    const dronesInHub = drones.filter(d => d.droneHub === hubId);
+    const dronesInHub = drones.filter(d => getDroneHubId(d) === hubId);
+    const busyDrones = dronesInHub.filter(d => d.status === 'busy');
+    
+    // Check if any drone is currently busy (delivering)
+    if (busyDrones.length > 0) {
+      alert(`❌ Cannot delete hub. ${busyDrones.length} drone(s) are currently delivering orders. Please wait until they complete their deliveries.`);
+      return;
+    }
     
     if (dronesInHub.length > 0) {
       const confirmMsg = `⚠️ This hub has ${dronesInHub.length} drone(s). Deleting the hub will also delete all drones assigned to it. Continue?`;
@@ -307,7 +322,7 @@ export default function DronesPage() {
       // Then delete the hub
       await deleteDroneHub(hubId);
       
-      setDrones(drones.filter(d => d.droneHub !== hubId));
+      setDrones(drones.filter(d => getDroneHubId(d) !== hubId));
       setHubs(hubs.filter(h => h.$id !== hubId));
       alert(`Hub and ${dronesInHub.length} drone(s) deleted successfully`);
     } catch (error) {
@@ -346,7 +361,8 @@ export default function DronesPage() {
 
   // Helper function to get drone hub ID
   const getDroneHubId = (drone: Drone): string => {
-    return typeof drone.droneHub === 'string' ? drone.droneHub : (drone.droneHub?.$id || '');
+    // Prioritize hubId (string field) over droneHub (relationship)
+    return (drone as any).hubId || (typeof drone.droneHub === 'string' ? drone.droneHub : (drone.droneHub?.$id || ''));
   };
 
   // Helper function to filter drones by hub
@@ -933,6 +949,28 @@ export default function DronesPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                   placeholder="DJI"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Hub <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={formData.hubId}
+                  onChange={(e) => setFormData({ ...formData, hubId: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                  required
+                >
+                  <option value="">Select a hub</option>
+                  {hubs.map(hub => (
+                    <option key={hub.$id} value={hub.$id}>
+                      {hub.name} - {hub.address}
+                    </option>
+                  ))}
+                </select>
+                {hubs.length === 0 && (
+                  <p className="text-xs text-red-500 mt-1">No hubs available. Please create a hub first.</p>
+                )}
               </div>
 
               {editingDrone && (

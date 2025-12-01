@@ -5,6 +5,7 @@ import { databases, Query, client } from '@/lib/appwrite';
 import { config } from '@/config';
 import { Order } from '@/types';
 import { Clock, CheckCircle, XCircle, Package, Truck, MapPin, X, Plane } from 'lucide-react';
+import DeliveryTrackingMap from '@/components/DeliveryTrackingMap';
 
 interface OrderItem {
   $id: string;
@@ -40,6 +41,11 @@ export default function OrdersPage() {
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [isLoadingItems, setIsLoadingItems] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  
+  // Tracking state
+  const [showTracking, setShowTracking] = useState(false);
+  const [dronePosition, setDronePosition] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [deliveryPath, setDeliveryPath] = useState<{ latitude: number; longitude: number }[]>([]);
   
   // Helper function to check if order is new (< 5 minutes old)
   const isNewOrder = (order: Order): boolean => {
@@ -145,6 +151,47 @@ export default function OrdersPage() {
       if (unsubscribeDrones) unsubscribeDrones();
     };
   }, [authLoading, restaurant?.$id]);
+
+  // Subscribe to drone position for selected delivering order
+  useEffect(() => {
+    if (!selectedOrder || !selectedOrder.droneId || selectedOrder.status !== 'delivering') {
+      return;
+    }
+
+    console.log('🚁 Subscribing to drone position for drone:', selectedOrder.droneId);
+    
+    const droneChannel = `databases.${config.appwrite.databaseId}.collections.${config.appwrite.dronesCollectionId}.documents.${selectedOrder.droneId}`;
+    
+    const unsubscribe = client.subscribe(droneChannel, (response) => {
+      const payload = response.payload as any;
+      console.log('📍 Drone position update:', payload);
+      
+      if (payload.currentLatitude && payload.currentLongitude) {
+        setDronePosition({
+          latitude: payload.currentLatitude,
+          longitude: payload.currentLongitude,
+        });
+        
+        // Add to path
+        setDeliveryPath(prev => [...prev, {
+          latitude: payload.currentLatitude,
+          longitude: payload.currentLongitude,
+        }]);
+      }
+      
+      // Update drone in map
+      setDrones(prev => {
+        const newMap = new Map(prev);
+        newMap.set(payload.$id, payload);
+        return newMap;
+      });
+    });
+
+    return () => {
+      console.log('🧹 Unsubscribing from drone position');
+      unsubscribe();
+    };
+  }, [selectedOrder?.$id, selectedOrder?.droneId, selectedOrder?.status]);
 
   // Fetch drones for active orders
   const fetchDrones = async () => {
@@ -854,9 +901,57 @@ export default function OrdersPage() {
                 <h3 className="text-lg font-semibold mb-3 text-gray-900">Delivery Address</h3>
                 <div className="flex items-start gap-2 text-sm">
                   <MapPin className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
-                  <span className="text-gray-700">{selectedOrder.deliveryAddress}</span>
+                  <div>
+                    <p className="font-medium">{selectedOrder.deliveryAddressLabel || 'Delivery Location'}</p>
+                    <p className="text-gray-700">{selectedOrder.deliveryAddress}</p>
+                    <p className="text-gray-500 mt-1">📞 {selectedOrder.phone}</p>
+                  </div>
                 </div>
               </div>
+
+              {/* Delivery Tracking Map */}
+              {(selectedOrder.status === 'delivering' || selectedOrder.status === 'picked_up') && selectedOrder.droneId && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-3 text-gray-900 flex items-center gap-2">
+                    <Plane className="w-5 h-5" />
+                    Live Tracking
+                  </h3>
+                  <DeliveryTrackingMap
+                    restaurant={restaurant ? {
+                      latitude: restaurant.latitude,
+                      longitude: restaurant.longitude,
+                      name: restaurant.name
+                    } : null}
+                    customer={selectedOrder.deliveryLatitude && selectedOrder.deliveryLongitude ? {
+                      latitude: selectedOrder.deliveryLatitude,
+                      longitude: selectedOrder.deliveryLongitude,
+                      address: selectedOrder.deliveryAddress
+                    } : null}
+                    drone={dronePosition ? {
+                      latitude: dronePosition.latitude,
+                      longitude: dronePosition.longitude,
+                      name: drones.get(selectedOrder.droneId)?.name,
+                      batteryLevel: drones.get(selectedOrder.droneId)?.batteryLevel
+                    } : null}
+                    path={deliveryPath}
+                    deliveryPhase={drones.get(selectedOrder.droneId)?.deliveryPhase}
+                    className="h-96 rounded-lg overflow-hidden"
+                  />
+                  <div className="mt-2 text-center">
+                    <button
+                      onClick={() => {
+                        setDeliveryPath([]);
+                        if (dronePosition) {
+                          setDeliveryPath([dronePosition]);
+                        }
+                      }}
+                      className="text-sm text-blue-600 hover:text-blue-700"
+                    >
+                      🔄 Reset Path
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Notes */}
               {selectedOrder.notes && (
