@@ -148,7 +148,7 @@ const DeliveryMap: React.FC<DeliveryMapProps> = ({
             coordinate={hub}
             title="Drone Hub"
             description="Drone base station"
-            pinColor="#1E90FF" // Blue
+            pinColor="#1E90FF"
           />
         )}
 
@@ -158,7 +158,7 @@ const DeliveryMap: React.FC<DeliveryMapProps> = ({
             coordinate={restaurant}
             title="Restaurant"
             description="Pickup location"
-            pinColor="#FE8C00" // Orange
+            pinColor="#FF8C00"
           />
         )}
 
@@ -168,7 +168,7 @@ const DeliveryMap: React.FC<DeliveryMapProps> = ({
             coordinate={customer}
             title="Delivery Address"
             description="Delivery destination"
-            pinColor="#2F9B65" // Green
+            pinColor="#32CD32"
           />
         )}
 
@@ -241,15 +241,6 @@ const DeliveryMap: React.FC<DeliveryMapProps> = ({
           />
         )}
       </MapView>
-
-      {/* Status overlay */}
-      <View className="absolute top-4 left-4 rounded-xl bg-black/70 px-3 py-2">
-        <Text className="text-white font-quicksand-semibold text-xs">
-          {phase === 'idle' && '⏳ Waiting for drone...'}
-          {phase === 'hub_to_restaurant' && '🚁 Hub → Restaurant'}
-          {phase === 'restaurant_to_customer' && '📦 Restaurant → Customer'}
-        </Text>
-      </View>
 
       {typeof etaMinutes === 'number' && etaMinutes > 0 && (
         <View className="absolute bottom-4 left-4 right-4 rounded-2xl bg-black/70 px-4 py-3">

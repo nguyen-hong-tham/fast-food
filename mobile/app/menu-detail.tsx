@@ -32,13 +32,29 @@ const MenuDetail = () => {
     const [loading, setLoading] = useState(true);
     const [quantity, setQuantity] = useState(1);
     const [notes, setNotes] = useState<string>('');
-    const { addItem } = useCartStore();
+    const { addItem, items, increaseQty, decreaseQty } = useCartStore();
     const { user } = useAuthStore();
     const { toast, showToast, hideToast, dialog, showConfirm, hideConfirm } = useToast();
 
     const isWeb = Platform.OS === 'web';
     const screenWidth = Dimensions.get('window').width;
     const isDesktop = isWeb && screenWidth > 768;
+
+    // Get existing cart item quantity
+    useEffect(() => {
+        if (!menuId) return;
+        
+        const simpleCartItem = items.find(i => 
+            i.id === menuId && 
+            (!i.customizations || i.customizations.length === 0) &&
+            (!i.notes || i.notes === '')
+        );
+        
+        if (simpleCartItem) {
+            setQuantity(simpleCartItem.quantity);
+            console.log('📦 Found existing item in cart with quantity:', simpleCartItem.quantity);
+        }
+    }, [menuId, items]);
 
     useEffect(() => {
         const fetchMenuItem = async () => {
@@ -132,19 +148,33 @@ const MenuDetail = () => {
     const addItemAndShowSuccess = () => {
         if (!menuItem || !restaurantId) return;
         
-        addItem(
-            {
-                id: menuItem.$id,
-                name: menuItem.name,
-                price: menuItem.price,
-                image: menuItem.image_url || '',
-                restaurantId: restaurantId,
-                customizations: [],
-                notes: notes.trim() || ''
-            },
-            restaurantId,
-            quantity
+        // 🔑 KEY FIX: Check if item already exists in cart
+        const existingItem = items.find(i => 
+            i.id === menuItem.$id && 
+            (!i.customizations || i.customizations.length === 0) &&
+            (i.notes || '') === (notes.trim() || '')
         );
+        
+        if (existingItem) {
+            // Item đã có trong cart - quantity đã được cập nhật bởi increaseQty/decreaseQty
+            // KHÔNG gọi addItem() nữa - chỉ show thông báo thành công
+            console.log('✅ Item already in cart with quantity:', existingItem.quantity);
+        } else {
+            // Item chưa có - thêm mới với quantity hiện tại
+            addItem(
+                {
+                    id: menuItem.$id,
+                    name: menuItem.name,
+                    price: menuItem.price,
+                    image: menuItem.image_url || '',
+                    restaurantId: restaurantId,
+                    customizations: [],
+                    notes: notes.trim() || ''
+                },
+                restaurantId,
+                quantity
+            );
+        }
 
         // On web, show custom dialog
         if (isWeb) {
@@ -351,7 +381,14 @@ const MenuDetail = () => {
                             <View className="flex-row items-center">
                                 <TouchableOpacity
                                     className="w-10 h-10 bg-gray-200 rounded-full items-center justify-center"
-                                    onPress={() => setQuantity(Math.max(1, quantity - 1))}
+                                    onPress={() => {
+                                        const newQty = Math.max(1, quantity - 1);
+                                        setQuantity(newQty);
+                                        // Sync with cart if item exists
+                                        if (menuItem && items.find(i => i.id === menuItem.$id && !i.customizations?.length && !i.notes)) {
+                                            decreaseQty(menuItem.$id, [], '');
+                                        }
+                                    }}
                                     style={isWeb ? { cursor: 'pointer' } as any : {}}
                                 >
                                     <Text className="text-lg font-bold text-gray-700">−</Text>
@@ -359,7 +396,14 @@ const MenuDetail = () => {
                                 <Text className="mx-4 text-lg font-semibold">{quantity}</Text>
                                 <TouchableOpacity
                                     className="w-10 h-10 bg-amber-500 rounded-full items-center justify-center"
-                                    onPress={() => setQuantity(quantity + 1)}
+                                    onPress={() => {
+                                        const newQty = quantity + 1;
+                                        setQuantity(newQty);
+                                        // Sync with cart if item exists
+                                        if (menuItem && items.find(i => i.id === menuItem.$id && !i.customizations?.length && !i.notes)) {
+                                            increaseQty(menuItem.$id, [], '');
+                                        }
+                                    }}
                                     style={isWeb ? { cursor: 'pointer' } as any : {}}
                                 >
                                     <Text className="text-lg font-bold text-white">+</Text>

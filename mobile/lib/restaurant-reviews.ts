@@ -35,11 +35,6 @@ export async function createRestaurantReview(
   }
 ) {
   try {
-    // TODO: Fix - Collection reviews doesn't exist or has different schema
-    console.warn('⚠️ Reviews collection not properly configured in Appwrite');
-    throw new Error('Reviews feature is temporarily disabled. Please contact support.');
-    
-    /* DISABLED until reviews collection is properly set up
     // Validate ratings
     if (data.overallRating < 1 || data.overallRating > 5) {
       throw new Error('Overall rating must be between 1 and 5');
@@ -65,8 +60,6 @@ export async function createRestaurantReview(
         deliverySpeed: data.deliverySpeed || null,
         service: data.service || null,
         comment: data.comment || '',
-        isVisible: true,
-        restaurantResponse: null,
       }
     );
 
@@ -74,7 +67,6 @@ export async function createRestaurantReview(
     await updateRestaurantAverageRating(restaurantId);
 
     return review;
-    */
   } catch (error) {
     console.error('Error creating restaurant review:', error);
     throw error;
@@ -179,11 +171,6 @@ export async function getRestaurantReviewsWithUserInfo(
  */
 export async function getUserReviewForOrder(userId: string, orderId: string) {
   try {
-    // TODO: Fix - Collection reviews doesn't exist or has different schema
-    console.warn('⚠️ Reviews collection not properly configured in Appwrite');
-    return null;
-    
-    /* DISABLED until reviews collection is properly set up
     const response = await databases.listDocuments(
       appwriteConfig.databaseId,
       appwriteConfig.reviewsCollectionId,
@@ -195,7 +182,6 @@ export async function getUserReviewForOrder(userId: string, orderId: string) {
     );
 
     return response.documents.length > 0 ? (response.documents[0] as unknown as Review) : null;
-    */
   } catch (error) {
     console.error('Error fetching user review for order:', error);
     return null;
@@ -215,14 +201,8 @@ export async function hasUserReviewedOrder(
   orderId: string
 ): Promise<boolean> {
   try {
-    // TODO: Fix - Collection reviews doesn't exist or has different schema
-    console.warn('⚠️ Reviews collection not properly configured in Appwrite');
-    return false;
-    
-    /* DISABLED until reviews collection is properly set up
     const review = await getUserReviewForOrder(userId, orderId);
     return review !== null;
-    */
   } catch (error) {
     console.error('Error checking if user reviewed order:', error);
     return false;
@@ -423,20 +403,36 @@ export async function updateRestaurantAverageRating(restaurantId: string) {
   try {
     const stats = await getRestaurantAverageRating(restaurantId);
 
-    // Update restaurant document
-    await databases.updateDocument(
-      appwriteConfig.databaseId,
-      appwriteConfig.restaurantsCollectionId,
-      restaurantId,
-      {
-        rating: stats.average,
-      }
-    );
+    // Only update if we have a valid rating (>= 1)
+    // Rating attribute in restaurants collection requires value between 1-5
+    if (stats.average >= 1 && stats.average <= 5) {
+      await databases.updateDocument(
+        appwriteConfig.databaseId,
+        appwriteConfig.restaurantsCollectionId,
+        restaurantId,
+        {
+          rating: stats.average,
+        }
+      );
+      console.log('✅ Restaurant rating updated to:', stats.average);
+    } else {
+      console.log('ℹ️ Skipping rating update - no valid reviews yet (average:', stats.average, ')');
+    }
 
     return stats;
   } catch (error) {
     console.error('Error updating restaurant average rating:', error);
-    throw error;
+    // Don't throw - this is a non-critical update
+    return {
+      average: 0,
+      total: 0,
+      distribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
+      averageByCategory: {
+        foodQuality: 0,
+        deliverySpeed: 0,
+        service: 0,
+      },
+    };
   }
 }
 

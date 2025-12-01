@@ -46,7 +46,17 @@ const OrderDetail = () => {
                 try {
                     const itemsData = await getOrderItems(orderId);
                     console.log('📦 Order detail - fetched items:', itemsData.length);
-                    setOrderItems(itemsData as unknown as OrderItem[]);
+                    // Map imageUrl → image_url for compatibility
+                    const mappedItems = itemsData.map((doc: any) => ({
+                        menuItemId: doc.menuItemId,
+                        name: doc.name,
+                        price: doc.price,
+                        quantity: doc.quantity,
+                        image_url: doc.imageUrl || doc.image_url || '',
+                        notes: doc.notes,
+                        customizations: doc.customizations,
+                    }));
+                    setOrderItems(mappedItems as OrderItem[]);
                 } catch (itemsError) {
                     console.warn('Failed to fetch order items:', itemsError);
                     // Fallback to parsing items from order.items field (for old orders)

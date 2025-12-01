@@ -1,6 +1,6 @@
 import { MenuItem } from "@/type";
 import { router } from "expo-router";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Image, Text, TouchableOpacity, View, ActivityIndicator, Alert, ToastAndroid, Platform } from 'react-native';
 import { useCartStore } from '@/store/cart.store';
 import useAuthStore from '@/store/auth.store';
@@ -14,10 +14,29 @@ interface MenuListItemProps {
 const MenuListItem = ({ item, restaurantId, searchTerm }: MenuListItemProps) => {
     const { $id, image_url, name, price, description } = item;
     const [adding, setAdding] = useState(false);
-    const { addItem, items, clearCart } = useCartStore();
+    const { addItem, items, clearCart, increaseQty, decreaseQty } = useCartStore();
     const { user } = useAuthStore();
+    
+    // Force re-render when cart changes
+    const [cartVersion, setCartVersion] = useState(0);
+    
+    useEffect(() => {
+        setCartVersion(prev => prev + 1);
+    }, [items]);
+    
+    // Calculate total quantity (all variations of this item)
+    const totalQuantity = items
+        .filter(i => i.id === $id)
+        .reduce((sum, item) => sum + item.quantity, 0);
+    
+    // Get simple cart item (no customizations)
+    const simpleCartItem = items.find(i => 
+        i.id === $id && 
+        (!i.customizations || i.customizations.length === 0)
+    );
+    const simpleQuantity = simpleCartItem?.quantity || 0;
 
-    const handleAddToCart = async () => {
+    const handleIncrement = async () => {
         if (!user) {
             if (Platform.OS === 'android') {
                 ToastAndroid.show('Please login to add items to cart', ToastAndroid.SHORT);
@@ -51,7 +70,19 @@ const MenuListItem = ({ item, restaurantId, searchTerm }: MenuListItemProps) => 
             return;
         }
 
-        await proceedAddToCart();
+        if (simpleQuantity === 0) {
+            // First time adding - create new simple item
+            await proceedAddToCart();
+        } else {
+            // Already have simple item - increase quantity
+            increaseQty($id, [], '');
+        }
+    };
+
+    const handleDecrement = () => {
+        if (simpleQuantity > 0) {
+            decreaseQty($id, [], '');
+        }
     };
 
     const proceedAddToCart = async () => {
@@ -184,7 +215,7 @@ const MenuListItem = ({ item, restaurantId, searchTerm }: MenuListItemProps) => 
                     )}
                 </View>
 
-                {/* Price & Add Button */}
+                {/* Price & Add Button / Quantity Controls */}
                 <View style={{ 
                     flexDirection: 'row', 
                     alignItems: 'center', 
@@ -198,35 +229,109 @@ const MenuListItem = ({ item, restaurantId, searchTerm }: MenuListItemProps) => 
                         {price.toLocaleString('vi-VN')}₫
                     </Text>
                     
-                    <TouchableOpacity
-                        onPress={handleAddToCart}
-                        disabled={adding}
-                        style={{
-                            width: 36,
-                            height: 36,
-                            borderRadius: 18,
-                            backgroundColor: '#f97316',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            shadowColor: '#f97316',
-                            shadowOffset: { width: 0, height: 2 },
-                            shadowOpacity: 0.3,
-                            shadowRadius: 4,
-                            elevation: 3
-                        }}
-                        activeOpacity={0.7}
-                    >
-                        {adding ? (
-                            <ActivityIndicator size="small" color="white" />
-                        ) : (
+                    {totalQuantity === 0 ? (
+                        // Show Add button when item not in cart
+                        <TouchableOpacity
+                            onPress={handleIncrement}
+                            disabled={adding}
+                            style={{
+                                width: 36,
+                                height: 36,
+                                borderRadius: 18,
+                                backgroundColor: '#f97316',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                shadowColor: '#f97316',
+                                shadowOffset: { width: 0, height: 2 },
+                                shadowOpacity: 0.3,
+                                shadowRadius: 4,
+                                elevation: 3
+                            }}
+                            activeOpacity={0.7}
+                        >
+                            {adding ? (
+                                <ActivityIndicator size="small" color="white" />
+                            ) : (
+                                <Text style={{ 
+                                    color: '#000000', 
+                                    fontSize: 20, 
+                                    fontWeight: 'bold',
+                                    lineHeight: 20
+                                }}>+</Text>
+                            )}
+                        </TouchableOpacity>
+                    ) : (
+                        // Show quantity controls when item is in cart
+                        <View style={{ 
+                            flexDirection: 'row', 
+                            alignItems: 'center', 
+                            gap: 8,
+                            backgroundColor: '#fef3c7',
+                            borderRadius: 20,
+                            paddingHorizontal: 8,
+                            paddingVertical: 4
+                        }}>
+                            <TouchableOpacity
+                                onPress={handleDecrement}
+                                style={{
+                                    width: 28,
+                                    height: 28,
+                                    borderRadius: 14,
+                                    backgroundColor: 'white',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    shadowColor: '#000',
+                                    shadowOffset: { width: 0, height: 1 },
+                                    shadowOpacity: 0.1,
+                                    shadowRadius: 2,
+                                    elevation: 2
+                                }}
+                                activeOpacity={0.7}
+                            >
+                                <Text style={{ 
+                                    color: '#f97316', 
+                                    fontSize: 18, 
+                                    fontWeight: 'bold',
+                                    lineHeight: 18
+                                }}>-</Text>
+                            </TouchableOpacity>
+                            
                             <Text style={{ 
-                                color: '#000000', 
-                                fontSize: 20, 
+                                fontSize: 16, 
                                 fontWeight: 'bold',
-                                lineHeight: 20
-                            }}>+</Text>
-                        )}
-                    </TouchableOpacity>
+                                color: '#1f2937',
+                                minWidth: 24,
+                                textAlign: 'center'
+                            }}>
+                                {totalQuantity}
+                            </Text>
+                            
+                            <TouchableOpacity
+                                onPress={handleIncrement}
+                                style={{
+                                    width: 28,
+                                    height: 28,
+                                    borderRadius: 14,
+                                    backgroundColor: '#f97316',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    shadowColor: '#f97316',
+                                    shadowOffset: { width: 0, height: 1 },
+                                    shadowOpacity: 0.3,
+                                    shadowRadius: 2,
+                                    elevation: 2
+                                }}
+                                activeOpacity={0.7}
+                            >
+                                <Text style={{ 
+                                    color: '#000000', 
+                                    fontSize: 18, 
+                                    fontWeight: 'bold',
+                                    lineHeight: 18
+                                }}>+</Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
                 </View>
             </View>
         </TouchableOpacity>

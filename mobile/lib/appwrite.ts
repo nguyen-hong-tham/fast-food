@@ -557,7 +557,53 @@ export const getUserOrders = async (userId: string) => {
             ]
         );
 
-        return orders.documents;
+        // Enhance orders with itemCount from orderItems collection
+        const enhancedOrders = await Promise.all(
+            orders.documents.map(async (order) => {
+                try {
+                    // Fetch order items count
+                    const orderItems = await databases.listDocuments(
+                        appwriteConfig.databaseId,
+                        appwriteConfig.orderItemsCollectionId,
+                        [
+                            Query.equal('orderId', order.$id),
+                        ]
+                    );
+                    
+                    // Calculate total item count
+                    const itemCount = orderItems.documents.reduce((sum, item: any) => {
+                        return sum + (item.quantity || 0);
+                    }, 0);
+                    
+                    return {
+                        ...order,
+                        itemCount,
+                    };
+                } catch (error) {
+                    console.warn('Failed to fetch items for order:', order.$id);
+                    // Fallback: try to parse from items field
+                    let itemCount = 0;
+                    if (order.items) {
+                        try {
+                            const items = typeof order.items === 'string' 
+                                ? JSON.parse(order.items) 
+                                : order.items;
+                            if (Array.isArray(items)) {
+                                itemCount = items.reduce((sum: number, item: any) => sum + (item.quantity || item.qty || 0), 0);
+                            }
+                        } catch (e) {
+                            console.warn('Failed to parse items:', e);
+                        }
+                    }
+                    return {
+                        ...order,
+                        itemCount,
+                    };
+                }
+            })
+        );
+
+        return enhancedOrders;
     } catch (e) {
         throw new Error(e as string);
     }
