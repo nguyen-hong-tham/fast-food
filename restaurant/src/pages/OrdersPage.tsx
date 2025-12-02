@@ -323,7 +323,7 @@ export default function OrdersPage() {
     if (authLoading || !restaurant?.$id) return;
     
     const interval = setInterval(() => {
-      console.log('🔄 Auto-refreshing orders...');
+      console.log('Auto-refreshing orders...');
       fetchOrders();
       fetchDrones();
     }, 10000); // Refresh every 10 seconds
@@ -350,9 +350,9 @@ export default function OrdersPage() {
       ? { latitude: selectedOrder.deliveryLatitude, longitude: selectedOrder.deliveryLongitude }
       : null;
 
-    console.log('📍 Hub:', hub);
-    console.log('🏪 Restaurant:', restaurantCoords);
-    console.log('🏠 Customer:', customerCoords);
+    console.log('Hub:', hub);
+    console.log('Restaurant:', restaurantCoords);
+    console.log('Customer:', customerCoords);
 
     // ============================================================
     // 🎮 ANIMATION SPEED SETTINGS - ĐIỀU CHỈNH TỐC ĐỘ TẠI ĐÂY
