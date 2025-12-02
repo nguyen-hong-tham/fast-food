@@ -278,6 +278,14 @@ export default function DronesPage() {
   };
   
   const handleDelete = async (droneId: string) => {
+    const drone = drones.find(d => d.$id === droneId);
+    
+    // Check if drone is busy (delivering)
+    if (drone?.status === 'busy' || drone?.status === 'delivering') {
+      alert('❌ Cannot delete this drone. It is currently busy with a delivery. Please wait until it completes the delivery.');
+      return;
+    }
+    
     if (!confirm('Are you sure you want to delete this drone?')) {
       return;
     }

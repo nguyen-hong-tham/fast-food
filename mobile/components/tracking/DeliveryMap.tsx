@@ -11,11 +11,13 @@ interface LatLng {
 
 export interface DeliveryMapProps {
   hub?: LatLng | null; // Hub location (drone base)
+  droneHub?: LatLng | null; // Alias for hub (backward compatibility)
   restaurant?: LatLng | null;
   customer?: LatLng | null;
   drone?: LatLng | null;
   path?: LatLng[];
   phase?: 'idle' | 'hub_to_restaurant' | 'restaurant_to_customer';
+  currentPhase?: 'idle' | 'to_restaurant' | 'to_customer'; // Alias for phase
   progress?: number;
   completedPath?: LatLng[];
   remainingPath?: LatLng[];
@@ -42,9 +44,9 @@ export const DroneProgressIndicator = ({
     <View className="mb-3">
       <View className="flex-row items-center justify-between mb-2">
         <Text className="text-sm font-quicksand-bold text-gray-700">
-          {phase === 'hub_to_restaurant' && '🚁 Hub → Restaurant'}
-          {phase === 'restaurant_to_customer' && '📦 Restaurant → Customer'}
-          {phase === 'idle' && '⏳ Preparing...'}
+          {phase === 'hub_to_restaurant' && 'Hub → Restaurant'}
+          {phase === 'restaurant_to_customer' && 'Restaurant → Customer'}
+          {phase === 'idle' && 'Preparing...'}
         </Text>
         <Text className="text-xs font-quicksand-semibold text-primary">
           {Math.round(phaseProgress)}%
@@ -77,20 +79,28 @@ export const DroneProgressIndicator = ({
 
 const DeliveryMap: React.FC<DeliveryMapProps> = ({
   hub,
+  droneHub,
   restaurant,
   customer,
   drone,
   path = [],
   phase = 'idle',
+  currentPhase,
   completedPath = [],
   remainingPath = [],
   etaMinutes,
 }) => {
   const mapRef = useRef<MapView | null>(null);
 
+  // Use droneHub as fallback, convert currentPhase to phase format
+  const hubLocation = hub || droneHub;
+  const activePhase = phase !== 'idle' ? phase : 
+    currentPhase === 'to_restaurant' ? 'hub_to_restaurant' : 
+    currentPhase === 'to_customer' ? 'restaurant_to_customer' : 'idle';
+
   const coordinates = useMemo(() => {
-    return [hub, restaurant, customer, drone].filter(Boolean) as LatLng[];
-  }, [hub, restaurant, customer, drone]);
+    return [hubLocation, restaurant, customer, drone].filter(Boolean) as LatLng[];
+  }, [hubLocation, restaurant, customer, drone]);
 
   const initialRegion = useMemo<Region>(() => {
     const fallback = INITIAL_REGION;
@@ -127,8 +137,8 @@ const DeliveryMap: React.FC<DeliveryMapProps> = ({
 
   // Get active segment color based on phase
   const getPathColor = () => {
-    if (phase === 'hub_to_restaurant') return '#FFA500'; // Orange for hub→restaurant
-    if (phase === 'restaurant_to_customer') return '#1E90FF'; // Blue for restaurant→customer
+    if (activePhase === 'hub_to_restaurant') return '#FFA500'; // Orange for hub→restaurant
+    if (activePhase === 'restaurant_to_customer') return '#1E90FF'; // Blue for restaurant→customer
     return '#7C3AED'; // Purple for idle
   };
 
@@ -142,33 +152,33 @@ const DeliveryMap: React.FC<DeliveryMapProps> = ({
         showsUserLocation={false}
         customMapStyle={[]}
       >
-        {/* Hub Marker (Drone Base) */}
-        {hub && (
+        {/* Hub Marker (Drone Base) - Purple Pin */}
+        {hubLocation && (
           <Marker
-            coordinate={hub}
+            coordinate={hubLocation}
             title="Drone Hub"
             description="Drone base station"
-            pinColor="#1E90FF"
+            pinColor="#9333ea"
           />
         )}
 
-        {/* Restaurant Marker */}
+        {/* Restaurant Marker - Orange Pin */}
         {restaurant && (
           <Marker
             coordinate={restaurant}
             title="Restaurant"
             description="Pickup location"
-            pinColor="#FF8C00"
+            pinColor="#f97316"
           />
         )}
 
-        {/* Customer Marker */}
+        {/* Customer Marker - Green Pin */}
         {customer && (
           <Marker
             coordinate={customer}
             title="Delivery Address"
             description="Delivery destination"
-            pinColor="#32CD32"
+            pinColor="#22c55e"
           />
         )}
 
@@ -178,12 +188,13 @@ const DeliveryMap: React.FC<DeliveryMapProps> = ({
             coordinate={drone}
             title="Drone"
             description="In-flight delivery"
-            pinColor="#1E90FF" // Blue
+            anchor={{ x: 0.5, y: 0.5 }}
+            flat={true}
           >
-            <View className="items-center justify-center">
+            <View style={{ alignItems: 'center', justifyContent: 'center' }}>
               <Image
                 source={icons.drone}
-                style={{ width: 40, height: 40 }}
+                style={{ width: 44, height: 44 }}
                 resizeMode="contain"
               />
             </View>
@@ -191,11 +202,11 @@ const DeliveryMap: React.FC<DeliveryMapProps> = ({
         )}
 
         {/* Planned Route - Full path (hub → restaurant → customer) with dashed lines */}
-        {hub && restaurant && (
+        {hubLocation && restaurant && (
           <Polyline
-            coordinates={[hub, restaurant]}
-            strokeColor={phase === 'hub_to_restaurant' ? '#FFA500' : '#CCCCCC'}
-            strokeWidth={phase === 'hub_to_restaurant' ? 4 : 2}
+            coordinates={[hubLocation, restaurant]}
+            strokeColor={activePhase === 'hub_to_restaurant' ? '#FFA500' : '#CCCCCC'}
+            strokeWidth={activePhase === 'hub_to_restaurant' ? 4 : 2}
             lineDashPattern={[8, 4]}
           />
         )}
@@ -203,8 +214,8 @@ const DeliveryMap: React.FC<DeliveryMapProps> = ({
         {restaurant && customer && (
           <Polyline
             coordinates={[restaurant, customer]}
-            strokeColor={phase === 'restaurant_to_customer' ? '#1E90FF' : '#CCCCCC'}
-            strokeWidth={phase === 'restaurant_to_customer' ? 4 : 2}
+            strokeColor={activePhase === 'restaurant_to_customer' ? '#1E90FF' : '#CCCCCC'}
+            strokeWidth={activePhase === 'restaurant_to_customer' ? 4 : 2}
             lineDashPattern={[8, 4]}
           />
         )}
@@ -241,14 +252,6 @@ const DeliveryMap: React.FC<DeliveryMapProps> = ({
           />
         )}
       </MapView>
-
-      {typeof etaMinutes === 'number' && etaMinutes > 0 && (
-        <View className="absolute bottom-4 left-4 right-4 rounded-2xl bg-black/70 px-4 py-3">
-          <Text className="text-white font-quicksand-semibold text-sm tracking-wide">
-            Estimated arrival in {Math.max(0, Math.round(etaMinutes))} minutes
-          </Text>
-        </View>
-      )}
     </View>
   );
 };

@@ -14,6 +14,7 @@ export const config = {
     paymentsCollectionId: import.meta.env.VITE_APPWRITE_PAYMENTS_COLLECTION_ID || '',
     reviewsCollectionId: import.meta.env.VITE_APPWRITE_REVIEWS_COLLECTION_ID || '',
     dronesCollectionId: import.meta.env.VITE_APPWRITE_DRONES_COLLECTION_ID || '',
+    droneHubsCollectionId: import.meta.env.VITE_APPWRITE_DRONE_HUBS_COLLECTION_ID || 'drone_hub',
     // Storage
     storageId: import.meta.env.VITE_APPWRITE_STORAGE_ID || '',
   }

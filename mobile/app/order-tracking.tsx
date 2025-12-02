@@ -1,10 +1,9 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Linking, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import * as Location from 'expo-location';
 
-import CustomHeader from '@/components/common/CustomHeader';
 import DeliveryMap from '@/components/tracking';
 import RealtimeStatus from '@/components/tracking/RealtimeStatus';
 
@@ -15,7 +14,7 @@ interface LatLng {
 }
 import StatusTimeline from '@/components/tracking/StatusTimeline';
 import { getOrderById, getOrderItems, subscribeToDroneEvents, subscribeToDronePosition, subscribeToOrder, updateOrderStatus } from '@/lib/appwrite';
-import { getDroneById, getRestaurantById } from '@/lib/api-helpers';
+import { getDroneById, getRestaurantById, updateDrone } from '@/lib/api-helpers';
 import { useDeliveryCalculation } from '@/hooks/useDeliveryCalculation';
 import { icons } from '@/constants';
 import { Drone, DroneHub, Order, OrderItem, Restaurant } from '@/type';
@@ -73,6 +72,9 @@ const OrderTrackingScreen = () => {
   const [currentPhase, setCurrentPhase] = useState<'to_restaurant' | 'to_customer' | 'idle'>('idle');
   const [phaseProgress, setPhaseProgress] = useState<number>(0);
   const [realtimeConnected, setRealtimeConnected] = useState(false);
+  
+  // Ref to track droneId for use in intervals/closures
+  const droneIdRef = useRef<string | null>(null);
 
   // Delivery calculation hook
   const { 
@@ -375,6 +377,11 @@ const OrderTrackingScreen = () => {
     };
   }, [order?.droneId, order?.status, restaurantCoords, customerCoords]);
 
+  // Update droneId ref whenever order changes
+  useEffect(() => {
+    droneIdRef.current = order?.droneId || null;
+  }, [order?.droneId]);
+
   // Fetch drone hub info when drone is assigned (for map display)
   useEffect(() => {
     if (!order?.droneId) return;
@@ -484,7 +491,7 @@ const OrderTrackingScreen = () => {
             console.log('🚁 Initial drone position: Current', initialDronePos);
           } else {
             initialDronePos = hubCoords;
-            console.log('🚁 Initial drone position: Fallback to Hub', initialDronePos);
+            console.log('Initial drone position: Fallback to Hub', initialDronePos);
           }
           
           setDroneCoords(initialDronePos);
@@ -499,7 +506,7 @@ const OrderTrackingScreen = () => {
     fetchDroneHub();
   }, [order?.droneId, restaurantCoords, droneHubCoords]);
 
-  // 🚁 LOCAL DRONE ANIMATION - runs when no realtime updates are received
+  // LOCAL DRONE ANIMATION - runs when no realtime updates are received
   // This ensures drone moves even if admin simulation is not running
   useEffect(() => {
     if (simulationState !== 'running') return;
@@ -521,15 +528,16 @@ const OrderTrackingScreen = () => {
 
     if (!targetCoords || !startCoords) return;
 
-    console.log(`🚁 Starting local animation: ${currentPhase}`);
-    console.log(`📍 From:`, startCoords, `To:`, targetCoords);
+    console.log(`Starting local animation: ${currentPhase}`);
+    console.log(`From:`, startCoords, `To:`, targetCoords);
     
     // Debug: Log exact coordinates
     if (currentPhase === 'to_customer') {
-      console.log(`🔍 Drone Route (to_customer):\n\nRestaurant (start):\n${startCoords.latitude.toFixed(6)}, ${startCoords.longitude.toFixed(6)}\n\nCustomer (target):\n${targetCoords.latitude.toFixed(6)}, ${targetCoords.longitude.toFixed(6)}`);
+      console.log(`Drone Route (to_customer):\n\nRestaurant (start):\n${startCoords.latitude.toFixed(6)}, ${startCoords.longitude.toFixed(6)}\n\nCustomer (target):\n${targetCoords.latitude.toFixed(6)}, ${targetCoords.longitude.toFixed(6)}`);
     }
 
-    let progress = phaseProgress / 100; // Convert 0-100 to 0-1
+    // Separate phase progress (0→1 for current phase) from overall progress (0→100)
+    let phaseLocalProgress = 0; // Always start from 0 for current phase
     let lastRealtimeUpdate = Date.now();
     let animationActive = true;
 
@@ -549,8 +557,15 @@ const OrderTrackingScreen = () => {
             Math.pow(droneCoords.latitude - startCoords.latitude, 2) +
             Math.pow(droneCoords.longitude - startCoords.longitude, 2)
           );
-          progress = Math.min(currentDist / totalDist, 1);
-          setPhaseProgress(Math.round(progress * 100));
+          phaseLocalProgress = Math.min(currentDist / totalDist, 1);
+          
+          // Calculate overall progress based on distance ratio:
+          // Hub→Restaurant = 30%, Restaurant→Customer = 70%
+          const overallProgress = currentPhase === 'to_restaurant'
+            ? Math.round(phaseLocalProgress * 30)
+            : Math.round(30 + phaseLocalProgress * 70);
+          
+          setPhaseProgress(overallProgress);
         }
         return;
       }
@@ -559,13 +574,21 @@ const OrderTrackingScreen = () => {
       const phaseDuration = currentPhase === 'to_restaurant' ? 30 : 45; // seconds
       const progressIncrement = 1 / phaseDuration; // Progress per second
       
-      progress = Math.min(progress + progressIncrement, 1);
-      setPhaseProgress(Math.round(progress * 100));
+      phaseLocalProgress = Math.min(phaseLocalProgress + progressIncrement, 1);
+      
+      // Calculate overall progress based on distance ratio:
+      // Hub→Restaurant = 30% (0% → 30%)
+      // Restaurant→Customer = 70% (30% → 100%)
+      const overallProgress = currentPhase === 'to_restaurant'
+        ? Math.round(phaseLocalProgress * 30)
+        : Math.round(30 + phaseLocalProgress * 70);
+      
+      setPhaseProgress(overallProgress);
 
       // Calculate new position using easing
-      const easeInOut = progress < 0.5 
-        ? 2 * progress * progress 
-        : -1 + (4 - 2 * progress) * progress;
+      const easeInOut = phaseLocalProgress < 0.5 
+        ? 2 * phaseLocalProgress * phaseLocalProgress 
+        : -1 + (4 - 2 * phaseLocalProgress) * phaseLocalProgress;
       
       const newLat = startCoords!.latitude + (targetCoords!.latitude - startCoords!.latitude) * easeInOut;
       const newLng = startCoords!.longitude + (targetCoords!.longitude - startCoords!.longitude) * easeInOut;
@@ -579,31 +602,39 @@ const OrderTrackingScreen = () => {
       });
 
       // Phase complete
-      if (progress >= 1) {
-        console.log(`✅ Phase ${currentPhase} complete!`);
+      if (phaseLocalProgress >= 1) {
+        console.log(`Phase ${currentPhase} complete!`);
         
         if (currentPhase === 'to_restaurant') {
           // Move to next phase - drone arrived at restaurant
           setCurrentPhase('to_customer');
-          progress = 0;
-          setPhaseProgress(0);
-          console.log('📦 Drone arrived at restaurant, starting delivery to customer...');
+          phaseLocalProgress = 0;
+          // Don't reset phaseProgress - it should stay at 30% and continue
+          console.log('Drone arrived at restaurant, starting delivery to customer...');
         } else if (currentPhase === 'to_customer') {
           // Delivery complete
           setSimulationState('completed');
           animationActive = false;
           clearInterval(animationInterval);
           
-          // 🎉 Mark as delivered - update LOCAL state immediately
-          // Note: Mobile users don't have permission to update order status in database
-          // The actual database status update is handled by admin simulation
+          // Mark as delivered and set drone status back to available
           console.log('🎉 Delivery complete! Updating local state to delivered...');
           setOrder(prev => prev ? { ...prev, status: 'delivered' } : null);
           
-          // Silently try to update database (will likely fail due to permissions - that's OK)
+          // Update drone status to available using ref (safer than closure)
+          if (droneIdRef.current) {
+            console.log('✈️ Updating drone', droneIdRef.current, 'status to available');
+            updateDrone(droneIdRef.current, { status: 'available' })
+              .then(() => console.log('✅ Drone status set to available'))
+              .catch(err => console.warn('Could not update drone status:', err));
+          } else {
+            console.warn('⚠️ No droneId available to update status');
+          }
+          
+          // Silently try to update order in database (will likely fail due to permissions - that's OK)
           if (order?.$id) {
             updateOrderStatus(order.$id, 'delivered')
-              .then(() => console.log('✅ Database also updated to delivered!'))
+              .then(() => console.log('Database also updated to delivered!'))
               .catch(() => {
                 // Silently ignore permission errors - local state is already updated
                 // Admin simulation or restaurant portal will update database later
@@ -667,11 +698,17 @@ const OrderTrackingScreen = () => {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-white" edges={['top']}>
-        <CustomHeader title="Order Tracking" />
-        <View className="flex-1 items-center justify-center">
+      <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }} edges={['top']}>
+        <View style={{ paddingHorizontal: 16, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <TouchableOpacity onPress={() => {}} style={{ width: 24, height: 24 }}>
+            <Text style={{ fontSize: 24 }}>←</Text>
+          </TouchableOpacity>
+          <Text style={{ fontSize: 18, fontWeight: '600', color: '#1f2937' }}>Order Tracking</Text>
+          <View style={{ width: 24 }} />
+        </View>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <ActivityIndicator size="large" color="#FE8C00" />
-          <Text className="mt-4 text-gray-500 font-quicksand-medium">Loading order...</Text>
+          <Text style={{ marginTop: 16, color: '#9ca3af', fontFamily: 'QuickSand-Medium' }}>Loading order...</Text>
         </View>
       </SafeAreaView>
     );
@@ -679,12 +716,18 @@ const OrderTrackingScreen = () => {
 
   if (errorMessage || !order) {
     return (
-      <SafeAreaView className="flex-1 bg-white" edges={['top']}>
-        <CustomHeader title="Order Tracking" />
-        <View className="flex-1 items-center justify-center px-6">
-          <Image source={icons.bag} className="h-24 w-24" resizeMode="contain" tintColor="#D1D5DB" />
-          <Text className="mt-6 text-lg font-quicksand-semibold text-dark-100">Order Unavailable</Text>
-          <Text className="mt-2 text-center text-gray-500 font-quicksand-regular">
+      <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }} edges={['top']}>
+        <View style={{ paddingHorizontal: 16, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <TouchableOpacity onPress={() => {}} style={{ width: 24, height: 24 }}>
+            <Text style={{ fontSize: 24 }}>←</Text>
+          </TouchableOpacity>
+          <Text style={{ fontSize: 18, fontWeight: '600', color: '#1f2937' }}>Order Tracking</Text>
+          <View style={{ width: 24 }} />
+        </View>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 }}>
+          <Image source={icons.bag} style={{ height: 96, width: 96 }} resizeMode="contain" tintColor="#D1D5DB" />
+          <Text style={{ marginTop: 24, fontSize: 18, fontWeight: '600', color: '#111827' }}>Order Unavailable</Text>
+          <Text style={{ marginTop: 8, textAlign: 'center', color: '#9ca3af', fontFamily: 'QuickSand-Regular' }}>
             {errorMessage || 'We could not load this order. Please try again later.'}
           </Text>
         </View>
@@ -771,11 +814,18 @@ const OrderTrackingScreen = () => {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
-      <CustomHeader title="Order Tracking" />
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }} edges={['top']}>
+      {/* Simple Header - No Navigation Hooks */}
+      <View style={{ paddingHorizontal: 16, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <TouchableOpacity onPress={() => {}} style={{ width: 24, height: 24 }}>
+          <Text style={{ fontSize: 24 }}>←</Text>
+        </TouchableOpacity>
+        <Text style={{ fontSize: 18, fontWeight: '600', color: '#1f2937' }}>Order Tracking</Text>
+        <View style={{ width: 24 }} />
+      </View>
       
-      {/* Map - Full width at top */}
-      <View style={{ height: 320 }} className="relative">
+      {/* Map - Full width at top with rounded corners */}
+      <View style={{ height: 300, marginHorizontal: 16, marginTop: 8, borderRadius: 24, overflow: 'hidden', elevation: 5 }}>
         <DeliveryMap
           restaurant={restaurantCoords}
           customer={customerCoords}
@@ -786,132 +836,78 @@ const OrderTrackingScreen = () => {
           etaMinutes={etaMinutes}
         />
         
-        {/* Map Gradient Overlay */}
-        <View className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-gray-50 to-transparent pointer-events-none" />
-        
         {/* Realtime Connection Status */}
         <RealtimeStatus isConnected={realtimeConnected} />
-        
-        {/* Debug Info Overlay (Remove in production) */}
-        {__DEV__ && (
-          <View className="absolute top-2 left-2 rounded-lg p-2" style={{ backgroundColor: 'rgba(0, 0, 0, 0.7)' }}>
-            <Text className="text-white text-xs font-mono">
-              Status: {order.status}
-            </Text>
-            <Text className="text-white text-xs font-mono">
-              Phase: {currentPhase} ({Math.round(phaseProgress)}%)
-            </Text>
-            <Text className="text-white text-xs font-mono">
-              Drone: {droneCoords ? '✓ Visible' : '✗ Hidden'}
-            </Text>
-            <Text className="text-white text-xs font-mono">
-              Hub: {droneHubCoords ? '✓ Set' : '✗ Not set'}
-            </Text>
-            <Text className="text-white text-xs font-mono">
-              Sim: {simulationState}
-            </Text>
-          </View>
-        )}
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 20 }} showsVerticalScrollIndicator={false}>
-        <View className="px-4 py-4 space-y-3">
+      <ScrollView contentContainerStyle={{ paddingBottom: 30 }} showsVerticalScrollIndicator={false}>
+        <View className="px-4 pt-5 space-y-4">
           
-          {/* Status Card - CLEAN MODERN DESIGN */}
-          <View className="bg-white rounded-2xl shadow-lg overflow-hidden" style={{ elevation: 4 }}>
-            {/* Colored top bar */}
-            <View style={{ height: 4, backgroundColor: getStatusGradient()[0] }} />
+          {/* Status Card - Modern Minimal Design */}
+          <View className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100" style={{ elevation: 6 }}>
+            {/* Colored accent line */}
+            <View style={{ height: 3, backgroundColor: getStatusGradient()[0] }} />
             
-            <View className="p-5">
+            <View className="p-6">
               <View className="flex-row items-center justify-between">
                 <View className="flex-1">
-                  <Text className="text-xs text-gray-500 font-quicksand-semibold mb-1">
+                  <Text className="text-xs text-gray-400 font-quicksand-bold uppercase tracking-wider mb-2">
                     Order Status
                   </Text>
-                  <Text className="text-xl font-quicksand-bold text-gray-900">
+                  <Text className="text-2xl font-quicksand-bold text-gray-900">
                     {getStatusText()}
                   </Text>
                 </View>
                 
-                {/* Status Indicator */}
+                {/* Status Indicator - Pulsing dot */}
                 <View className="items-center justify-center">
                   <View 
-                    className="w-12 h-12 rounded-full items-center justify-center"
-                    style={{ backgroundColor: getStatusGradient()[0] + '20' }}
+                    className="w-14 h-14 rounded-2xl items-center justify-center"
+                    style={{ backgroundColor: getStatusGradient()[0] + '15' }}
                   >
                     <View 
-                      className="w-3 h-3 rounded-full"
+                      className="w-4 h-4 rounded-full"
                       style={{ backgroundColor: getStatusGradient()[0] }}
                     />
                   </View>
                 </View>
               </View>
-              
-              {/* ETA - Only show when delivering */}
-              {order?.status === 'delivering' && (
-                <View className="mt-4 p-3 rounded-xl" style={{ backgroundColor: '#f0f9ff' }}>
-                  <Text className="text-xs text-gray-600 font-quicksand-medium mb-1">
-                    Estimated Arrival
-                  </Text>
-                  <Text className="text-lg font-quicksand-bold text-gray-900">
-                    {getEtaText()}
-                  </Text>
-                  
-                  {/* Progress bar */}
-                  {currentPhase !== 'idle' && (
-                    <View className="mt-3">
-                      <View className="flex-row justify-between mb-1">
-                        <Text className="text-xs text-gray-600 font-quicksand-medium">
-                          {currentPhase === 'to_restaurant' ? 'Picking up order' : 'On the way to you'}
-                        </Text>
-                        <Text className="text-xs font-quicksand-bold text-gray-700">
-                          {phaseProgress}%
-                        </Text>
-                      </View>
-                      <View className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                        <View 
-                          className="h-full rounded-full" 
-                          style={{ 
-                            width: `${phaseProgress}%`,
-                            backgroundColor: getStatusGradient()[0]
-                          }}
-                        />
-                      </View>
-                    </View>
-                  )}
-                </View>
-              )}
             </View>
           </View>
 
           {/* Delivery Address */}
-          <View className="bg-white rounded-2xl p-5 shadow-md" style={{ elevation: 2 }}>
-            <Text className="text-xs text-gray-500 font-quicksand-semibold mb-3">
-              Delivery Address
-            </Text>
-            <Text className="text-base text-gray-900 font-quicksand-bold leading-relaxed">
+          <View className="bg-white rounded-3xl p-5 shadow-md border border-gray-100" style={{ elevation: 3 }}>
+            <View className="flex-row items-center mb-3">
+              <Text className="text-xs text-gray-400 font-quicksand-bold uppercase tracking-wider">
+                Delivery Address
+              </Text>
+            </View>
+            <Text className="text-base text-gray-900 font-quicksand-bold leading-relaxed ml-13">
               {order.deliveryAddress}
             </Text>
             {order.phone && (
-              <Text className="text-sm text-gray-600 font-quicksand-medium mt-2">
-                {order.phone}
+              <Text className="text-sm text-gray-500 font-quicksand-medium mt-2 ml-13">
+                Phone: {order.phone}
               </Text>
             )}
           </View>
 
           {/* Restaurant Info */}
           {restaurant && (
-            <View className="bg-white rounded-2xl p-5 shadow-md" style={{ elevation: 2 }}>
+            <View className="bg-white rounded-3xl p-5 shadow-md border border-gray-100" style={{ elevation: 3 }}>
               <View className="flex-row items-start justify-between">
                 <View className="flex-1">
-                  <Text className="text-xs text-gray-500 font-quicksand-semibold mb-2">
-                    Restaurant
-                  </Text>
-                  <Text className="text-lg text-gray-900 font-quicksand-bold mb-2">
+                  <View className="flex-row items-center mb-3">
+
+                    <Text className="text-xs text-gray-400 font-quicksand-bold uppercase tracking-wider">
+                      Restaurant
+                    </Text>
+                  </View>
+                  <Text className="text-lg text-gray-900 font-quicksand-bold mb-1 ml-13">
                     {restaurant.name}
                   </Text>
                   {deliveryCalc && (
-                    <Text className="text-sm text-gray-600 font-quicksand-medium">
+                    <Text className="text-sm text-gray-500 font-quicksand-medium ml-13">
                       {deliveryCalc.formattedDistance} • {deliveryCalc.formattedTime}
                     </Text>
                   )}
@@ -920,12 +916,12 @@ const OrderTrackingScreen = () => {
                 {/* Call Button */}
                 {restaurant?.phone && (
                   <TouchableOpacity
-                    className="w-12 h-12 bg-primary rounded-xl items-center justify-center ml-3"
-                    activeOpacity={0.7}
+                    className="w-14 h-14 bg-primary rounded-2xl items-center justify-center"
+                    activeOpacity={0.8}
                     onPress={handleCallRestaurant}
-                    style={{ elevation: 2 }}
+                    style={{ elevation: 4 }}
                   >
-                    <Text className="text-2xl">📞</Text>
+                    <Text style={{ fontSize: 22 }}>📞</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -934,15 +930,17 @@ const OrderTrackingScreen = () => {
 
           {/* Order Items */}
           {items.length > 0 && (
-            <View className="bg-white rounded-2xl shadow-md overflow-hidden" style={{ elevation: 2 }}>
+            <View className="bg-white rounded-3xl shadow-md overflow-hidden border border-gray-100" style={{ elevation: 3 }}>
               {/* Header */}
-              <View className="px-5 py-4 border-b border-gray-100">
+              <View className="px-5 py-4 bg-gray-50 border-b border-gray-100">
                 <View className="flex-row items-center justify-between">
-                  <Text className="text-base font-quicksand-bold text-gray-900">
-                    Order Items
-                  </Text>
-                  <View className="bg-gray-100 px-3 py-1 rounded-full">
-                    <Text className="text-xs text-gray-700 font-quicksand-bold">
+                  <View className="flex-row items-center">
+                    <Text className="text-base font-quicksand-bold text-gray-900 ml-2">
+                      Order Items
+                    </Text>
+                  </View>
+                  <View className="bg-primary/10 px-3 py-1.5 rounded-full">
+                    <Text className="text-xs text-primary font-quicksand-bold">
                       {items.length} {items.length === 1 ? 'item' : 'items'}
                     </Text>
                   </View>
@@ -950,13 +948,13 @@ const OrderTrackingScreen = () => {
               </View>
               
               {/* Items List */}
-              <View className="px-5 py-3">
+              <View className="px-5 py-2">
                 {items.map((item, index) => (
                   <View key={`${item.menuItemId}-${index}`}>
-                    <View className="py-3 flex-row items-start justify-between">
-                      <View className="flex-1 flex-row items-start">
-                        <View className="w-8 h-8 bg-amber-50 rounded-lg items-center justify-center mr-3 border border-amber-200">
-                          <Text className="text-sm font-quicksand-bold text-primary">
+                    <View className="py-4 flex-row items-center justify-between">
+                      <View className="flex-1 flex-row items-center">
+                        <View className="w-10 h-10 bg-amber-100 rounded-xl items-center justify-center mr-4">
+                          <Text className="text-base font-quicksand-bold text-primary">
                             {item.quantity}×
                           </Text>
                         </View>
@@ -965,28 +963,28 @@ const OrderTrackingScreen = () => {
                             {item.name}
                           </Text>
                           {item.notes && (
-                            <Text className="text-xs text-gray-500 font-quicksand-medium mt-1">
-                              Note: {item.notes}
+                            <Text className="text-xs text-gray-400 font-quicksand-medium mt-1">
+                              {item.notes}
                             </Text>
                           )}
                         </View>
                       </View>
-                      <Text className="text-sm font-quicksand-bold text-gray-900 ml-2">
+                      <Text className="text-sm font-quicksand-bold text-gray-700 ml-2">
                         {(item.price * item.quantity).toLocaleString('vi-VN')}₫
                       </Text>
                     </View>
                     {index < items.length - 1 && (
-                      <View className="h-px bg-gray-100" />
+                      <View className="h-px bg-gray-100 ml-14" />
                     )}
                   </View>
                 ))}
               </View>
               
               {/* Total */}
-              <View className="px-5 py-4 bg-gray-50 border-t border-gray-200">
+              <View className="px-5 py-5 bg-gradient-to-r from-primary/5 to-amber-50 border-t border-gray-100">
                 <View className="flex-row justify-between items-center">
-                  <Text className="text-base font-quicksand-bold text-gray-700">
-                    Total
+                  <Text className="text-base font-quicksand-bold text-gray-600">
+                    Total Amount
                   </Text>
                   <Text className="text-2xl font-quicksand-bold text-primary">
                     {order.total.toLocaleString('vi-VN')}₫
@@ -997,10 +995,12 @@ const OrderTrackingScreen = () => {
           )}
 
           {/* Order ID */}
-          <View className="items-center py-3">
-            <Text className="text-xs text-gray-500 font-quicksand-medium">
-              Order #{order.$id.slice(-8).toUpperCase()}
-            </Text>
+          <View className="items-center py-4">
+            <View className="bg-white-100 px-4 py-2 rounded-full border border-gray-200">
+              <Text className="text-xs text-black-500 font-quicksand-semibold">
+                Order ID: #{order.$id.slice(-8).toUpperCase()}
+              </Text>
+            </View>
           </View>
         </View>
       </ScrollView>

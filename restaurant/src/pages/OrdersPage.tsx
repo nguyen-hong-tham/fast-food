@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 import { useAuthStore } from '@/store/authStore';
 import { databases, Query, client } from '@/lib/appwrite';
@@ -29,7 +29,96 @@ interface Drone {
   currentLatitude?: number;
   currentLongitude?: number;
   batteryLevel: number;
+  homeLatitude?: number;
+  homeLongitude?: number;
+  droneHub?: DroneHub | string;
 }
+
+interface DroneHub {
+  $id: string;
+  name: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+}
+
+// Default hub location (273 An Dương Vương - Main Hub)
+const DEFAULT_HUB = { latitude: 10.7599171, longitude: 106.6796834 };
+
+// Helper function to calculate distance between two points (Haversine formula)
+const calculateDistance = (
+  lat1: number, lon1: number,
+  lat2: number, lon2: number
+): number => {
+  const R = 6371; // Earth radius in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c; // Distance in km
+};
+
+// Helper function to calculate progress percentage
+const calculateProgress = (
+  dronePosition: { latitude: number; longitude: number } | null,
+  hubCoords: { latitude: number; longitude: number } | null,
+  restaurantCoords: { latitude: number; longitude: number } | null,
+  customerCoords: { latitude: number; longitude: number } | null,
+  phase?: string
+): number => {
+  if (!dronePosition || !restaurantCoords) return 0;
+  
+  const hub = hubCoords || DEFAULT_HUB;
+  
+  if (phase === 'to_restaurant') {
+    const totalDistance = calculateDistance(hub.latitude, hub.longitude, restaurantCoords.latitude, restaurantCoords.longitude);
+    if (totalDistance === 0) return 100;
+    const currentDistance = calculateDistance(dronePosition.latitude, dronePosition.longitude, restaurantCoords.latitude, restaurantCoords.longitude);
+    const traveled = totalDistance - currentDistance;
+    return Math.min(Math.max((traveled / totalDistance) * 100, 0), 100);
+  } else if (phase === 'to_customer' && customerCoords) {
+    const totalDistance = calculateDistance(restaurantCoords.latitude, restaurantCoords.longitude, customerCoords.latitude, customerCoords.longitude);
+    if (totalDistance === 0) return 100;
+    const currentDistance = calculateDistance(dronePosition.latitude, dronePosition.longitude, customerCoords.latitude, customerCoords.longitude);
+    const traveled = totalDistance - currentDistance;
+    return Math.min(Math.max((traveled / totalDistance) * 100, 0), 100);
+  }
+  
+  return 0;
+};
+
+// Helper function to calculate ETA in minutes
+const calculateETA = (
+  dronePosition: { latitude: number; longitude: number } | null,
+  restaurantCoords: { latitude: number; longitude: number } | null,
+  customerCoords: { latitude: number; longitude: number } | null,
+  phase?: string
+): number | undefined => {
+  if (!dronePosition) return undefined;
+  
+  const DRONE_SPEED_KM_PER_HOUR = 50;
+  let distance = 0;
+  
+  if (phase === 'to_restaurant' && restaurantCoords) {
+    distance = calculateDistance(
+      dronePosition.latitude, dronePosition.longitude,
+      restaurantCoords.latitude, restaurantCoords.longitude
+    );
+  } else if (phase === 'to_customer' && customerCoords) {
+    distance = calculateDistance(
+      dronePosition.latitude, dronePosition.longitude,
+      customerCoords.latitude, customerCoords.longitude
+    );
+  }
+  
+  const timeInHours = distance / DRONE_SPEED_KM_PER_HOUR;
+  const timeInMinutes = Math.ceil(timeInHours * 60);
+  
+  return timeInMinutes > 0 ? timeInMinutes : undefined;
+};
 
 export default function OrdersPage() {
   const { restaurant, isLoading: authLoading } = useAuthStore();
@@ -46,6 +135,19 @@ export default function OrdersPage() {
   const [showTracking, setShowTracking] = useState(false);
   const [dronePosition, setDronePosition] = useState<{ latitude: number; longitude: number } | null>(null);
   const [deliveryPath, setDeliveryPath] = useState<{ latitude: number; longitude: number }[]>([]);
+  const [hubCoords, setHubCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [currentPhase, setCurrentPhase] = useState<'to_restaurant' | 'to_customer' | 'idle'>('idle');
+  const [isSimulating, setIsSimulating] = useState(false);
+  
+  // Animation refs to avoid closure issues
+  const phaseRef = useRef(currentPhase);
+  const simulatingRef = useRef(isSimulating);
+  const hubRef = useRef(hubCoords);
+  
+  // Keep refs in sync
+  useEffect(() => { phaseRef.current = currentPhase; }, [currentPhase]);
+  useEffect(() => { simulatingRef.current = isSimulating; }, [isSimulating]);
+  useEffect(() => { hubRef.current = hubCoords; }, [hubCoords]);
   
   // Helper function to check if order is new (< 5 minutes old)
   const isNewOrder = (order: Order): boolean => {
@@ -229,6 +331,100 @@ export default function OrdersPage() {
     return () => clearInterval(interval);
   }, [authLoading, restaurant?.$id]);
 
+  // DRONE ANIMATION - Simulates drone movement Hub → Restaurant → Customer (synced with mobile)
+  useEffect(() => {
+    if (!isSimulating || !selectedOrder?.droneId || !restaurant) {
+      return;
+    }
+    if (selectedOrder.status === 'delivered' || selectedOrder.status === 'cancelled') {
+      setIsSimulating(false);
+      return;
+    }
+
+    console.log('🎬 Starting drone animation, phase:', phaseRef.current);
+
+    // Capture coordinates
+    const hub = hubRef.current || DEFAULT_HUB;
+    const restaurantCoords = { latitude: restaurant.latitude, longitude: restaurant.longitude };
+    const customerCoords = selectedOrder.deliveryLatitude && selectedOrder.deliveryLongitude
+      ? { latitude: selectedOrder.deliveryLatitude, longitude: selectedOrder.deliveryLongitude }
+      : null;
+
+    console.log('📍 Hub:', hub);
+    console.log('🏪 Restaurant:', restaurantCoords);
+    console.log('🏠 Customer:', customerCoords);
+
+    // ============================================================
+    // 🎮 ANIMATION SPEED SETTINGS - ĐIỀU CHỈNH TỐC ĐỘ TẠI ĐÂY
+    // ============================================================
+    // PHASE1_DURATION: Thời gian bay từ Hub → Restaurant (milliseconds)
+    // PHASE2_DURATION: Thời gian bay từ Restaurant → Customer (milliseconds)
+    // TICK_INTERVAL: Khoảng cách giữa các frame animation (ms) - càng nhỏ càng mượt
+    // 
+    // Ví dụ: 
+    //   - 6000ms = 6 giây, 12000ms = 12 giây, 20000ms = 20 giây
+    //   - Tăng số này để drone bay chậm hơn
+    // ============================================================
+    const PHASE1_DURATION = 18500; // 18 giây cho Hub → Restaurant (tăng từ 6s)
+    const PHASE2_DURATION = 31500; // 31 giây cho Restaurant → Customer (tăng từ 8s)
+    const TICK_INTERVAL = 200;     // 200ms per tick (giữ nguyên để animation mượt)
+    // ============================================================
+    
+    const PHASE1_STEPS = PHASE1_DURATION / TICK_INTERVAL; // 60 steps
+    const PHASE2_STEPS = PHASE2_DURATION / TICK_INTERVAL; // 80 steps
+    
+    let stepCount = 0;
+    let currentSteps = PHASE1_STEPS;
+    let startPos = { ...hub };
+    let endPos = restaurantCoords;
+    
+    const animationInterval = setInterval(() => {
+      if (!simulatingRef.current) {
+        clearInterval(animationInterval);
+        return;
+      }
+
+      stepCount++;
+      const phase = phaseRef.current;
+      
+      // Calculate eased progress (same easing as mobile)
+      const t = stepCount / currentSteps;
+      const easeInOut = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+      
+      // Calculate new position
+      const newPos = {
+        latitude: startPos.latitude + (endPos.latitude - startPos.latitude) * easeInOut,
+        longitude: startPos.longitude + (endPos.longitude - startPos.longitude) * easeInOut,
+      };
+      
+      setDronePosition(newPos);
+
+      // Check if phase completed
+      if (stepCount >= currentSteps) {
+        if (phase === 'to_restaurant') {
+          console.log('Arrived at Restaurant!');
+          phaseRef.current = 'to_customer';
+          setCurrentPhase('to_customer');
+          
+          // Reset for phase 2
+          stepCount = 0;
+          currentSteps = PHASE2_STEPS;
+          startPos = { ...restaurantCoords };
+          endPos = customerCoords || restaurantCoords;
+        } else {
+          console.log('Arrived at Customer! Delivery complete.');
+          simulatingRef.current = false;
+          setIsSimulating(false);
+          phaseRef.current = 'idle';
+          setCurrentPhase('idle');
+          clearInterval(animationInterval);
+        }
+      }
+    }, TICK_INTERVAL);
+
+    return () => clearInterval(animationInterval);
+  }, [isSimulating, selectedOrder?.$id, restaurant]);
+
   const fetchOrders = async () => {
     if (!restaurant?.$id) {
       console.warn('No restaurant ID to fetch orders');
@@ -238,8 +434,8 @@ export default function OrdersPage() {
 
       try {
         setIsLoading(true);
-        console.log('🔍 Fetching orders for restaurant:', restaurant.$id);
-        console.log('🏪 Restaurant name:', restaurant.name);
+        console.log('Fetching orders for restaurant:', restaurant.$id);
+        console.log('Restaurant name:', restaurant.name);
         
         // Debug alert
         //alert(`DEBUG: Restaurant ID = ${restaurant.$id}\nRestaurant Name = ${restaurant.name}`);      // Try to query with restaurantId filter (will work if it's a string attribute)
@@ -258,11 +454,11 @@ export default function OrdersPage() {
           ]
         );
         filtered = response.documents;
-        console.log('✅ Server-side filtering successful:', filtered.length, 'orders');
+        console.log('Server-side filtering successful:', filtered.length, 'orders');
       } catch (queryError: any) {
         // If server-side filtering fails (relationship), do client-side filtering
-        console.log('⚠️ Server-side filtering failed:', queryError.message);
-        console.log('📥 Fetching ALL orders for client-side filtering...');
+        console.log('Server-side filtering failed:', queryError.message);
+        console.log('Fetching ALL orders for client-side filtering...');
         const response = await databases.listDocuments(
           config.appwrite.databaseId,
           config.appwrite.ordersCollectionId,
@@ -272,7 +468,7 @@ export default function OrdersPage() {
           ]
         );
         
-        console.log('📊 Total orders in database:', response.documents.length);
+        console.log('Total orders in database:', response.documents.length);
         
         // Debug: Log first few orders to see restaurantId structure
         response.documents.slice(0, 3).forEach((order: any, index: number) => {
@@ -296,11 +492,11 @@ export default function OrdersPage() {
           const matches = orderRestaurantId === restaurant.$id;
           return matches;
         });
-        console.log('✅ Client-side filtered:', filtered.length, 'orders for restaurant', restaurant.$id);
+        console.log('Client-side filtered:', filtered.length, 'orders for restaurant', restaurant.$id);
       }
       
-      // ✅ ALWAYS recalculate totals from order_items to ensure accuracy
-      console.log(`📊 Calculating totals for ${filtered.length} orders from order_items`);
+      // ALWAYS recalculate totals from order_items to ensure accuracy
+      console.log(`Calculating totals for ${filtered.length} orders from order_items`);
       
       try {
         // Fetch all order items in one call
@@ -310,7 +506,7 @@ export default function OrdersPage() {
           [Query.limit(500)]
         );
         
-        console.log(`📦 Found ${itemsResponse.documents.length} order items in database`);
+        console.log(`Found ${itemsResponse.documents.length} order items in database`);
         
         // Group items by orderId
         const itemsByOrderId: Record<string, any[]> = {};
@@ -349,7 +545,7 @@ export default function OrdersPage() {
           };
         });
         
-        console.log('✅ Totals recalculated from order items');
+        console.log('Totals recalculated from order items');
         console.table(updatedOrders.map((o: any) => ({
           orderId: o.$id.slice(-8),
           items: (itemsByOrderId[o.$id] || []).length,
@@ -372,6 +568,63 @@ export default function OrdersPage() {
   const viewOrderDetails = async (order: Order) => {
     setSelectedOrder(order);
     setIsLoadingItems(true);
+    setIsSimulating(false);
+    setDronePosition(null);
+    setDeliveryPath([]);
+    setHubCoords(null);
+    setCurrentPhase('idle');
+    
+    // Initialize drone tracking if order is being delivered
+    if (order.droneId && (order.status === 'delivering' || order.status === 'picked_up')) {
+      console.log('Initializing drone tracking for order:', order.$id);
+      
+      try {
+        const drone = drones.get(order.droneId);
+        let hubLocation = { ...DEFAULT_HUB };
+        
+        if (drone) {
+          console.log('Found drone:', drone.name, drone);
+          
+          // Get hub from droneHub relationship
+          if (drone.droneHub && typeof drone.droneHub === 'object' && 'latitude' in drone.droneHub) {
+            const hub = drone.droneHub as DroneHub;
+            hubLocation = { latitude: hub.latitude, longitude: hub.longitude };
+            console.log('Hub from droneHub object:', hubLocation);
+          } else if (drone.droneHub && typeof drone.droneHub === 'string') {
+            // Fetch hub from database
+            try {
+              const hubDoc = await databases.getDocument(
+                config.appwrite.databaseId,
+                config.appwrite.droneHubsCollectionId,
+                drone.droneHub
+              );
+              hubLocation = { latitude: hubDoc.latitude, longitude: hubDoc.longitude };
+              console.log('Hub fetched:', hubDoc.name, hubLocation);
+            } catch (e) {
+              console.warn('Failed to fetch hub, using default');
+            }
+          } else if (drone.homeLatitude && drone.homeLongitude) {
+            hubLocation = { latitude: drone.homeLatitude, longitude: drone.homeLongitude };
+            console.log('Using drone home position:', hubLocation);
+          }
+        }
+        
+        // Set hub coords and start drone from hub
+        setHubCoords(hubLocation);
+        setCurrentPhase('to_restaurant');
+        setDronePosition({ ...hubLocation });
+        console.log('Drone starting from:', hubLocation);
+        
+        // Start simulation after state is set
+        setTimeout(() => {
+          setIsSimulating(true);
+          console.log('Animation started');
+        }, 300);
+        
+      } catch (err) {
+        console.error('Error initializing tracking:', err);
+      }
+    }
     
     try {
       console.log('Fetching order items for order:', order.$id);
@@ -559,7 +812,7 @@ export default function OrdersPage() {
       <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-bold text-gray-900">Orders</h1>
-            {/* 🔔 NEW ORDER BADGE */}
+            {/* NEW ORDER BADGE */}
             {newOrderCount > 0 && (
               <div className="flex items-center gap-2 px-3 py-1 bg-orange-100 border-2 border-orange-500 rounded-full animate-pulse">
                 <span className="relative flex h-3 w-3">
@@ -917,6 +1170,7 @@ export default function OrdersPage() {
                     Live Tracking
                   </h3>
                   <DeliveryTrackingMap
+                    hub={hubCoords || DEFAULT_HUB}
                     restaurant={restaurant ? {
                       latitude: restaurant.latitude,
                       longitude: restaurant.longitude,
@@ -933,22 +1187,30 @@ export default function OrdersPage() {
                       name: drones.get(selectedOrder.droneId)?.name,
                       batteryLevel: drones.get(selectedOrder.droneId)?.batteryLevel
                     } : null}
-                    path={deliveryPath}
-                    deliveryPhase={drones.get(selectedOrder.droneId)?.deliveryPhase}
+                    currentPhase={currentPhase}
+                    progress={calculateProgress(
+                      dronePosition,
+                      hubCoords,
+                      restaurant ? { latitude: restaurant.latitude, longitude: restaurant.longitude } : null,
+                      selectedOrder.deliveryLatitude && selectedOrder.deliveryLongitude 
+                        ? { latitude: selectedOrder.deliveryLatitude, longitude: selectedOrder.deliveryLongitude }
+                        : null,
+                      currentPhase
+                    )}
+                    etaMinutes={calculateETA(
+                      dronePosition,
+                      restaurant ? { latitude: restaurant.latitude, longitude: restaurant.longitude } : null,
+                      selectedOrder.deliveryLatitude && selectedOrder.deliveryLongitude 
+                        ? { latitude: selectedOrder.deliveryLatitude, longitude: selectedOrder.deliveryLongitude }
+                        : null,
+                      currentPhase
+                    )}
                     className="h-96 rounded-lg overflow-hidden"
                   />
-                  <div className="mt-2 text-center">
-                    <button
-                      onClick={() => {
-                        setDeliveryPath([]);
-                        if (dronePosition) {
-                          setDeliveryPath([dronePosition]);
-                        }
-                      }}
-                      className="text-sm text-blue-600 hover:text-blue-700"
-                    >
-                      🔄 Reset Path
-                    </button>
+                  <div className="mt-2 flex justify-center gap-4">
+                    <span className="text-sm text-gray-500">
+                      Phase: {currentPhase === 'to_restaurant' ? 'Hub → Restaurant' : currentPhase === 'to_customer' ? 'Restaurant → Customer' : 'Idle'}
+                    </span>
                   </div>
                 </div>
               )}

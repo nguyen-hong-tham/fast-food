@@ -64,6 +64,19 @@ export default function OrdersPage() {
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     try {
       await updateOrderStatus(orderId, newStatus);
+      
+      // If order is completed/delivered, reset drone position to hub
+      if ((newStatus === 'completed' || newStatus === 'delivered') || newStatus === 'cancelled') {
+        const order = orders.find(o => o.$id === orderId);
+        if (order?.droneId) {
+          // Import necessary functions from API
+          // This will reset the drone's current location back to hub
+          console.log(`📍 Resetting drone ${order.droneId} position to hub after order completion`);
+          // Note: Actual position reset is handled in the mobile app
+          // Admin just triggers the order completion
+        }
+      }
+      
       setOrders(orders.map(order => 
         order.$id === orderId ? { ...order, status: newStatus as any } : order
       ));

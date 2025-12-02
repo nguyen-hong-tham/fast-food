@@ -299,20 +299,6 @@ export async function replyToReview(reviewId: string, response: string) {
  */
 export async function getRestaurantAverageRating(restaurantId: string) {
   try {
-    // TODO: Fix - Collection reviews doesn't exist or has different schema
-    console.warn('⚠️ Reviews collection not properly configured in Appwrite');
-    return {
-      average: 0,
-      total: 0,
-      distribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
-      averageByCategory: {
-        foodQuality: 0,
-        deliverySpeed: 0,
-        service: 0,
-      },
-    };
-    
-    /* DISABLED until reviews collection is properly set up
     const response = await databases.listDocuments(
       appwriteConfig.databaseId,
       appwriteConfig.reviewsCollectionId,
@@ -379,7 +365,6 @@ export async function getRestaurantAverageRating(restaurantId: string) {
       distribution,
       averageByCategory,
     };
-    */
   } catch (error) {
     console.error('Error calculating restaurant average rating:', error);
     return {
@@ -411,7 +396,7 @@ export async function updateRestaurantAverageRating(restaurantId: string) {
         appwriteConfig.restaurantsCollectionId,
         restaurantId,
         {
-          rating: stats.average,
+          rating: Math.round(stats.average),
         }
       );
       console.log('✅ Restaurant rating updated to:', stats.average);

@@ -68,6 +68,11 @@ const RestaurantDetailScreen = () => {
         setLoading(true);
         const data = await getRestaurantById(id);
         setRestaurant(data as any as Restaurant);
+        
+        // Lấy reviews từ relationship
+        if (data.reviews && Array.isArray(data.reviews)) {
+          setReviews(data.reviews.filter((r: any) => r.isVisible !== false));
+        }
       } catch (error) {
         console.error('Error fetching restaurant:', error);
       } finally {
@@ -205,26 +210,35 @@ const RestaurantDetailScreen = () => {
     }
   }, [menuItems, categories]);
 
-  // Fetch reviews
+  // Calculate rating stats from reviews
   useEffect(() => {
-    if (!id) return;
-    loadReviews();
-  }, [id]);
-
-  const loadReviews = async () => {
-    if (!id) return;
-    try {
-      const [reviewsData, ratingData] = await Promise.all([
-        getRestaurantReviewsWithUserInfo(id, 50),
-        getRestaurantAverageRating(id),
-      ]);
-      setReviews(reviewsData);
-      setRating(ratingData);
-    } catch (error) {
-      console.error('Error fetching reviews:', error);
-      setReviews([]);
+    if (reviews.length > 0) {
+      const totalRating = reviews.reduce((sum: number, r: any) => sum + (r.overallRating || 0), 0);
+      const average = totalRating / reviews.length;
+      
+      const distribution = reviews.reduce(
+        (acc: any, review: any) => {
+          const rating = review.overallRating || 0;
+          if (rating >= 1 && rating <= 5) {
+            acc[rating as 1 | 2 | 3 | 4 | 5]++;
+          }
+          return acc;
+        },
+        { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
+      );
+      
+      setRating({
+        average: Math.round(average * 10) / 10,
+        total: reviews.length,
+        distribution,
+        averageByCategory: {
+          foodQuality: 0,
+          deliverySpeed: 0,
+          service: 0,
+        },
+      });
     }
-  };
+  }, [reviews]);
 
   const scrollToCategory = (categoryId: string) => {
     setSelectedCategory(categoryId);

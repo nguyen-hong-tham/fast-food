@@ -1221,7 +1221,10 @@ export const getRestaurantById = async (restaurantId: string) => {
         const restaurant = await databases.getDocument(
             appwriteConfig.databaseId,
             appwriteConfig.restaurantsCollectionId,
-            restaurantId
+            restaurantId,
+            [
+                Query.select(['*', 'reviews.*', 'reviews.user.*'])
+            ]
         );
 
         return restaurant;
