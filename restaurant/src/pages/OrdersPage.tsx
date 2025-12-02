@@ -341,7 +341,7 @@ export default function OrdersPage() {
       return;
     }
 
-    console.log('🎬 Starting drone animation, phase:', phaseRef.current);
+    console.log('Starting drone animation, phase:', phaseRef.current);
 
     // Capture coordinates
     const hub = hubRef.current || DEFAULT_HUB;
