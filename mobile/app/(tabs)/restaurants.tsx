@@ -25,6 +25,10 @@ const RestaurantsScreen = () => {
   const [selectedDistance, setSelectedDistance] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState<'rating' | 'distance' | 'name' | 'newest'>('rating');
   const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'active'>('all');
+  
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 3;
 
   // Get user location (mock for Ho Chi Minh City)
   useEffect(() => {
@@ -124,7 +128,26 @@ const RestaurantsScreen = () => {
 
   useEffect(() => {
     setFilteredRestaurants(filteredResults);
+    // Reset to page 1 when filter changes
+    setCurrentPage(1);
   }, [filteredResults]);
+
+  // Calculate paginated data
+  const paginatedRestaurants = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredRestaurants.slice(startIndex, endIndex);
+  }, [filteredRestaurants, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(filteredRestaurants.length / itemsPerPage);
+
+  const handlePageChange = useCallback((page: number) => {
+    setCurrentPage(page);
+    // Scroll to top when changing page (mobile only)
+    if (!isDesktop) {
+      // Will be handled by FlatList scroll
+    }
+  }, [isDesktop]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -145,10 +168,133 @@ const RestaurantsScreen = () => {
     setSelectedDistance(prev => prev === distance ? null : distance);
   }, []);
 
+  // Pagination Component
+  const renderPagination = () => {
+    if (totalPages <= 1) return null;
+
+    const pageNumbers = [];
+    const maxVisiblePages = isDesktop ? 7 : 5;
+    
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pageNumbers.push(i);
+    }
+
+    return (
+      <View className={cn(
+        "py-6 bg-white border-t border-gray-200",
+        isDesktop ? "px-20" : "px-4"
+      )}>
+        <View className="flex-row items-center justify-center" style={{ gap: 8 }}>
+          {/* Previous Button */}
+          <TouchableOpacity
+            onPress={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className={cn(
+              "rounded-lg px-3 py-2 border",
+              currentPage === 1 
+                ? "bg-gray-100 border-gray-200" 
+                : "bg-white border-gray-300"
+            )}
+          >
+            <Text className={cn(
+              "font-semibold",
+              currentPage === 1 ? "text-gray-400" : "text-gray-700"
+            )}>
+              ←
+            </Text>
+          </TouchableOpacity>
+
+          {/* First Page */}
+          {startPage > 1 && (
+            <>
+              <TouchableOpacity
+                onPress={() => handlePageChange(1)}
+                className="rounded-lg px-3 py-2 border bg-white border-gray-300"
+              >
+                <Text className="font-semibold text-gray-700">1</Text>
+              </TouchableOpacity>
+              {startPage > 2 && (
+                <Text className="text-gray-400 px-1">...</Text>
+              )}
+            </>
+          )}
+
+          {/* Page Numbers */}
+          {pageNumbers.map((page) => (
+            <TouchableOpacity
+              key={page}
+              onPress={() => handlePageChange(page)}
+              className={cn(
+                "rounded-lg px-3 py-2 border",
+                currentPage === page
+                  ? "bg-amber-500 border-amber-500"
+                  : "bg-white border-gray-300"
+              )}
+            >
+              <Text className={cn(
+                "font-semibold",
+                currentPage === page ? "text-white" : "text-gray-700"
+              )}>
+                {page}
+              </Text>
+            </TouchableOpacity>
+          ))}
+
+          {/* Last Page */}
+          {endPage < totalPages && (
+            <>
+              {endPage < totalPages - 1 && (
+                <Text className="text-gray-400 px-1">...</Text>
+              )}
+              <TouchableOpacity
+                onPress={() => handlePageChange(totalPages)}
+                className="rounded-lg px-3 py-2 border bg-white border-gray-300"
+              >
+                <Text className="font-semibold text-gray-700">{totalPages}</Text>
+              </TouchableOpacity>
+            </>
+          )}
+
+          {/* Next Button */}
+          <TouchableOpacity
+            onPress={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className={cn(
+              "rounded-lg px-3 py-2 border",
+              currentPage === totalPages
+                ? "bg-gray-100 border-gray-200"
+                : "bg-white border-gray-300"
+            )}
+          >
+            <Text className={cn(
+              "font-semibold",
+              currentPage === totalPages ? "text-gray-400" : "text-gray-700"
+            )}>
+              →
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Page Info */}
+        <Text className="text-center text-gray-500 text-sm mt-3">
+          Page {currentPage} of {totalPages}
+        </Text>
+      </View>
+    );
+  };
+
   const handleResetFilters = useCallback(() => {
     setSelectedDistance(null);
     setStatusFilter('all');
     setSearchQuery('');
+    setCurrentPage(1);
   }, []);
 
   const renderHeader = () => {
@@ -271,7 +417,7 @@ const RestaurantsScreen = () => {
           "text-gray-600",
           isDesktop ? "text-base font-medium" : "text-sm"
         )}>
-          {filteredRestaurants.length} restaurant{filteredRestaurants.length !== 1 ? 's' : ''} found
+          Showing {paginatedRestaurants.length} of {filteredRestaurants.length} restaurant{filteredRestaurants.length !== 1 ? 's' : ''}
         </Text>
         
         {/* Clear Filters */}
@@ -355,13 +501,16 @@ const RestaurantsScreen = () => {
             {renderHeader()}
             
             {filteredRestaurants.length > 0 ? (
-              <View className="px-20 flex flex-row flex-wrap pb-8" style={{ gap: 24 }}>
-                {filteredRestaurants.map((restaurant) => (
-                  <View key={restaurant.$id} style={{ width: '48%' }}>
-                    <RestaurantCard restaurant={restaurant} />
-                  </View>
-                ))}
-              </View>
+              <>
+                <View className="px-20 flex flex-row flex-wrap" style={{ gap: 24 }}>
+                  {paginatedRestaurants.map((restaurant) => (
+                    <View key={restaurant.$id} style={{ width: '48%' }}>
+                      <RestaurantCard restaurant={restaurant} />
+                    </View>
+                  ))}
+                </View>
+                {renderPagination()}
+              </>
             ) : (
               <View className="items-center justify-center py-16 px-20">
                 <Text className="text-xl font-bold text-gray-800 mb-2">
@@ -382,10 +531,11 @@ const RestaurantsScreen = () => {
         ) : (
           // Mobile: FlatList (original)
           <FlatList
-            data={filteredRestaurants}
+            data={paginatedRestaurants}
             keyExtractor={keyExtractor}
             ListHeaderComponent={renderHeader}
             renderItem={renderRestaurantItem}
+            ListFooterComponent={renderPagination}
             contentContainerClassName="px-4 pt-4 pb-24"
             showsVerticalScrollIndicator={false}
             removeClippedSubviews={true}
