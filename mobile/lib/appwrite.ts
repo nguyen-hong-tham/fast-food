@@ -4,13 +4,13 @@ import { Account, Avatars, Client, Databases, ID, Query, Storage } from "react-n
 import { CreateUserParams, GetMenuParams, RestaurantFilters, SignInParams, VNPayPaymentRequest, VNPayPaymentResponse, VNPayCallbackParams, PaymentResult, PaymentMethod, Order, DroneEvent, Drone } from "../type";
 
 export const appwriteConfig = {
-  endpoint: process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT || "https://cloud.appwrite.io/v1",
+  endpoint: process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT || "https://fra.cloud.appwrite.io/v1",
   projectId: process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID || "",
   // Use Expo defaults in development if bundle IDs are not set
   iosBundleId: process.env.EXPO_PUBLIC_APPWRITE_IOS_BUNDLE_ID || Constants.expoConfig?.ios?.bundleIdentifier || "host.exp.Exponent",
   androidPackage: process.env.EXPO_PUBLIC_APPWRITE_ANDROID_PACKAGE || Constants.expoConfig?.android?.package || "host.exp.exponent",
-  databaseId: process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID || "68da5e73002cb68e70af",
-  bucketId: process.env.EXPO_PUBLIC_APPWRITE_BUCKET_ID || "68dacda1003d6943981e",
+  databaseId: process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID || "69fc54170018f8c2b52e",
+  bucketId: process.env.EXPO_PUBLIC_APPWRITE_BUCKET_ID || "69fc54170018f8c2b52e",
   
   // Existing collections
   userCollectionId: process.env.EXPO_PUBLIC_APPWRITE_USER_COLLECTION_ID || "user", 
@@ -45,8 +45,9 @@ console.log('🔧 Appwrite Config:', {
 
 client
     .setEndpoint(appwriteConfig.endpoint)
-    .setProject(appwriteConfig.projectId)
-    .setPlatform(Platform.OS === 'ios' ? appwriteConfig.iosBundleId : appwriteConfig.androidPackage);
+    .setProject(appwriteConfig.projectId);
+    // .setPlatform(Platform.OS === 'ios' ? appwriteConfig.iosBundleId : appwriteConfig.androidPackage);
+    // TODO: Register platform in Appwrite console for production
 
 // Configure realtime with retry logic for better stability
 if (typeof window !== 'undefined') {
