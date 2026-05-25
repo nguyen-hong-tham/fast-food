@@ -50,6 +50,106 @@ const mapOrderItemsFromDatabase = (docs: any[]): OrderItem[] => {
   }));
 };
 
+// --- CLIENT SIDE INTERPOLATION HOOK (Phase C) ---
+function getMetersDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371e3; // Earth's radius in meters
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const rLat1 = (lat1 * Math.PI) / 180;
+  const rLat2 = (lat2 * Math.PI) / 180;
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(rLat1) * Math.cos(rLat2) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c;
+}
+
+export function useInterpolatedCoordinate(target: LatLng | null) {
+  const [current, setCurrent] = useState<LatLng | null>(null);
+  const animationRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number>(0);
+  const startCoordsRef = useRef<LatLng | null>(null);
+  const targetCoordsRef = useRef<LatLng | null>(null);
+
+  useEffect(() => {
+    if (!target) {
+      setCurrent(null);
+      startCoordsRef.current = null;
+      targetCoordsRef.current = null;
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+      }
+      return;
+    }
+
+    if (!current) {
+      setCurrent(target);
+      startCoordsRef.current = target;
+      targetCoordsRef.current = target;
+      return;
+    }
+
+    const dist = getMetersDistance(
+      current.latitude, current.longitude,
+      target.latitude, target.longitude
+    );
+
+    if (dist > 1000) {
+      // Snap instantly if teleport threshold (1000m) is exceeded
+      console.log(`[Interpolation] Teleported ${dist.toFixed(0)}m > 1000m. Snapping instantly.`);
+      setCurrent(target);
+      startCoordsRef.current = target;
+      targetCoordsRef.current = target;
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+      }
+      return;
+    }
+
+    startCoordsRef.current = { ...current };
+    targetCoordsRef.current = { ...target };
+    startTimeRef.current = performance.now();
+
+    const duration = 2500; // Smooth 2.5s slide
+
+    const animate = (time: number) => {
+      if (!startCoordsRef.current || !targetCoordsRef.current) return;
+
+      const elapsed = time - startTimeRef.current;
+      const progress = Math.min(elapsed / duration, 1);
+
+      const lat = startCoordsRef.current.latitude + (targetCoordsRef.current.latitude - startCoordsRef.current.latitude) * progress;
+      const lng = startCoordsRef.current.longitude + (targetCoordsRef.current.longitude - startCoordsRef.current.longitude) * progress;
+
+      setCurrent({ latitude: lat, longitude: lng });
+
+      if (progress < 1) {
+        animationRef.current = requestAnimationFrame(animate);
+      } else {
+        animationRef.current = null;
+      }
+    };
+
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+    }
+    animationRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [target?.latitude, target?.longitude]);
+
+  return current;
+}
+
 const OrderTrackingScreen = () => {
   const params = useLocalSearchParams<{ orderId?: string; id?: string }>();
   const trackingOrderId = useMemo(() => params.orderId || params.id, [params.orderId, params.id]);
@@ -62,7 +162,8 @@ const OrderTrackingScreen = () => {
 
   const [restaurantCoords, setRestaurantCoords] = useState<LatLng | null>(null);
   const [customerCoords, setCustomerCoords] = useState<LatLng | null>(null);
-  const [droneCoords, setDroneCoords] = useState<LatLng | null>(null);
+  const [rawDroneCoords, setRawDroneCoords] = useState<LatLng | null>(null);
+  const droneCoords = useInterpolatedCoordinate(rawDroneCoords);
   const [droneHubCoords, setDroneHubCoords] = useState<LatLng | null>(null); // Drone hub location
   const [dronePath, setDronePath] = useState<LatLng[]>([]);
   const [etaMinutes, setEtaMinutes] = useState<number | undefined>(undefined);
@@ -239,7 +340,7 @@ const OrderTrackingScreen = () => {
                   // Clear old path and start from restaurant
                   setDronePath(restaurantCoords ? [restaurantCoords] : []);
                   if (restaurantCoords) {
-                    setDroneCoords(restaurantCoords);
+                    setRawDroneCoords(restaurantCoords);
                   }
                 }
                 return 'to_customer';
@@ -280,7 +381,7 @@ const OrderTrackingScreen = () => {
               // Clear old path and start from restaurant
               setDronePath(restaurantCoords ? [restaurantCoords] : []);
               if (restaurantCoords) {
-                setDroneCoords(restaurantCoords);
+                setRawDroneCoords(restaurantCoords);
               }
             }
             return 'to_customer';
@@ -352,7 +453,7 @@ const OrderTrackingScreen = () => {
       console.log('📍 Received drone position update:', position.latitude.toFixed(6), position.longitude.toFixed(6));
       
       const coordinate = { latitude: position.latitude, longitude: position.longitude };
-      setDroneCoords(coordinate);
+      setRawDroneCoords(coordinate);
       setDronePath((prev) => {
         // Avoid duplicate points
         const last = prev[prev.length - 1];
@@ -494,7 +595,7 @@ const OrderTrackingScreen = () => {
             console.log('Initial drone position: Fallback to Hub', initialDronePos);
           }
           
-          setDroneCoords(initialDronePos);
+          setRawDroneCoords(initialDronePos);
           setDronePath([initialDronePos]);
           setSimulationState('running');
         }
@@ -594,7 +695,7 @@ const OrderTrackingScreen = () => {
       const newLng = startCoords!.longitude + (targetCoords!.longitude - startCoords!.longitude) * easeInOut;
       
       const newCoords = { latitude: newLat, longitude: newLng };
-      setDroneCoords(newCoords);
+      setRawDroneCoords(newCoords);
       setDronePath(prev => {
         const last = prev[prev.length - 1];
         if (last && Math.abs(last.latitude - newLat) < 0.00001) return prev;

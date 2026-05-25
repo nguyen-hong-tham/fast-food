@@ -1,10 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, Circle } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Drone, DroneHub } from '../../types';
 import { databases } from '../../lib/appwrite';
 import { Query } from 'appwrite';
+import { metricsTracker } from '../../lib/telemetry';
+
 
 interface DeliveryOrder {
   $id: string;
@@ -131,6 +133,135 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
   return R * c;
 };
 
+// --- CLIENT SIDE INTERPOLATION HOOK (Phase C) ---
+function getMetersDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371e3; // Earth's radius in meters
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const rLat1 = (lat1 * Math.PI) / 180;
+  const rLat2 = (lat2 * Math.PI) / 180;
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(rLat1) * Math.cos(rLat2) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c; // Distance in meters
+}
+
+function useInterpolatedCoordinate(target: { latitude: number; longitude: number } | null) {
+  const [current, setCurrent] = useState<{ latitude: number; longitude: number } | null>(null);
+  const animationRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number>(0);
+  const startCoordsRef = useRef<{ latitude: number; longitude: number } | null>(null);
+  const targetCoordsRef = useRef<{ latitude: number; longitude: number } | null>(null);
+
+  useEffect(() => {
+    if (!target) {
+      setCurrent(null);
+      startCoordsRef.current = null;
+      targetCoordsRef.current = null;
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+      }
+      return;
+    }
+
+    if (!current) {
+      setCurrent(target);
+      startCoordsRef.current = target;
+      targetCoordsRef.current = target;
+      return;
+    }
+
+    const dist = getMetersDistance(
+      current.latitude, current.longitude,
+      target.latitude, target.longitude
+    );
+
+    if (dist > 1000) {
+      // Snap instantly if teleport threshold (1000m) is exceeded
+      setCurrent(target);
+      startCoordsRef.current = target;
+      targetCoordsRef.current = target;
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+      }
+      return;
+    }
+
+    startCoordsRef.current = { ...current };
+    targetCoordsRef.current = { ...target };
+    startTimeRef.current = performance.now();
+
+    const duration = 2500; // Smooth 2.5s slide
+
+    const animate = (time: number) => {
+      if (!startCoordsRef.current || !targetCoordsRef.current) return;
+
+      const elapsed = time - startTimeRef.current;
+      const progress = Math.min(elapsed / duration, 1);
+
+      const lat = startCoordsRef.current.latitude + (targetCoordsRef.current.latitude - startCoordsRef.current.latitude) * progress;
+      const lng = startCoordsRef.current.longitude + (targetCoordsRef.current.longitude - startCoordsRef.current.longitude) * progress;
+
+      setCurrent({ latitude: lat, longitude: lng });
+
+      if (progress < 1) {
+        animationRef.current = requestAnimationFrame(animate);
+      } else {
+        animationRef.current = null;
+      }
+    };
+
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+    }
+    animationRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [target?.latitude, target?.longitude]);
+
+  return current;
+}
+
+interface InterpolatedMarkerProps {
+  latitude: number;
+  longitude: number;
+  icon: L.DivIcon;
+  eventHandlers?: any;
+  children?: React.ReactNode;
+}
+
+const InterpolatedMarker: React.FC<InterpolatedMarkerProps> = ({
+  latitude,
+  longitude,
+  icon,
+  eventHandlers,
+  children
+}) => {
+  const interpolated = useInterpolatedCoordinate({ latitude, longitude });
+
+  if (!interpolated) return null;
+
+  return (
+    <Marker
+      position={[interpolated.latitude, interpolated.longitude]}
+      icon={icon}
+      eventHandlers={eventHandlers}
+    >
+      {children}
+    </Marker>
+  );
+};
+
 interface DroneMapProps {
   drones: Drone[];
   hubs: DroneHub[];
@@ -154,6 +285,11 @@ const DroneMap: React.FC<DroneMapProps> = ({
   // Fetch delivery orders
   useEffect(() => {
     const fetchDeliveryOrders = async () => {
+      if (document.visibilityState === 'hidden') {
+        console.log('Skipping poll request: tab is inactive');
+        return;
+      }
+      metricsTracker.logPollRequest('admin/fetchDeliveryOrders');
       try {
         const response = await databases.listDocuments(
           import.meta.env.VITE_APPWRITE_DATABASE_ID,
@@ -174,8 +310,8 @@ const DroneMap: React.FC<DroneMapProps> = ({
 
     fetchDeliveryOrders();
     
-    // Refresh every 5 seconds
-    const interval = setInterval(fetchDeliveryOrders, 5000);
+    // Refresh every 15 seconds (optimized from 5s)
+    const interval = setInterval(fetchDeliveryOrders, 15000);
     return () => clearInterval(interval);
   }, []);
 
@@ -450,8 +586,9 @@ const DroneMap: React.FC<DroneMapProps> = ({
                 </Marker>
               )}
 
-              <Marker
-                position={[drone.currentLatitude, drone.currentLongitude]}
+              <InterpolatedMarker
+                latitude={drone.currentLatitude}
+                longitude={drone.currentLongitude}
                 icon={createDroneIcon(drone.status, !!activeDelivery)}
                 eventHandlers={{
                   click: () => onDroneClick?.(drone),
@@ -532,7 +669,7 @@ const DroneMap: React.FC<DroneMapProps> = ({
                     </div>
                   </div>
                 </Popup>
-              </Marker>
+              </InterpolatedMarker>
 
               {/* Show route to hub if enabled and hub exists */}
               {showRoutes && isSelected && hubPosition && (

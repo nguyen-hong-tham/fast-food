@@ -3,7 +3,7 @@ import { LogOut, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function Header() {
-  const { user, restaurant, logout } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   
   const handleSignOut = async () => {

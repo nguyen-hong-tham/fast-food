@@ -5,13 +5,10 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, GripVertical, Eye, EyeOff, ChevronRight, UtensilsCrossed } from 'lucide-react';
+import { Plus, Edit2, Trash2, GripVertical, Eye, EyeOff } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
-import { useNavigate } from 'react-router-dom';
 import {
-  getRestaurantCategories,
   getCategoriesWithMenuCount,
-  createCategory,
   updateCategory,
   deleteCategory,
   reorderCategories,
@@ -21,7 +18,6 @@ import CategoryModal from '../components/CategoryModal.tsx';
 
 const CategoriesPage: React.FC = () => {
   const { restaurant } = useAuthStore();
-  const navigate = useNavigate();
   const [categories, setCategories] = useState<CategoryWithMenuCount[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);

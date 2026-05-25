@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 
 import { useAuthStore } from '@/store/authStore';
 import { databases, Query, client } from '@/lib/appwrite';
+import { metricsTracker } from '@/lib/telemetry';
 import { config } from '@/config';
 import { Order } from '@/types';
 import { Clock, CheckCircle, XCircle, Package, Truck, MapPin, X, Plane } from 'lucide-react';
@@ -120,6 +121,105 @@ const calculateETA = (
   return timeInMinutes > 0 ? timeInMinutes : undefined;
 };
 
+// --- CLIENT SIDE INTERPOLATION HOOK (Phase C) ---
+function getMetersDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371e3; // Earth's radius in meters
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const rLat1 = (lat1 * Math.PI) / 180;
+  const rLat2 = (lat2 * Math.PI) / 180;
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(rLat1) * Math.cos(rLat2) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c; // Distance in meters
+}
+
+function useInterpolatedCoordinate(target: { latitude: number; longitude: number } | null) {
+  const [current, setCurrent] = useState<{ latitude: number; longitude: number } | null>(null);
+  const animationRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number>(0);
+  const startCoordsRef = useRef<{ latitude: number; longitude: number } | null>(null);
+  const targetCoordsRef = useRef<{ latitude: number; longitude: number } | null>(null);
+
+  useEffect(() => {
+    if (!target) {
+      setCurrent(null);
+      startCoordsRef.current = null;
+      targetCoordsRef.current = null;
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+      }
+      return;
+    }
+
+    if (!current) {
+      setCurrent(target);
+      startCoordsRef.current = target;
+      targetCoordsRef.current = target;
+      return;
+    }
+
+    const dist = getMetersDistance(
+      current.latitude, current.longitude,
+      target.latitude, target.longitude
+    );
+
+    if (dist > 1000) {
+      // Snap instantly if teleport threshold (1000m) is exceeded
+      setCurrent(target);
+      startCoordsRef.current = target;
+      targetCoordsRef.current = target;
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+      }
+      return;
+    }
+
+    startCoordsRef.current = { ...current };
+    targetCoordsRef.current = { ...target };
+    startTimeRef.current = performance.now();
+
+    const duration = 2500; // Smooth 2.5s slide
+
+    const animate = (time: number) => {
+      if (!startCoordsRef.current || !targetCoordsRef.current) return;
+
+      const elapsed = time - startTimeRef.current;
+      const progress = Math.min(elapsed / duration, 1);
+
+      const lat = startCoordsRef.current.latitude + (targetCoordsRef.current.latitude - startCoordsRef.current.latitude) * progress;
+      const lng = startCoordsRef.current.longitude + (targetCoordsRef.current.longitude - startCoordsRef.current.longitude) * progress;
+
+      setCurrent({ latitude: lat, longitude: lng });
+
+      if (progress < 1) {
+        animationRef.current = requestAnimationFrame(animate);
+      } else {
+        animationRef.current = null;
+      }
+    };
+
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+    }
+    animationRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [target?.latitude, target?.longitude]);
+
+  return current;
+}
+
 export default function OrdersPage() {
   const { restaurant, isLoading: authLoading } = useAuthStore();
   const [orders, setOrders] = useState<Order[]>([]);
@@ -132,8 +232,9 @@ export default function OrdersPage() {
   const [isUpdating, setIsUpdating] = useState(false);
   
   // Tracking state
-  const [showTracking, setShowTracking] = useState(false);
-  const [dronePosition, setDronePosition] = useState<{ latitude: number; longitude: number } | null>(null);
+  // const [showTracking, setShowTracking] = useState(false);
+  const [rawDronePosition, setRawDronePosition] = useState<{ latitude: number; longitude: number } | null>(null);
+  const dronePosition = useInterpolatedCoordinate(rawDronePosition);
   const [deliveryPath, setDeliveryPath] = useState<{ latitude: number; longitude: number }[]>([]);
   const [hubCoords, setHubCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [currentPhase, setCurrentPhase] = useState<'to_restaurant' | 'to_customer' | 'idle'>('idle');
@@ -180,81 +281,39 @@ export default function OrdersPage() {
     fetchDrones();
   }, [authLoading, restaurant?.$id]);
 
-  // Realtime subscriptions - only after auth is ready
+  // Subscribe to selected order details for realtime status changes (document-level subscription)
   useEffect(() => {
-    // Don't subscribe until auth is complete
-    if (authLoading || !restaurant?.$id) return;
+    if (authLoading || !selectedOrder?.$id) return;
 
-    let unsubscribeOrders: (() => void) | null = null;
-    let unsubscribeDrones: (() => void) | null = null;
-    
-    // Subscribe to orders
-    const ordersChannel = `databases.${config.appwrite.databaseId}.collections.${config.appwrite.ordersCollectionId}.documents`;
-    console.log('🔔 Subscribing to orders channel:', ordersChannel);
-    
-    unsubscribeOrders = client.subscribe(ordersChannel, (response) => {
+    const orderChannel = `databases.${config.appwrite.databaseId}.collections.${config.appwrite.ordersCollectionId}.documents.${selectedOrder.$id}`;
+    console.log('🔔 Subscribing to selected order document:', selectedOrder.$id);
+
+    const unsubscribe = client.subscribe(orderChannel, (response) => {
+      metricsTracker.logRealtimeEvent(`order-document: ${selectedOrder.$id}`);
       const payload = response.payload as any;
-      console.log('📨 Realtime order update received:', {
-        orderId: payload.$id,
-        status: payload.status,
-        droneId: payload.droneId,
-        restaurantId: payload.restaurantId
-      });
+      console.log('📨 Selected order realtime update:', payload.$id, payload.status);
       
-      // Update order in list
-      setOrders(prev => {
-        const index = prev.findIndex(o => o.$id === payload.$id);
-        
-        // If order exists in our list, update it
-        if (index >= 0) {
-          console.log('✅ Updating existing order:', payload.$id, 'Status:', payload.status);
-          const newOrders = [...prev];
-          // Preserve totalAmount if payload doesn't have it
-          newOrders[index] = {
-            ...payload,
-            totalAmount: payload.totalAmount || prev[index].totalAmount
-          };
-          return newOrders;
+      // Update selected order details
+      setSelectedOrder(prev => {
+        if (prev?.$id === payload.$id) {
+          return { ...prev, ...payload };
         }
-        
-        // If order doesn't exist, check if it belongs to this restaurant
-        const payloadRestaurantId = typeof payload.restaurantId === 'string'
-          ? payload.restaurantId
-          : payload.restaurantId?.$id;
-        
-        if (payloadRestaurantId === restaurant?.$id) {
-          console.log('➕ Adding new order:', payload.$id);
-          return [payload, ...prev];
-        }
-        
         return prev;
       });
-    });
-    
-    // Subscribe to drones
-    const dronesChannel = `databases.${config.appwrite.databaseId}.collections.${config.appwrite.dronesCollectionId}.documents`;
-    console.log('🔔 Subscribing to drones channel:', dronesChannel);
-    
-    unsubscribeDrones = client.subscribe(dronesChannel, (response) => {
-      const payload = response.payload as any;
-      console.log('🚁 Drone update:', payload.$id, payload.status);
-      
-      setDrones(prev => {
-        const newMap = new Map(prev);
-        newMap.set(payload.$id, payload);
-        return newMap;
-      });
+
+      // Also update the order in the list so list stays in sync
+      setOrders(prev => 
+        prev.map(o => o.$id === payload.$id ? { ...o, ...payload } : o)
+      );
     });
 
     return () => {
-      // Cleanup subscriptions
-      console.log('🧹 Cleaning up subscriptions');
-      if (unsubscribeOrders) unsubscribeOrders();
-      if (unsubscribeDrones) unsubscribeDrones();
+      console.log('🧹 Unsubscribing from selected order document:', selectedOrder.$id);
+      unsubscribe();
     };
-  }, [authLoading, restaurant?.$id]);
+  }, [authLoading, selectedOrder?.$id]);
 
-  // Subscribe to drone position for selected delivering order
+  // Subscribe to drone position for selected delivering order (document-level subscription)
   useEffect(() => {
     if (!selectedOrder || !selectedOrder.droneId || selectedOrder.status !== 'delivering') {
       return;
@@ -265,11 +324,12 @@ export default function OrdersPage() {
     const droneChannel = `databases.${config.appwrite.databaseId}.collections.${config.appwrite.dronesCollectionId}.documents.${selectedOrder.droneId}`;
     
     const unsubscribe = client.subscribe(droneChannel, (response) => {
+      metricsTracker.logRealtimeEvent(`drone-document: ${selectedOrder.droneId}`);
       const payload = response.payload as any;
       console.log('📍 Drone position update:', payload);
       
       if (payload.currentLatitude && payload.currentLongitude) {
-        setDronePosition({
+        setRawDronePosition({
           latitude: payload.currentLatitude,
           longitude: payload.currentLongitude,
         });
@@ -297,6 +357,7 @@ export default function OrdersPage() {
 
   // Fetch drones for active orders
   const fetchDrones = async () => {
+    metricsTracker.logPollRequest('restaurant/fetchDrones');
     try {
       const response = await databases.listDocuments(
         config.appwrite.databaseId,
@@ -318,15 +379,19 @@ export default function OrdersPage() {
     }
   };
 
-  // Auto-refresh orders every 10 seconds as fallback for realtime
+  // Auto-refresh orders every 30 seconds as fallback for realtime (optimized from 10s)
   useEffect(() => {
     if (authLoading || !restaurant?.$id) return;
     
     const interval = setInterval(() => {
+      if (document.visibilityState === 'hidden') {
+        console.log('Skipping poll request: tab is inactive');
+        return;
+      }
       console.log('Auto-refreshing orders...');
       fetchOrders();
       fetchDrones();
-    }, 10000); // Refresh every 10 seconds
+    }, 30000); // Refresh every 30 seconds
     
     return () => clearInterval(interval);
   }, [authLoading, restaurant?.$id]);
@@ -397,7 +462,7 @@ export default function OrdersPage() {
         longitude: startPos.longitude + (endPos.longitude - startPos.longitude) * easeInOut,
       };
       
-      setDronePosition(newPos);
+      setRawDronePosition(newPos);
 
       // Check if phase completed
       if (stepCount >= currentSteps) {
@@ -426,6 +491,7 @@ export default function OrdersPage() {
   }, [isSimulating, selectedOrder?.$id, restaurant]);
 
   const fetchOrders = async () => {
+    metricsTracker.logPollRequest('restaurant/fetchOrders');
     if (!restaurant?.$id) {
       console.warn('No restaurant ID to fetch orders');
       setIsLoading(false);
@@ -569,7 +635,7 @@ export default function OrdersPage() {
     setSelectedOrder(order);
     setIsLoadingItems(true);
     setIsSimulating(false);
-    setDronePosition(null);
+    setRawDronePosition(null);
     setDeliveryPath([]);
     setHubCoords(null);
     setCurrentPhase('idle');
@@ -612,7 +678,7 @@ export default function OrdersPage() {
         // Set hub coords and start drone from hub
         setHubCoords(hubLocation);
         setCurrentPhase('to_restaurant');
-        setDronePosition({ ...hubLocation });
+        setRawDronePosition({ ...hubLocation });
         console.log('Drone starting from:', hubLocation);
         
         // Start simulation after state is set
@@ -1155,9 +1221,9 @@ export default function OrdersPage() {
                 <div className="flex items-start gap-2 text-sm">
                   <MapPin className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="font-medium">{selectedOrder.deliveryAddressLabel || 'Delivery Location'}</p>
+                    <p className="font-medium">{(selectedOrder as any).deliveryAddressLabel || 'Delivery Location'}</p>
                     <p className="text-gray-700">{selectedOrder.deliveryAddress}</p>
-                    <p className="text-gray-500 mt-1">📞 {selectedOrder.phone}</p>
+                    <p className="text-gray-500 mt-1">📞 {(selectedOrder as any).phone}</p>
                   </div>
                 </div>
               </div>
@@ -1171,6 +1237,7 @@ export default function OrdersPage() {
                   </h3>
                   <DeliveryTrackingMap
                     hub={hubCoords || DEFAULT_HUB}
+                    path={deliveryPath}
                     restaurant={restaurant ? {
                       latitude: restaurant.latitude,
                       longitude: restaurant.longitude,

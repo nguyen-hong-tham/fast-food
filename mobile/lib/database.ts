@@ -1,4 +1,4 @@
-/**
+ /**
  * Database Helper Functions for Mobile App
  * 
  * Enhanced helpers using the simplified database structure
@@ -39,7 +39,7 @@ export async function getActiveRestaurants(limit = 25) {
         Query.limit(limit),
       ]
     );
-    return result.documents as Restaurant[];
+    return result.documents as unknown as Restaurant[];
   } catch (error) {
     console.error('Get active restaurants error:', error);
     throw error;
@@ -55,8 +55,8 @@ export async function getRestaurantDetails(restaurantId: string) {
       databaseId,
       'restaurants',
       restaurantId
-    );
-    return restaurant as Restaurant;
+    ) as unknown as Restaurant;
+    return restaurant;
   } catch (error) {
     console.error('Get restaurant details error:', error);
     throw error;
@@ -78,7 +78,7 @@ export async function searchRestaurants(searchTerm: string) {
         Query.limit(25),
       ]
     );
-    return result.documents as Restaurant[];
+    return result.documents as unknown as Restaurant[];
   } catch (error) {
     console.error('Search restaurants error:', error);
     throw error;
@@ -134,7 +134,7 @@ export async function getRestaurantMenu(restaurantId: string) {
         Query.limit(100),
       ]
     );
-    return result.documents as MenuItem[];
+    return result.documents as unknown as MenuItem[];
   } catch (error) {
     console.error('Get restaurant menu error:', error);
     throw error;
@@ -161,7 +161,7 @@ export async function getMenuByCategory(categoryId: string, restaurantId?: strin
       'menu',
       queries
     );
-    return result.documents as MenuItem[];
+    return result.documents as unknown as MenuItem[];
   } catch (error) {
     console.error('Get menu by category error:', error);
     throw error;
@@ -177,8 +177,8 @@ export async function getMenuItemDetails(menuItemId: string) {
       databaseId,
       'menu',
       menuItemId
-    );
-    return menuItem as MenuItem;
+    ) as unknown as MenuItem;
+    return menuItem;
   } catch (error) {
     console.error('Get menu item details error:', error);
     throw error;
@@ -199,7 +199,7 @@ export async function getPopularMenuItems(limit = 10) {
         Query.limit(limit),
       ]
     );
-    return result.documents as MenuItem[];
+    return result.documents as unknown as MenuItem[];
   } catch (error) {
     console.error('Get popular menu items error:', error);
     throw error;
@@ -209,6 +209,7 @@ export async function getPopularMenuItems(limit = 10) {
 // ============================================
 // CATEGORY OPERATIONS
 // ============================================
+
 
 /**
  * Get all categories
@@ -223,7 +224,7 @@ export async function getAllCategories() {
         Query.limit(50),
       ]
     );
-    return result.documents as Category[];
+    return result.documents as unknown as Category[];
   } catch (error) {
     console.error('Get all categories error:', error);
     throw error;
@@ -233,6 +234,7 @@ export async function getAllCategories() {
 // ============================================
 // ORDER OPERATIONS
 // ============================================
+
 
 /**
  * Create a new order
@@ -265,7 +267,7 @@ export async function createOrder(
     }, 0);
     
     // 1. Create order document
-    const order = await databases.createDocument(
+    const order = (await databases.createDocument(
       databaseId,
       'orders',
       ID.unique(),
@@ -286,17 +288,17 @@ export async function createOrder(
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       }
-    );
+    )) as unknown as Order;
     
     // 2. Create order items
-    const orderItems = await Promise.all(
+    const orderItems = (await Promise.all(
       items.map(item => 
         databases.createDocument(
           databaseId,
           'order_items',
           ID.unique(),
           {
-            orderId: order.$id,
+            orderId: order.$id as string,
             menuItemId: item.menuItemId,
             name: item.name,
             imageUrl: item.imageUrl || null,
@@ -307,7 +309,7 @@ export async function createOrder(
           }
         )
       )
-    );
+    )) as unknown as OrderItem[];
     
     // 3. Create payment record
     await databases.createDocument(
@@ -316,7 +318,7 @@ export async function createOrder(
       ID.unique(),
       {
         userId,
-        orderId: order.$id,
+        orderId: order.$id as string,
         provider: paymentMethod,
         method: paymentMethod === 'cod' ? 'cash' : 'e-wallet',
         status: paymentMethod === 'cod' ? 'pending' : 'pending',
@@ -326,8 +328,8 @@ export async function createOrder(
     );
     
     return {
-      order: order as Order,
-      orderItems: orderItems as OrderItem[],
+      order,
+      orderItems,
     };
   } catch (error) {
     console.error('Create order error:', error);
@@ -349,7 +351,7 @@ export async function getUserOrders(userId: string, limit = 50) {
         Query.limit(limit),
       ]
     );
-    return result.documents as Order[];
+    return result.documents as unknown as Order[];
   } catch (error) {
     console.error('Get user orders error:', error);
     throw error;
@@ -362,11 +364,11 @@ export async function getUserOrders(userId: string, limit = 50) {
 export async function getOrderDetails(orderId: string) {
   try {
     // Get order
-    const order = await databases.getDocument(
+    const order = (await databases.getDocument(
       databaseId,
       'orders',
       orderId
-    ) as Order;
+    )) as unknown as Order;
     
     // Get order items
     const itemsResult = await databases.listDocuments(
@@ -380,16 +382,16 @@ export async function getOrderDetails(orderId: string) {
     // Get restaurant info (if needed)
     let restaurant: Restaurant | null = null;
     if (typeof order.restaurantId === 'string') {
-      restaurant = await databases.getDocument(
+      restaurant = (await databases.getDocument(
         databaseId,
         'restaurants',
         order.restaurantId
-      ) as Restaurant;
+      )) as unknown as Restaurant;
     }
     
     return {
       order,
-      orderItems: itemsResult.documents as OrderItem[],
+      orderItems: itemsResult.documents as unknown as OrderItem[],
       restaurant,
     };
   } catch (error) {
@@ -416,7 +418,7 @@ export async function getOrdersByStatus(
         Query.limit(50),
       ]
     );
-    return result.documents as Order[];
+    return result.documents as unknown as Order[];
   } catch (error) {
     console.error('Get orders by status error:', error);
     throw error;
@@ -426,6 +428,7 @@ export async function getOrdersByStatus(
 // ============================================
 // NOTIFICATION OPERATIONS
 // ============================================
+
 
 /**
  * Get user notifications
@@ -441,7 +444,7 @@ export async function getUserNotifications(userId: string, limit = 50) {
         Query.limit(limit),
       ]
     );
-    return result.documents as Notification[];
+    return result.documents as unknown as Notification[];
   } catch (error) {
     console.error('Get user notifications error:', error);
     throw error;
@@ -504,8 +507,9 @@ export async function markAllNotificationsAsRead(userId: string) {
       ]
     );
     
+    const notifications = unreadNotifications.documents as unknown as Notification[];
     await Promise.all(
-      unreadNotifications.documents.map(notification =>
+      notifications.map(notification =>
         markNotificationAsRead(notification.$id)
       )
     );
@@ -533,16 +537,16 @@ export async function updateUserProfile(
   }
 ) {
   try {
-    const updated = await databases.updateDocument(
+    const updated = (await databases.updateDocument(
       databaseId,
-      'user',
+      appwriteConfig.userCollectionId,
       userId,
       {
         ...data,
         updatedAt: new Date().toISOString(),
       }
-    );
-    return updated as User;
+    )) as unknown as User;
+    return updated;
   } catch (error) {
     console.error('Update user profile error:', error);
     throw error;
@@ -554,12 +558,12 @@ export async function updateUserProfile(
  */
 export async function getUserProfile(userId: string) {
   try {
-    const user = await databases.getDocument(
+    const user = (await databases.getDocument(
       databaseId,
-      'user',
+      appwriteConfig.userCollectionId,
       userId
-    );
-    return user as User;
+    )) as unknown as User;
+    return user;
   } catch (error) {
     console.error('Get user profile error:', error);
     throw error;

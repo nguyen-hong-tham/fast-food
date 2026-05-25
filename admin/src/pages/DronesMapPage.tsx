@@ -3,6 +3,7 @@ import type { Drone, DroneHub } from '@/types';
 import { Map, List, RefreshCw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import DroneMap from '@/components/maps/DroneMap';
+import { metricsTracker } from '@/lib/telemetry';
 
 export default function DronesMapPage() {
   const [drones, setDrones] = useState<Drone[]>([]);
@@ -20,15 +21,20 @@ export default function DronesMapPage() {
   useEffect(() => {
     loadData();
 
-    // Auto-refresh every 5 seconds for real-time tracking
+    // Auto-refresh every 15 seconds for real-time tracking (optimized from 5s)
     const interval = setInterval(() => {
       loadData();
-    }, 5000);
+    }, 15000);
 
     return () => clearInterval(interval);
   }, []);
 
   const loadData = async () => {
+    if (document.visibilityState === 'hidden') {
+      console.log('Skipping poll request: tab is inactive');
+      return;
+    }
+    metricsTracker.logPollRequest('admin/loadData (DronesMapPage)');
     try {
       setIsLoading(true);
       const [dronesData, hubsData] = await Promise.all([

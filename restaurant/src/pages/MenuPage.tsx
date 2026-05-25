@@ -10,7 +10,7 @@ import MenuItemReviewsModal from '@/components/MenuItemReviewsModal';
 import { getMenuItemAverageRating } from '@/lib/reviews';
 import { getCategoriesWithMenuCount } from '@/lib/categories';
 import type { CategoryWithMenuCount } from '@/types';
-import { Plus, Search, Edit, Trash2, Eye, EyeOff, Star, MessageSquare, Grid, Filter, X } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Eye, EyeOff, Star, MessageSquare } from 'lucide-react';
 
 export default function MenuPage() {
   const { restaurant } = useAuthStore();
@@ -25,7 +25,6 @@ export default function MenuPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
-  const [showCategorySidebar, setShowCategorySidebar] = useState(true);
   const [reviewsModal, setReviewsModal] = useState<{ isOpen: boolean; itemId: string; itemName: string }>({
     isOpen: false,
     itemId: '',

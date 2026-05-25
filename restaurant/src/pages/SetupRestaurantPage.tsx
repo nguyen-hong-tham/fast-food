@@ -10,7 +10,6 @@ export default function SetupRestaurantPage() {
   const { user, checkAuth } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [debugInfo, setDebugInfo] = useState<string>('');
   
   const [formData, setFormData] = useState({
     name: '',
@@ -89,7 +88,11 @@ export default function SetupRestaurantPage() {
           </p>
         </div>
 
-
+        {error && (
+          <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg mb-6">
+            <p className="text-sm text-red-700">{error}</p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>

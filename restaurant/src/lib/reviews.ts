@@ -58,7 +58,7 @@ export async function getRestaurantReviews(
       ]
     );
 
-    return response.documents as Review[];
+    return response.documents as unknown as Review[];
   } catch (error) {
     console.error('Error fetching restaurant reviews:', error);
     throw error;
@@ -131,7 +131,7 @@ export async function getMenuItemReviews(
       ]
     );
 
-    const reviews = response.documents as Review[];
+    const reviews = response.documents as unknown as Review[];
 
     // Fetch user info
     const reviewsWithUser = await Promise.all(
@@ -184,7 +184,7 @@ export async function getMenuItemAverageRating(menuItemId: string) {
       ]
     );
 
-    const reviews = response.documents as Review[];
+    const reviews = response.documents as unknown as Review[];
 
     if (reviews.length === 0) {
       return {
@@ -260,7 +260,7 @@ export async function getRestaurantAverageRating(restaurantId: string) {
       ]
     );
 
-    const reviews = response.documents as Review[];
+    const reviews = response.documents as unknown as Review[];
 
     if (reviews.length === 0) {
       return {
@@ -381,7 +381,7 @@ export async function getFilteredRestaurantReviews(
       queries
     );
 
-    return response.documents as Review[];
+    return response.documents as unknown as Review[];
   } catch (error) {
     console.error('Error fetching filtered reviews:', error);
     throw error;

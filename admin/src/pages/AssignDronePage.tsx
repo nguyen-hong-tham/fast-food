@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { databases, client } from '../lib/appwrite';
+import { databases } from '../lib/appwrite';
 import { Query } from 'appwrite';
 import { Plane, Battery, MapPin, Clock, Package, RefreshCw } from 'lucide-react';
 import { startDeliverySimulation } from '../lib/drone-delivery-simulator';
+import { metricsTracker } from '../lib/telemetry';
 
 interface Order {
   $id: string;
@@ -52,52 +53,6 @@ export default function AssignDronePage() {
     fetchReadyOrders();
     fetchAvailableDrones();
     
-    // Subscribe to realtime updates for orders
-    const channel = `databases.${import.meta.env.VITE_APPWRITE_DATABASE_ID}.collections.${import.meta.env.VITE_APPWRITE_ORDERS_COLLECTION_ID}.documents`;
-    
-    let unsubscribe: (() => void) | null = null;
-    
-    try {
-      unsubscribe = client.subscribe(channel, (response) => {
-        try {
-          const payload = response.payload as any;
-          
-          // If an order status changed to 'ready' and has no drone assigned
-          if (payload?.status === 'ready' && !payload?.droneId) {
-            console.log('New order ready for delivery:', payload.$id);
-            
-            // Show notification
-            setNewOrderAlert(`New order #${payload.$id.slice(-8).toUpperCase()} ready for delivery!`);
-            setTimeout(() => setNewOrderAlert(null), 5000);
-            
-            // Play notification sound (optional)
-            try {
-              const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUqjk77RgGwU7k9r0yHUpBSl+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBSh+zPLaizsKGGS56+mjUBELTKXh8LdjHAU2jdXzxnkpBQ==');
-              audio.volume = 0.3;
-              audio.play().catch(() => {}); // Silently fail if audio not allowed
-            } catch (e) {
-              // Ignore audio errors
-            }
-            
-            fetchReadyOrders(); // Refresh the list
-          }
-          
-          // If an order got assigned a drone or status changed from 'ready'
-          if (payload?.droneId || payload?.status !== 'ready') {
-            console.log('Order assigned or status changed:', payload.$id);
-            fetchReadyOrders(); // Refresh the list
-            fetchAvailableDrones(); // Also refresh drones (one became busy)
-          }
-        } catch (error) {
-          console.error('Error processing order update:', error);
-        }
-      });
-      
-      console.log('Subscribed to order updates');
-    } catch (error) {
-      console.error('Error subscribing to orders:', error);
-    }
-    
     // Poll every 30 seconds as backup (increased from 10s)
     const interval = setInterval(() => {
       fetchReadyOrders();
@@ -106,18 +61,11 @@ export default function AssignDronePage() {
     
     return () => {
       clearInterval(interval);
-      try {
-        if (unsubscribe) {
-          unsubscribe();
-          console.log('Unsubscribed from order updates');
-        }
-      } catch (error) {
-        console.error('Error unsubscribing:', error);
-      }
     };
   }, []);
 
   const fetchReadyOrders = async () => {
+    metricsTracker.logPollRequest('admin/fetchReadyOrders');
     try {
       setError(null);
       console.log('🔍 Fetching ready orders...');
@@ -165,6 +113,7 @@ export default function AssignDronePage() {
   };
 
   const fetchAvailableDrones = async () => {
+    metricsTracker.logPollRequest('admin/fetchAvailableDrones');
     try {
       setError(null);
       const dronesCollectionId = import.meta.env.VITE_APPWRITE_DRONES_COLLECTION_ID;

@@ -24,7 +24,7 @@ export default function CustomersPage() {
       const data = await getAllUsers(200);
       // Filter to only show customers (not admin and not restaurant)
       const customersOnly = data.filter(u => 
-        u.role !== 'admin' && u.role !== 'restaurant'
+        u.role !== 'admin' && (u.role as string) !== 'restaurant'
       );
       setCustomers(customersOnly);
     } catch (error) {

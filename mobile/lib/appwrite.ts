@@ -1343,20 +1343,14 @@ export const createVNPayPayment = async (params: VNPayPaymentRequest & { userId?
         // Generate unique secret for this payment
         const secret = ID.unique();
 
-        // Create payment document in database
-        await databases.createDocument(
+        // Note: Payments collection is omitted, update order details instead.
+        await databases.updateDocument(
             appwriteConfig.databaseId,
-            appwriteConfig.paymentsCollectionId,
-            ID.unique(),
+            appwriteConfig.ordersCollectionId,
+            params.orderId,
             {
-                orderId: params.orderId,
-                userId: params.userId || 'anonymous', // Required field for database
-                secret,
-                provider: 'vnpay',
-                status: 'pending',
-                amount: params.amount,
-                currency: 'VND',
-                createdAt: new Date().toISOString(),
+                paymentMethod: 'vnpay',
+                paymentStatus: 'pending',
                 updatedAt: new Date().toISOString()
             }
         );
@@ -1381,41 +1375,15 @@ export const processVNPayCallback = async (callbackParams: VNPayCallbackParams):
             vnp_TransactionStatus,
             vnp_TxnRef,
             vnp_Amount,
-            vnp_TransactionNo,
-            vnp_BankTranNo
+            vnp_TransactionNo
         } = callbackParams;
 
         const orderId = vnp_TxnRef;
         const amount = parseInt(vnp_Amount) / 100; // Convert back from VNPay format
         const success = vnp_ResponseCode === '00' && vnp_TransactionStatus === '00';
 
-        // Update payment status in database
-        const payments = await databases.listDocuments(
-            appwriteConfig.databaseId,
-            appwriteConfig.paymentsCollectionId,
-            [Query.equal('secret', orderId)] // Using orderId as secret for simplicity
-        );
-
-        if (payments.documents.length > 0) {
-            const payment = payments.documents[0];
-            await databases.updateDocument(
-                appwriteConfig.databaseId,
-                appwriteConfig.paymentsCollectionId,
-                payment.$id,
-                {
-                    status: success ? 'completed' : 'failed',
-                    resultCode: vnp_ResponseCode,
-                    transactionRef: vnp_TransactionNo,
-                    mvrResponse: JSON.stringify(callbackParams),
-                    updatedAt: new Date().toISOString()
-                }
-            );
-        }
-
-        // Update order payment status
-        if (success) {
-            await updateOrderPaymentStatus(orderId, 'paid');
-        }
+        // Update order payment status directly
+        await updateOrderPaymentStatus(orderId, success ? 'paid' : 'failed');
 
         return {
             success,
@@ -1467,26 +1435,17 @@ export const updateOrderPaymentStatus = async (orderId: string, paymentStatus: '
  */
 export const createCODPayment = async (orderId: string, amount: number): Promise<PaymentResult> => {
     try {
-        const secret = ID.unique();
-
-        // Create payment document
-        await databases.createDocument(
+        // Update order with COD payment method and pending status directly
+        await databases.updateDocument(
             appwriteConfig.databaseId,
-            appwriteConfig.paymentsCollectionId,
-            ID.unique(),
+            appwriteConfig.ordersCollectionId,
+            orderId,
             {
-                secret,
-                provider: 'cod',
-                status: 'pending',
-                amount,
-                currency: 'VND',
-                createdAt: new Date().toISOString(),
+                paymentMethod: 'cod',
+                paymentStatus: 'pending',
                 updatedAt: new Date().toISOString()
             }
         );
-
-        // Update order with COD payment method
-        await updateOrderPaymentStatus(orderId, 'pending');
 
         return {
             success: true,

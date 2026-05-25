@@ -4,6 +4,7 @@ import { Models } from "react-native-appwrite";
 // ===================== MENU =====================
 
 export interface MenuItem extends Models.Document {
+  $id?: string; // Appwrite document ID
   name: string;
   price: number;
   image_url: string;
@@ -23,6 +24,7 @@ export interface MenuItem extends Models.Document {
 // ===================== CATEGORY =====================
 
 export interface Category extends Models.Document {
+  $id?: string; // Appwrite document ID
   name: string;
   description?: string;
   restaurantId: string;
@@ -52,6 +54,7 @@ export interface CategoryWithMenuCount extends Category {
 // ===================== RESTAURANT =====================
 
 export interface Restaurant extends Models.Document {
+  $id?: string; // Appwrite document ID
   ownerId: string;
   name: string;
   description?: string;
@@ -96,6 +99,7 @@ export interface RestaurantWithDistance extends Restaurant {
 export type UserRole = 'customer' | 'admin' | 'restaurant' | 'staff';
 
 export interface User extends Models.Document {
+  $id?: string; // Appwrite document ID
   accountId: string;
   name: string;
   email: string;
@@ -160,6 +164,7 @@ export interface OrderItem {
 }
 
 export interface Order extends Models.Document {
+  $id?: string; // Appwrite document ID
   userId: string;
   restaurantId?: string; // NEW: Phase 0
   items: OrderItem[];
@@ -197,6 +202,7 @@ export interface Order extends Models.Document {
 // ===================== ORDER ITEMS =====================
 
 export interface OrderItemDocument extends Models.Document {
+  $id?: string; // Appwrite document ID
   orderId: string;
   menuItemId: string;
   name: string;
@@ -211,6 +217,7 @@ export interface OrderItemDocument extends Models.Document {
 // ===================== PAYMENT =====================
 
 export interface Payment extends Models.Document {
+  $id?: string; // Appwrite document ID
   secret: string; // From database schema
   resultCode?: string;
   transactionRef?: string;
@@ -276,6 +283,7 @@ export interface PaymentResult {
 // ===================== NOTIFICATION =====================
 
 export interface Notification extends Models.Document {
+  $id?: string; // Appwrite document ID
   userId: string;
   type: 'order_update' | 'promotion' | 'system' | 'review_request';
   title: string;
@@ -294,19 +302,17 @@ export interface DroneHub extends Models.Document {
   address: string;
   latitude: number;
   longitude: number;
-<<<<<<< HEAD
   capacity: number;
   currentDrones: number;
   isActive: boolean;
   createdAt: string;
-=======
   drones?: Drone[] | string[]; // Relationship - can be array of IDs or objects
->>>>>>> 9058acf3dafd0cffc4f244a29aad512c2d6200a5
 }
 
 // ===================== DRONE =====================
 
 export interface Drone extends Models.Document {
+  $id?: string; // Appwrite document ID
   code: string; // Unique identifier (required)
   name: string; // Required
   model?: string;
@@ -328,7 +334,6 @@ export interface Drone extends Models.Document {
   lastMaintenanceAt?: string;
   nextMaintenanceAt?: string;
   createdAt: string;
-  droneHub?: string | DroneHub; // Relationship to DroneHub
 }
 
 // ===================== DRONE EVENT =====================

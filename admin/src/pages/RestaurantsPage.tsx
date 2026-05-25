@@ -1,6 +1,6 @@
 import { databases } from '@/lib/appwrite';
 import { Query } from 'appwrite';
-import { Calendar, Mail, MapPin, Phone, Search, Store, Star, Clock } from 'lucide-react';
+import { Calendar, Mail, MapPin, Phone, Search, Store, Star } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface Restaurant {

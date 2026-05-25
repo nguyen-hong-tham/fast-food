@@ -5,6 +5,7 @@
  */
 
 import { databases } from './appwrite';
+import { shouldWritePosition, metricsTracker } from './telemetry';
 
 export type DeliveryPhase = 
   | 'idle'           // Drone chờ tại hub
@@ -114,16 +115,32 @@ export async function startDeliverySimulation(
 
     // Cập nhật drone position trong database
     try {
-      await databases.updateDocument(
-        import.meta.env.VITE_APPWRITE_DATABASE_ID,
-        import.meta.env.VITE_APPWRITE_DRONES_COLLECTION_ID,
+      const check = shouldWritePosition(
         droneId,
         {
-          currentLatitude: simulation.currentLat,
-          currentLongitude: simulation.currentLng,
-          // Note: deliveryPhase is tracked locally, not in database
-        }
+          latitude: simulation.currentLat,
+          longitude: simulation.currentLng,
+          batteryLevel: 100, // Simulator does not track battery depletion inside this loop, default to 100
+          status: 'busy',
+        },
+        false // Do not force write location updates
       );
+
+      if (check.shouldWrite) {
+        metricsTracker.logWriteSent(`admin-simulator (${check.reason})`);
+        await databases.updateDocument(
+          import.meta.env.VITE_APPWRITE_DATABASE_ID,
+          import.meta.env.VITE_APPWRITE_DRONES_COLLECTION_ID,
+          droneId,
+          {
+            currentLatitude: simulation.currentLat,
+            currentLongitude: simulation.currentLng,
+            // Note: deliveryPhase is tracked locally, not in database
+          }
+        );
+      } else {
+        metricsTracker.logWriteSkipped(check.reason);
+      }
     } catch (error) {
       console.error('Error updating drone position:', error);
     }

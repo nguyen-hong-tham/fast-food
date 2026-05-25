@@ -1,8 +1,8 @@
-import { createDrone, deleteDrone, getAllDrones, getAllDroneHubs, updateDrone, createDroneHub, updateDroneHub, deleteDroneHub } from '@/lib/api';
+import { createDrone, deleteDrone, getAllDrones, getAllDroneHubs, updateDrone, createDroneHub, updateDroneHub } from '@/lib/api';
 import type { Drone, DroneHub, DroneStatus } from '@/types';
-import { Battery, Edit, Map, List, Plane, Plus, Search, Trash2, X, RefreshCw, Building2 } from 'lucide-react';
+import { Battery, Edit, List, Plane, Plus, Search, Trash2, X, RefreshCw, Building2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import DroneMap from '@/components/maps/DroneMap';
+import { metricsTracker } from '@/lib/telemetry';
 
 interface DroneFormData {
   code: string;
@@ -34,7 +34,7 @@ export default function DronesPage() {
   const [isHubModalOpen, setIsHubModalOpen] = useState(false);
   const [editingDrone, setEditingDrone] = useState<Drone | null>(null);
   const [editingHub, setEditingHub] = useState<DroneHub | null>(null);
-  const [selectedDroneId, setSelectedDroneId] = useState<string>();
+  // const [selectedDroneId, setSelectedDroneId] = useState<string>();
   const [viewMode, setViewMode] = useState<'list' | 'hub'>('list');
   const [isEditingHubInfo, setIsEditingHubInfo] = useState(false);
   const [formData, setFormData] = useState<DroneFormData>({
@@ -61,6 +61,11 @@ export default function DronesPage() {
     
     // Auto-refresh every 30 seconds
     const interval = setInterval(async () => {
+      if (document.visibilityState === 'hidden') {
+        console.log('Skipping poll request: tab is inactive');
+        return;
+      }
+      metricsTracker.logPollRequest('admin/autoRefresh (DronesPage)');
       try {
         const [dronesData] = await Promise.all([
           getAllDrones(200),
@@ -80,6 +85,7 @@ export default function DronesPage() {
   }, [searchQuery, drones]);
   
   const loadData = async () => {
+    metricsTracker.logPollRequest('admin/loadData (DronesPage)');
     try {
       setIsLoading(true);
       const [dronesData, hubsData] = await Promise.all([
@@ -164,6 +170,7 @@ export default function DronesPage() {
     setIsModalOpen(true);
   };
   
+  /*
   const handleOpenHubModal = (hub?: DroneHub) => {
     if (hub) {
       setEditingHub(hub);
@@ -184,6 +191,7 @@ export default function DronesPage() {
     }
     setIsHubModalOpen(true);
   };
+  */
   
   const handleCloseHubModal = () => {
     setIsHubModalOpen(false);
@@ -281,7 +289,7 @@ export default function DronesPage() {
     const drone = drones.find(d => d.$id === droneId);
     
     // Check if drone is busy (delivering)
-    if (drone?.status === 'busy' || drone?.status === 'delivering') {
+    if (drone?.status === 'busy' || (drone?.status as string) === 'delivering') {
       alert('❌ Cannot delete this drone. It is currently busy with a delivery. Please wait until it completes the delivery.');
       return;
     }
@@ -300,6 +308,7 @@ export default function DronesPage() {
     }
   };
   
+  /*
   const handleDeleteHub = async (hubId: string) => {
     const dronesInHub = drones.filter(d => getDroneHubId(d) === hubId);
     const busyDrones = dronesInHub.filter(d => d.status === 'busy');
@@ -338,6 +347,7 @@ export default function DronesPage() {
       alert('Failed to delete hub');
     }
   };
+  */
 
   const stats = {
     total: drones.length,

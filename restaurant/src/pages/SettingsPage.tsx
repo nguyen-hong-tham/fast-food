@@ -67,7 +67,7 @@ export default function SettingsPage() {
 
   // Check for pending orders that prevent deletion
   const checkPendingOrders = async () => {
-    if (!restaurant?.$id) return;
+    if (!restaurant?.$id) return [];
 
     try {
       const orders = await databases.listDocuments(

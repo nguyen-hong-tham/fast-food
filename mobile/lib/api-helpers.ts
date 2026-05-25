@@ -130,18 +130,17 @@ export const createPayment = async (paymentData: {
     provider: 'cod' | 'vnpay';
     amount: number;
 }): Promise<Payment> => {
-    const payment = await databases.createDocument(
-        databaseId,
-        appwriteConfig.paymentsCollectionId,
-        ID.unique(),
-        {
-            ...paymentData,
-            status: 'pending',
-            createdAt: new Date().toISOString(),
-        }
-    );
-    
-    return payment as unknown as Payment;
+    // Note: Payments collection is omitted, return mock payment object
+    return {
+        $id: ID.unique(),
+        $collectionId: appwriteConfig.paymentsCollectionId,
+        $databaseId: databaseId,
+        $createdAt: new Date().toISOString(),
+        $updatedAt: new Date().toISOString(),
+        $permissions: [],
+        status: 'pending',
+        ...paymentData,
+    } as unknown as Payment;
 };
 
 export const updatePaymentStatus = async (
@@ -149,33 +148,34 @@ export const updatePaymentStatus = async (
     status: 'pending' | 'completed' | 'failed' | 'refunded',
     transactionId?: string
 ): Promise<Payment> => {
-    const updates: any = {
+    // Note: Payments collection is omitted, return mock payment object
+    return {
+        $id: paymentId,
+        $collectionId: appwriteConfig.paymentsCollectionId,
+        $databaseId: databaseId,
+        $createdAt: new Date().toISOString(),
+        $updatedAt: new Date().toISOString(),
+        $permissions: [],
         status,
-        updatedAt: new Date().toISOString(),
-    };
-    
-    if (transactionId) {
-        updates.transactionId = transactionId;
-    }
-    
-    const payment = await databases.updateDocument(
-        databaseId,
-        appwriteConfig.paymentsCollectionId,
-        paymentId,
-        updates
-    );
-    
-    return payment as unknown as Payment;
+        transactionId: transactionId || null,
+    } as unknown as Payment;
 };
 
 export const getPaymentByOrderId = async (orderId: string): Promise<Payment | null> => {
-    const response = await databases.listDocuments(
-        databaseId,
-        appwriteConfig.paymentsCollectionId,
-        [Query.equal('orderId', orderId), Query.limit(1)]
-    );
-    
-    return response.documents.length > 0 ? response.documents[0] as unknown as Payment : null;
+    // Note: Payments collection is omitted, return mock payment object
+    return {
+        $id: ID.unique(),
+        $collectionId: appwriteConfig.paymentsCollectionId,
+        $databaseId: databaseId,
+        $createdAt: new Date().toISOString(),
+        $updatedAt: new Date().toISOString(),
+        $permissions: [],
+        orderId,
+        userId: 'anonymous',
+        provider: 'cod',
+        amount: 0,
+        status: 'pending',
+    } as unknown as Payment;
 };
 
 // ===================== REVIEWS =====================
@@ -550,6 +550,8 @@ export const listDroneEvents = async (droneId: string, limit: number = 50): Prom
     return response.documents as unknown as DroneEvent[];
 };
 
+import { shouldWritePosition, metricsTracker } from '../../shared/utils/telemetry';
+
 export const updateDroneLocation = async (
     droneId: string,
     latitude: number,
@@ -559,8 +561,28 @@ export const updateDroneLocation = async (
         speed?: number;
         batteryLevel?: number;
         orderId?: string;
+        status?: string;
+        forceWrite?: boolean;
     } = {}
 ): Promise<void> => {
+    const batteryLevel = options.batteryLevel ?? 100;
+    const status = options.status ?? 'busy';
+    const forceWrite = options.forceWrite ?? false;
+
+    // Check throttle
+    const throttleResult = shouldWritePosition(
+        droneId,
+        { latitude, longitude, batteryLevel, status },
+        forceWrite
+    );
+
+    if (!throttleResult.shouldWrite) {
+        metricsTracker.logWriteSkipped(throttleResult.reason);
+        return;
+    }
+
+    metricsTracker.logWriteSent(`updateDroneLocation (${throttleResult.reason})`);
+
     // Update drone position
     await databases.updateDocument(
         databaseId,
@@ -569,7 +591,7 @@ export const updateDroneLocation = async (
         {
             currentLatitude: latitude,
             currentLongitude: longitude,
-            batteryLevel: options.batteryLevel ?? undefined,
+            batteryLevel: batteryLevel,
         }
     );
     
@@ -588,7 +610,7 @@ export const updateDroneLocation = async (
                     longitude,
                     altitude: options.altitude || null,
                     speed: options.speed || null,
-                    batteryLevel: options.batteryLevel || null,
+                    batteryLevel: batteryLevel,
                 }
             );
         } catch (error) {

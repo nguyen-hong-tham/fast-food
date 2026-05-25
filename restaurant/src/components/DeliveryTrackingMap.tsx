@@ -153,7 +153,6 @@ const DeliveryTrackingMap: React.FC<DeliveryMapProps> = ({
   phase = 'idle',
   currentPhase,
   progress = 0,
-  etaMinutes,
   deliveryPhase,
   className = '',
 }) => {
