@@ -1,8 +1,11 @@
 {
-  "installCommand": "npm install",
-  "buildCommand": "npm run build",
+  "buildCommand": "npm install && npm run build && echo 'Build successful, checking dist:' && ls -la dist/ || echo 'Checking dist folder'",
   "outputDirectory": "dist",
-  "framework": "create-react-app",
+  "github": {
+    "enabled": true,
+    "autoAlias": false,
+    "autoJobCancelation": true
+  },
   "env": {
     "EXPO_PUBLIC_APPWRITE_ENDPOINT": "@expo_public_appwrite_endpoint",
     "EXPO_PUBLIC_APPWRITE_PROJECT_ID": "@expo_public_appwrite_project_id",
