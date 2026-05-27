@@ -2,23 +2,7 @@
   "installCommand": "npm install",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "headers": [
-    {
-      "source": "/:path*",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=3600, must-revalidate"
-        }
-      ]
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/:path*",
-      "destination": "/index.html"
-    }
-  ],
+  "framework": "vite",
   "env": {
     "VITE_APPWRITE_ENDPOINT": "@vite_appwrite_endpoint",
     "VITE_APPWRITE_PROJECT_ID": "@vite_appwrite_project_id",
