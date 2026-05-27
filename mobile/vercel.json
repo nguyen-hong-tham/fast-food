@@ -26,11 +26,5 @@
       "source": "/(.*)",
       "destination": "/index.html"
     }
-  ],
-  "env": {
-    "EXPO_PUBLIC_APPWRITE_ENDPOINT": "@expo_public_appwrite_endpoint",
-    "EXPO_PUBLIC_APPWRITE_PROJECT_ID": "@expo_public_appwrite_project_id",
-    "EXPO_PUBLIC_APPWRITE_DATABASE_ID": "@expo_public_appwrite_database_id",
-    "EXPO_PUBLIC_APPWRITE_BUCKET_ID": "@expo_public_appwrite_bucket_id"
-  }
+  ]
 }
