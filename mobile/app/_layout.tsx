@@ -69,4 +69,4 @@ function RootInner() {
 // 3) Xuất mặc định (bắt buộc cho expo-router)
 export default RootInner;
 
-// ❌ Sentry disabled due to compatibility issues
+// Sentry disabled due to compatibility issues
