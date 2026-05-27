@@ -3,7 +3,7 @@
   "outputDirectory": "dist",
   "headers": [
     {
-      "source": "/(assets|_expo)/**",
+      "source": "/(assets|_expo)/:path*",
       "headers": [
         {
           "key": "cache-control",
