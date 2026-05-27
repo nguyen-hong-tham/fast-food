@@ -67,10 +67,6 @@ function RootInner() {
 }
 
 // 3) Xuất mặc định (bắt buộc cho expo-router)
-export default Sentry.wrap(RootInner);
+export default RootInner;
 
-// ❌ ĐỪNG gọi ở global scope:
-// Sentry.showFeedbackWidget();
-
-// ✅ Nếu muốn mở Feedback, hãy gọi trong một handler khi đã sẵn sàng:
-// const openFeedback = () => !__DEV__ && Sentry.showFeedbackWidget();
+// ❌ Sentry disabled due to compatibility issues
