@@ -1,7 +1,7 @@
 // app/_layout.tsx
 import useAuthStore from '@/store/auth.store';
 import useNotificationSetup from '@/hooks/useNotificationSetup';
-import * as Sentry from '@sentry/react-native';
+// import * as Sentry from '@sentry/react-native'; // TODO: Fix Sentry compatibility with Expo 54
 import { useFonts } from 'expo-font';
 import { SplashScreen, Stack } from 'expo-router';
 import { useEffect } from 'react';
@@ -23,14 +23,15 @@ LogBox.ignoreLogs([
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 // 2) Khởi tạo Sentry, TẮT feedback/replay ở dev để tránh crash
-Sentry.init({
-  dsn: 'https://68e9cb3b752bed44fe8c25bbbb455153@o4510090773725184.ingest.us.sentry.io/4510090775363584',
-  sendDefaultPii: true,
-  enableLogs: true,
-  replaysSessionSampleRate: __DEV__ ? 0 : 0.1,
-  replaysOnErrorSampleRate: __DEV__ ? 0 : 1,
-  integrations: __DEV__ ? [] : [Sentry.mobileReplayIntegration(), Sentry.feedbackIntegration()],
-});
+// TODO: Fix Sentry compatibility issue with Expo 54 + React Native 0.81.4
+// Sentry.init({
+//   dsn: 'https://68e9cb3b752bed44fe8c25bbbb455153@o4510090773725184.ingest.us.sentry.io/4510090775363584',
+//   sendDefaultPii: true,
+//   enableLogs: true,
+//   replaysSessionSampleRate: __DEV__ ? 0 : 0.1,
+//   replaysOnErrorSampleRate: __DEV__ ? 0 : 1,
+//   integrations: __DEV__ ? [] : [Sentry.mobileReplayIntegration(), Sentry.feedbackIntegration()],
+// });
 
 function RootInner() {
   const { isLoading } = useAuthStore();

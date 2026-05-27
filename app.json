@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "5c1ec996-f945-459b-a3e5-8cfaf5759b4c"
+      }
+    },
+    "android": {
+      "package": "ycom.fastfood.app"
+    }
+  }
+}

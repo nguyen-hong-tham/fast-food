@@ -2,7 +2,7 @@ import CustomButton from "@/components/common/CustomButton";
 import CustomInput from "@/components/common/CustomInput";
 import { signIn } from "@/lib/appwrite";
 import useAuthStore from "@/store/auth.store";
-import * as Sentry from '@sentry/react-native';
+// import * as Sentry from '@sentry/react-native'; // TODO: Fix Sentry compatibility
 import { Link, router } from "expo-router";
 import { useState } from "react";
 import { Alert, Text, View, Platform } from 'react-native';
