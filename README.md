@@ -827,9 +827,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Liên Hệ
 
-- **Email**: phatle224@example.com
-- **GitHub**: [@phatle224](https://github.com/phatle224)
-- **Project Repository**: [sgu_cnpm_foodfast](https://github.com/phatle224/sgu_cnpm_foodfast)
+- **Email**:nguyenhongtham27.09.2004@mail.com 
+- **GitHub**:https://github.com/nguyen-hong-tham
+- **Github group**: [sgu_cnpm_foodfast](https://github.com/phatle224/sgu_cnpm_foodfast)
+- 
 
 ---
 
