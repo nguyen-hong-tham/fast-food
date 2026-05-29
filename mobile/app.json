@@ -7,7 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "sgufastfooddeli",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "config": {
@@ -52,14 +52,14 @@
           }
         }
       ],
-     
       "expo-web-browser",
       [
         "expo-notifications",
         {
           "color": "#FE8C00"
         }
-      ]
+      ],
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true
@@ -67,8 +67,15 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "4961eea9-2e75-48b9-af75-25680d299d44"
+        "projectId": "50480665-cead-42c5-9ef1-c4c7d23c4aa8"
       }
+    },
+    "owner": "joppy27",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/50480665-cead-42c5-9ef1-c4c7d23c4aa8"
     }
   }
 }
